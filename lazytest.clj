@@ -34,7 +34,9 @@
 (deftype Context [parents before after])
 
 (deftype TestCase [contexts children] :as this
-  clojure.lang.IFn (invoke [] (run-test-case this))
+  clojure.lang.IFn
+  (invoke [] (run-test-case this))
+  (invoke [active] (run-test-case this active))
   TestInvokable (invoke-test [states active]
                              (run-test-case this active)))
 
@@ -110,20 +112,50 @@
     (let [active (reduce close-context active (:parents c))]
       (dissoc active c))))
 
+;; (let [m {:name name}
+;;         m (if (string? (first decl)) (assoc m :doc (first decl)) m)
+;;         decl (if (string? (first decl)) (next decl) decl)
+;;         bindings (first decl)
+;;         assertions (next decl)]
+;;     (assert (vector? bindings))
+;;     (assert (even? (count bindings)))
+;;     (let [locals (vec (map first (partition 2 bindings)))
+;;           contexts (vec (map (comp coerce-context second) (partition 2 bindings)))]
+;;       (assert (every? symbol locals))
+;;       `(def ~name
+;;             (with-meta (TestCase ~contexts
+;;                                  ~(loop [r [], as assertions]
+;;                                     (if (seq as)
+;;                                       (if (string? (first as))
+;;                                         (recur (conj r `(with-meta (assertion ~locals ~(next as))
+;;                                                           {:doc ~(first as)}))
+;;                                                (nnext as))
+;;                                         (recur (conj r `(assertion ~locals ~(first as))) (next as)))
+;;                                       r)))
+;;               '~m))))
+
 (defmacro defcontext
   "Defines a context.
-  decl => docstring? [parents*] before-fn after-fn?"
+  decl => docstring? [bindings*] before-body* (:after [state] after-body*)?"
   [name & decl]
   (let [m {:name name}
         m (if (string? (first decl)) (assoc m :doc (first decl)) m)
         decl (if (string? (first decl)) (next decl) decl)
-        parents (first decl)
-        m (assoc m :locals parents)
-        before (next decl)
-        after (next decl)]
-    (assert (vector? parents))
-    `(def ~name (with-meta (Context ~parents ~before ~after)
-                  '~m))))
+        bindings (first decl)
+        bodies (next decl)]
+    (assert (vector? bindings))
+    (assert (even? (count bindings)))
+    (let [locals (vec (map first (partition 2 bindings)))
+          contexts (vec (map (comp coerce-context second) (partition 2 bindings)))
+          before (take-while #(not= :after %) bodies)
+          after (next (drop-while #(not= :after %) bodies))
+          before-fn `(fn ~locals ~@before)]
+      (when after (assert (vector? (first after))))
+      (let [after-fn (when after
+                       `(fn ~(vec (concat (first after) locals))
+                          ~@after))]
+        `(def ~name (with-meta (Context ~contexts ~before-fn ~after-fn)
+                      '~m))))))
 
 
 ;;; TEST CASE HANDLING
@@ -164,6 +196,10 @@
         (TestResult t results))
       (catch Throwable e (TestThrown t e)))))
 
+(defn- coerce-context [c]
+  (if (and (symbol? c) (= ::Context (type (var-get (resolve c)))))
+    c (Context [] (fn [] c) nil)))
+
 (defmacro deftest
   "Defines a test case containing assertions that share the same contexts.
   decl => docstring? [binding*] assertion*
@@ -178,7 +214,7 @@
     (assert (vector? bindings))
     (assert (even? (count bindings)))
     (let [locals (vec (map first (partition 2 bindings)))
-          contexts (vec (map second (partition 2 bindings)))]
+          contexts (vec (map (comp coerce-context second) (partition 2 bindings)))]
       (assert (every? symbol locals))
       `(def ~name
             (with-meta (TestCase ~contexts
@@ -374,11 +410,17 @@
 (assert (= ::AssertionThrown (type (a5 "a" "b"))))
 
 ;; defcontext form
-(defcontext c7 "Context c7" [c5] (fn [s5] 7) (fn [s7 s5] nil))
+(defcontext c7 "Context c7" [s5 c5]
+  (assert (= s5 5))
+  7
+  :after [s7]
+  (assert (= s7 7)))
 (assert (= ::Context (type c7)))
 (assert (= 'c7 (:name (meta c7))))
 (assert (= "Context c7" (:doc (meta c7))))
 (assert (= [c5] (:parents c7)))
+(assert (fn? (:before c7)))
+(assert (fn? (:after c7)))
 
 ;; deftest form
 (deftest t10 "Test t10"
