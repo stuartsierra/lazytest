@@ -89,16 +89,51 @@ inside defcontext up to the keyword :after.  Expressions following
 :after will become the body of the "after" function.
 
 The "before" function returns a value representing some state.  That
-value will be given to Test Cases that use the Context.
+value will be passed to Test Cases that use the Context.
 
 The keyword :after must be followed by a vector containing a single
 symbol.  When the "after" function runs, that symbol will be bound to
 the state returned by the "before" function.
 
     (defcontext name []
-       ... body of before function ...
+       ... body of "before" function ...
        ... returns some state ...
        :after [x]
-       ... body of after function ...
+       ... body of "after" function ...
        ... where x is the state ...)
 
+Contexts may be composed.  The vector immediately following the name
+in defcontext is a bindings vector, just like in deftest.  These
+bindings are available in both the "before" and "after" functions.
+
+    (defcontext name [a context-one
+                      b context-two]
+       ... body of "before" function ...
+       ... a and b are the states of contexts one and two ...
+       :after [x]
+       ... body of "after" function ...
+       ... where x is the state ...
+       ... a and b are also available here ...)
+
+
+Contexts may also be attached to Test Suites, by placing them in the
+vector following the name in defsuite:
+
+    (defsuite name [contexts...] ... test cases ...)
+
+When a Context is attached to a Test Suite, its before/after functions
+execute only ONCE for the entire suite.
+
+   (defcontext context-one [] 1)
+
+   (deftest my-test [x context-one] (pos? x) (= x 1))
+
+   (defsuite long-suite []
+      my-test my-test my-test)
+
+   (long-suite) ;; context-one runs three times
+
+   (defsuite short-suite [context-one]
+      my-test my-test my-test)
+
+   (short-suite) ;; context-one runs once
