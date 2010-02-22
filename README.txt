@@ -84,16 +84,21 @@ A Context is actually a *pair* of functions, one that runs before the
 test and one that runs after it.  These correspond to the
 "setup/teardown" functions in other test frameworks.
 
-    (defcontext name []
-       ... body of before function ...
-       :after [x]
-       ... body of after function ...)
-
 The body of the "before" function will consist of the expressions
 inside defcontext up to the keyword :after.  Expressions following
 :after will become the body of the "after" function.
 
-The "before" function returns a value, the "state" of the context.
+The "before" function returns a value representing some state.  That
+value will be given to Test Cases that use the Context.
+
 The keyword :after must be followed by a vector containing a single
 symbol.  When the "after" function runs, that symbol will be bound to
 the state returned by the "before" function.
+
+    (defcontext name []
+       ... body of before function ...
+       ... returns some state ...
+       :after [x]
+       ... body of after function ...
+       ... where x is the state ...)
+
