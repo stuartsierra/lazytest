@@ -240,32 +240,44 @@
   (run-test-case t4)
   (assert (= @*log* [:c5-open :a3 :a4 :c5-close])))
 
+(def t5 (TestCase [] [t4 t4]))
+
+(with-log
+  (dorun (result-seq (run-test-case t5)))
+  (assert (= @*log* [:c5-open :a3 :a4 :c5-close :c5-open :a3 :a4 :c5-close])))
+
+(def t6 (TestCase [c5] [t4 t4]))
+
+(with-log
+  (dorun (result-seq (run-test-case t6)))
+  (assert (= @*log* [:c5-open :a3 :a4 :a3 :a4 :c5-close])))
+
 ;; Lazy Evaluation
 (def c6 (Context [] (fn [] (log :c6-open) 6) nil))
 
-(def t5 (TestCase [c6] [a3 a4]))
+(def t7 (TestCase [c6] [a3 a4]))
 
 (with-log
-  (let [results (run-test-case t5)]
+  (let [results (run-test-case t7)]
     (assert (= @*log* [:c6-open]))
     (dorun (result-seq results))
     (assert (= @*log* [:c6-open :a3 :a4]))))
 
 ;; Nested Lazy Evaluation
-(def t6 (TestCase [] [t5 t5]))
+(def t8 (TestCase [] [t7 t7]))
 
 (with-log
-  (let [results (run-test-case t6)]
+  (let [results (run-test-case t8)]
     (assert (= @*log* []))
     (dorun (:children (first (:children results))))
     (assert (= @*log* [:c6-open :a3 :a4]))
     (dorun (result-seq results))
     (assert (= @*log* [:c6-open :a3 :a4 :c6-open :a3 :a4]))))
 
-(def t7 (TestCase [c6] [t5 t5]))
+(def t9 (TestCase [c6] [t7 t7]))
 
 (with-log
-  (let [results (run-test-case t7)]
+  (let [results (run-test-case t9)]
     (assert (= @*log* [:c6-open]))
     (dorun (result-seq results))
     (assert (= @*log* [:c6-open :a3 :a4 :a3 :a4]))))
