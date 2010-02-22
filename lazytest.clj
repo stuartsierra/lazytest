@@ -20,12 +20,23 @@
 (defprotocol Testable
   (run-tests [x] "Runs tests defined for the Namespace, Var, or TestCase."))
 
+(defprotocol TestInvokable
+  (invoke-test [t states active]
+               "(private) Executes the TestCase or Assertion."))
+
+(extend-class clojure.lang.Fn TestInvokable
+              (invoke-test [f states active] (apply f states)))
 
 ;;; DATATYPES
 
+(declare run-test-case)
+
 (deftype Context [parents before after])
 
-(deftype TestCase [contexts children])
+(deftype TestCase [contexts children] :as this
+  clojure.lang.IFn (invoke [] (run-test-case this))
+  TestInvokable (invoke-test [states active]
+                             (run-test-case this active)))
 
 (deftype Assertion [locals form])
 
@@ -141,9 +152,7 @@
       (let [merged (reduce open-context active (:contexts t))
             states (map merged (:contexts t))
             ;; Prevent chunking for truly lazy execution:
-            results (unchunked-map (fn [c] (if (fn? c)
-                                             (apply c states)
-                                             (run-test-case c merged)))
+            results (unchunked-map #(invoke-test % states merged)
                                    (:children t))]
         ;; Force non-lazy execution to handle shutdown properly:
         (when (some has-after? (:contexts t))
