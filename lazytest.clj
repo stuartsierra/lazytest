@@ -64,6 +64,20 @@
 (defmacro assertion [locals & body]
   (format-assertion (Assertion locals `(do ~@body))))
 
+(defmacro defassert
+  "Defines an Assertion.
+  decl => docstring? [locals*] body*"
+  [name & decl]
+  (let [m {:name name}
+        m (if (string? (first decl)) (assoc m :doc (first decl)) m)
+        decl (if (string? (first decl)) (next decl) decl)
+        argv (first decl)
+        m (assoc m :locals argv)
+        body (next decl)]
+    (assert (vector? argv))
+    `(def ~name (with-meta (assertion ~argv ~@body)
+                  '~m))))
+
 
 ;;; CONTEXT HANDLING
 
@@ -84,6 +98,21 @@
       (apply f (active c) states))
     (let [active (reduce close-context active (:parents c))]
       (dissoc active c))))
+
+(defmacro defcontext
+  "Defines a context.
+  decl => docstring? [parents*] before-fn after-fn?"
+  [name & decl]
+  (let [m {:name name}
+        m (if (string? (first decl)) (assoc m :doc (first decl)) m)
+        decl (if (string? (first decl)) (next decl) decl)
+        parents (first decl)
+        m (assoc m :locals parents)
+        before (next decl)
+        after (next decl)]
+    (assert (vector? parents))
+    `(def ~name (with-meta (Context ~parents ~before ~after)
+                  '~m))))
 
 
 ;;; TEST CASE HANDLING
@@ -125,7 +154,48 @@
                                  (reverse (:contexts t))))))
         (TestResult t results))
       (catch Throwable e (TestThrown t e)))))
- 
+
+(defmacro deftest
+  "Defines a test case containing assertions that share the same contexts.
+  decl => docstring? [binding*] assertion*
+  binding => symbol context
+  assertion => docstring? expression"
+  [name & decl]
+  (let [m {:name name}
+        m (if (string? (first decl)) (assoc m :doc (first decl)) m)
+        decl (if (string? (first decl)) (next decl) decl)
+        bindings (first decl)
+        assertions (next decl)]
+    (assert (vector? bindings))
+    (assert (even? (count bindings)))
+    (let [locals (vec (map first (partition 2 bindings)))
+          contexts (vec (map second (partition 2 bindings)))]
+      (assert (every? symbol locals))
+      `(def ~name
+            (with-meta (TestCase ~contexts
+                                 ~(loop [r [], as assertions]
+                                    (if (seq as)
+                                      (if (string? (first as))
+                                        (recur (conj r `(with-meta (assertion ~locals ~(next as))
+                                                          {:doc ~(first as)}))
+                                               (nnext as))
+                                        (recur (conj r `(assertion ~locals ~(first as))) (next as)))
+                                      r)))
+              '~m)))))
+
+(defmacro defsuite
+  "Defines a test suite containing other test cases or suites.
+  decl => docstring? [context*] children*"
+  [name & decl]
+  (let [m {:name name}
+        m (if (string? (first decl)) (assoc m :doc (first decl)) m)
+        decl (if (string? (first decl)) (next decl) decl)
+        contexts (first decl)
+        children (next decl)]
+    (assert (vector? contexts))
+    `(def ~name (with-meta (TestCase ~contexts ~(vec children))
+                  '~m))))
+
 
 ;;; TEST RESULT HANDLING
 
@@ -281,3 +351,46 @@
     (assert (= @*log* [:c6-open]))
     (dorun (result-seq results))
     (assert (= @*log* [:c6-open :a3 :a4 :a3 :a4]))))
+
+;; defassert form
+(defassert a5 "Assertion a5" [a b]
+  (comment "stuff")
+  (< a b))
+
+(assert (fn? a5))
+(assert (= 'a5 (:name (meta a5))))
+(assert (= "Assertion a5" (:doc (meta a5))))
+(assert (= ::AssertionPassed (type (a5 1 2))))
+(assert (= ::AssertionFailed (type (a5 2 1))))
+(assert (= ::AssertionThrown (type (a5 "a" "b"))))
+
+;; defcontext form
+(defcontext c7 "Context c7" [c5] (fn [s5] 7) (fn [s7 s5] nil))
+(assert (= ::Context (type c7)))
+(assert (= 'c7 (:name (meta c7))))
+(assert (= "Context c7" (:doc (meta c7))))
+(assert (= [c5] (:parents c7)))
+
+;; deftest form
+(deftest t10 "Test t10"
+  [a c4, b c5]
+  (= a b)
+  "a is less than b"
+  (< a b))
+
+(assert (= 't10 (:name (meta t10))))
+(assert (= "Test t10" (:doc (meta t10))))
+(assert (= ::TestCase (type t10)))
+(assert (= [c4 c5] (:contexts t10)))
+(assert (every? fn? (:children t10)))
+(assert (= "a is less than b"
+           (:doc (meta (second (:children t10))))))
+
+;; defsuite form
+(defsuite t11 "Suite t11" [c4 c5] t9 t10)
+
+(assert (= 't11 (:name (meta t11))))
+(assert (= "Suite t11" (:doc (meta t11))))
+(assert (= ::TestCase (type t11)))
+(assert (= [c4 c5] (:contexts t11)))
+(assert (= [t9 t10] (:children t11)))
