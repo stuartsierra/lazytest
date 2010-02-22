@@ -81,7 +81,7 @@
   "Defines an Assertion.
   decl => docstring? [locals*] body*"
   [name & decl]
-  (let [m {:name name}
+  (let [m {:name name, :ns *ns*}
         m (if (string? (first decl)) (assoc m :doc (first decl)) m)
         decl (if (string? (first decl)) (next decl) decl)
         argv (first decl)
@@ -112,33 +112,11 @@
     (let [active (reduce close-context active (:parents c))]
       (dissoc active c))))
 
-;; (let [m {:name name}
-;;         m (if (string? (first decl)) (assoc m :doc (first decl)) m)
-;;         decl (if (string? (first decl)) (next decl) decl)
-;;         bindings (first decl)
-;;         assertions (next decl)]
-;;     (assert (vector? bindings))
-;;     (assert (even? (count bindings)))
-;;     (let [locals (vec (map first (partition 2 bindings)))
-;;           contexts (vec (map (comp coerce-context second) (partition 2 bindings)))]
-;;       (assert (every? symbol locals))
-;;       `(def ~name
-;;             (with-meta (TestCase ~contexts
-;;                                  ~(loop [r [], as assertions]
-;;                                     (if (seq as)
-;;                                       (if (string? (first as))
-;;                                         (recur (conj r `(with-meta (assertion ~locals ~(next as))
-;;                                                           {:doc ~(first as)}))
-;;                                                (nnext as))
-;;                                         (recur (conj r `(assertion ~locals ~(first as))) (next as)))
-;;                                       r)))
-;;               '~m))))
-
 (defmacro defcontext
   "Defines a context.
   decl => docstring? [bindings*] before-body* (:after [state] after-body*)?"
   [name & decl]
-  (let [m {:name name}
+  (let [m {:name name, :ns *ns*}
         m (if (string? (first decl)) (assoc m :doc (first decl)) m)
         decl (if (string? (first decl)) (next decl) decl)
         bindings (first decl)
@@ -206,7 +184,7 @@
   binding => symbol context
   assertion => docstring? expression"
   [name & decl]
-  (let [m {:name name}
+  (let [m {:name name, :ns *ns*}
         m (if (string? (first decl)) (assoc m :doc (first decl)) m)
         decl (if (string? (first decl)) (next decl) decl)
         bindings (first decl)
@@ -232,7 +210,7 @@
   "Defines a test suite containing other test cases or suites.
   decl => docstring? [context*] children*"
   [name & decl]
-  (let [m {:name name}
+  (let [m {:name name, :ns *ns*}
         m (if (string? (first decl)) (assoc m :doc (first decl)) m)
         decl (if (string? (first decl)) (next decl) decl)
         contexts (first decl)
@@ -404,6 +382,7 @@
 
 (assert (fn? a5))
 (assert (= 'a5 (:name (meta a5))))
+(assert (= *ns* (:ns (meta a5))))
 (assert (= "Assertion a5" (:doc (meta a5))))
 (assert (= ::AssertionPassed (type (a5 1 2))))
 (assert (= ::AssertionFailed (type (a5 2 1))))
@@ -417,6 +396,7 @@
   (assert (= s7 7)))
 (assert (= ::Context (type c7)))
 (assert (= 'c7 (:name (meta c7))))
+(assert (= *ns* (:ns (meta c7))))
 (assert (= "Context c7" (:doc (meta c7))))
 (assert (= [c5] (:parents c7)))
 (assert (fn? (:before c7)))
@@ -430,6 +410,7 @@
   (< a b))
 
 (assert (= 't10 (:name (meta t10))))
+(assert (= *ns* (:ns (meta t10))))
 (assert (= "Test t10" (:doc (meta t10))))
 (assert (= ::TestCase (type t10)))
 (assert (= [c4 c5] (:contexts t10)))
@@ -441,6 +422,7 @@
 (defsuite t11 "Suite t11" [c4 c5] t9 t10)
 
 (assert (= 't11 (:name (meta t11))))
+(assert (= *ns* (:ns (meta t11))))
 (assert (= "Suite t11" (:doc (meta t11))))
 (assert (= ::TestCase (type t11)))
 (assert (= [c4 c5] (:contexts t11)))
