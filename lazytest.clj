@@ -17,6 +17,8 @@
 
 (def *active-contexts* {})
 
+(def *defining-context-bindings* [])
+
 (defprotocol Successful
   (success? [r] "Returns true if the result r was 100% successful."))
 
@@ -26,7 +28,7 @@
 
 (deftype Context [before after])
 
-(deftype Suite [contexts tests])
+(deftype Suite [contexts children])
 
 (deftype AssertionSuccess [assertion]
   Successful (success? [] true))
@@ -65,6 +67,7 @@
         (catch Throwable t#
           (AssertionThrown (quote ~expr) t#))))
 
+;; TODO: Lazy evaluation
 (defn- format-test [t]
   {:pre [(test? t)
          (vector? (:locals t))
@@ -114,32 +117,155 @@
   (TestResult t (call-with-contexts (:contexts t)
                   (compile-test t))))
 
+(declare run)
+
 (defn run-suite
   "Run a Suite s, return a SuiteResult."
   [s]
   (SuiteResult s (call-with-contexts (:contexts s)
                    (fn [& _]
-                     (doall (map run-test (:tests s)))))))
+                     (doall (map run (:children s)))))))
 
 
-;;; USAGE:
+(defn run [x]
+  (cond (suite? x) (run-suite x)
+        (test? x) (run-test x)
+        :else (throw (IllegalArgumentException.
+                      "Suites may only contain Tests and other Suites"))))
+
+
+
+;;; CONVENIENCE MACROS
+
+(defn- reformat-context [x]
+  (if (symbol? x) x
+      `(Context (fn [] ~x) nil)))
+
+(defmacro make-test
+  "args => docstring? [bindings*] assertions*
+
+  bindings => local-name context
+
+  If context is an expression, will create an anonymous 
+  context using that expression in its :before function."
+  [& args]
+  (let [docstring (if (string? (first args))
+                    (first args)
+                    nil)
+        args (if (string? (first args))
+                (next args) args)
+        context-bindings (if (vector? (first args))
+                           (first args)
+                           [])
+        assertions (if (vector? (first args))
+                     (next args) args)]
+    `(Test (quote ~(vec (map first (partition 2 context-bindings))))
+           ~(vec (map (comp reformat-context second)
+                      (partition 2 context-bindings)))
+           (quote ~(vec assertions))
+           {:doc ~docstring} {})))
+
+(defmacro deftest [name & args]
+  `(def ~name (let [t# (make-test ~@args)]
+                (with-meta t# (assoc (meta t#)
+                                :name '~name
+                                :ns *ns*
+                                :file *file*
+                                :line @clojure.lang.Compiler/LINE)))))
+
+(declare reformat-child)
+
+(defmacro make-child-test [parent-bindings & args]
+  (let [docstring (if (string? (first args))
+                    (first args)
+                    nil)
+        args (if (string? (first args))
+                (next args) args)
+        context-bindings (if (vector? (first args))
+                           (vec (concat parent-bindings (first args)))
+                           parent-bindings)
+        assertions (if (vector? (first args))
+                     (next args) args)]
+    `(Test (quote ~(vec (map first (partition 2 context-bindings))))
+           ~(vec (map (comp reformat-context second)
+                      (partition 2 context-bindings)))
+           (quote ~(vec assertions))
+           {:doc ~docstring} {})))
+
+(defmacro make-child-suite [parent-bindings & args]
+  (let [docstring (if (string? (first args))
+                    (first args)
+                    nil)
+        args (if (string? (first args))
+                (next args)
+                args)
+        context-bindings (if (vector? (first args))
+                           (vec (concat parent-bindings (first args)))
+                           parent-bindings)
+        children (if (vector? (first args))
+                   (next args) args)]
+    `(Suite ~(vec (map (comp reformat-context second) (partition 2 context-bindings)))
+            ~(vec (map (partial reformat-child context-bindings) children))
+            {:doc ~docstring} {})))
+
+(defn reformat-child [parent-bindings args]
+  (cond (symbol? args) args
+        (= :test (first args)) `(make-child-test ~parent-bindings ~@(rest args))
+        (= :suite (first args)) `(make-child-suite ~parent-bindings ~@(rest args))
+        :else args))
+
+(defmacro make-suite [& args]
+  (let [docstring (if (string? (first args))
+                    (first args)
+                    nil)
+        args (if (string? (first args))
+                (next args)
+                args)
+        context-bindings (if (vector? (first args))
+                           (first args) [])
+        children (if (vector? (first args))
+                   (next args) args)]
+    `(Suite ~(vec (map (comp reformat-context second) (partition 2 context-bindings)))
+            ~(vec (map (partial reformat-child context-bindings) children))
+            {:doc ~docstring} {})))
+
+(defmacro defsuite [name & args]
+  `(def ~name (let [s# (make-suite ~@args)]
+                (with-meta s# (assoc (meta s#)
+                                :name '~name
+                                :ns *ns*
+                                :file *file*
+                                :line @clojure.lang.Compiler/LINE)))))
+
+
+;;; RAW API USAGE:
 
 (def c1 (Context (fn [] 1) nil))
 
-(def c2 (Context (fn [] 2) nil))
+(def c2 (Context (fn [] (Thread/sleep 1000) 2) nil))
 
 (def t1 (Test '[a b] [c1 c2] '[(integer? a) (integer? b)]))
 
 (def t2 (Test '[a b] [c1 c2] '[(> b a) (< a b)]))
 
-(def s1 (Suite [c1] [t1 t2]))
+;; Including context c2 in the Suite means it's only executed once for
+;; all tests in the suite.
+(def s1 (Suite [c2] [t1 t2]))
 
-;; user=> (run-suite s1)
+;; Suites may be nested.
+(def s2 (Suite nil [s1]))
+
+;; user=> (run-suite s2)
 ;; ...
 ;; user=> (success? *1)
 ;; true
 
 
-;;; STILL TO DO:
+;;; DEFSUITE USAGE
 
-;; * Come up with convenient macro syntax.
+(defsuite s3 [a c1 b 2]
+  t1 t2
+  (:test [b 2] (> b a)) 
+  (:suite [c 3]
+          (:test (integer? c))
+          (:test (< a c))))
