@@ -17,28 +17,8 @@ which they are run.
 
 THE BASICS
 
-An Assertion is a function, created with defassert.  The body of the
-function should return true if the assertion passes or false if it
-fails.
-
-    (defassert positive [x] (pos? x))
-
-You can call an assertion like an ordinary function; it returns a
-result object.  The success? function tells you if the result was
-successful or not.
-
-    (success? (positive 1))
-    ;;=> true
-    (success? (positive -1))
-    ;;=> false
-
-It also catches errors and wraps them in a result object as well.
-
-    (success? (positive "hello"))
-    ;;=> false
-
-Usually you want to make several assertions about the same value.  You
-can group Assertions into Test Cases with deftest.
+A Test Case is a collection of assertions about one or more values.
+Create a Test Case with deftest:
 
     (deftest addition [a 1, b 2]
       (integer? a)
@@ -46,16 +26,18 @@ can group Assertions into Test Cases with deftest.
       (integer? (+ a b)))
 
 The deftest macro takes a vector of bindings, like "let".  Each
-expression in the body of the deftest will be compiled into an
-assertion using those bindings.
+expression in the body of the deftest is an assertion about the values
+of those bindings.
 
-Test Cases can also be called like functions, with no arguments:
+Test Cases can be called like functions, with no arguments.  They
+return a result object.  Use the success? function to find out if the
+test passed:
 
     (success? (addition))
     ;;=> true
 
-A Context is a pair of functions that will be called "around" a Test
-Case.  Contexts are created with defcontext:
+A Context is a function that supplies values to a Test Case.  Contexts
+are created with defcontext:
 
     (defcontext random-int []
       (rand-int Integer/MAX_VALUE))
@@ -94,3 +76,24 @@ tests passed.  Try the simple-report function:
           FAIL failure
                FAIL (= 1 0)
 
+
+
+MORE ADVANCED
+
+A Context is actually a *pair* of functions, one that runs before the
+test and one that runs after it.  These correspond to the
+"setup/teardown" functions in other test frameworks.
+
+    (defcontext name []
+       ... body of before function ...
+       :after [x]
+       ... body of after function ...)
+
+The body of the "before" function will consist of the expressions
+inside defcontext up to the keyword :after.  Expressions following
+:after will become the body of the "after" function.
+
+The "before" function returns a value, the "state" of the context.
+The keyword :after must be followed by a vector containing a single
+symbol.  When the "after" function runs, that symbol will be bound to
+the state returned by the "before" function.
