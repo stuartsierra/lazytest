@@ -242,10 +242,13 @@
   ([r] (simple-report r ""))
   ([r indent]
      (cond (= ::TestResult (type r))
-           (do (println indent (if (success? r) "OK" "TEST")
-                        (result-identifier r))
-               (doseq [c (:children r)]
-                 (simple-report c (str indent "   "))))
+           (if (success? r)
+             (do (println indent "OK" (result-identifier r))
+                 (doseq [c (:children r)]
+                   (simple-report c (str indent "   "))))
+             (do (println indent "FAIL" (result-identifier r))
+                 (doseq [c (:children r)]
+                   (simple-report c (str indent "     ")))))
 
            (= ::TestThrown (type r))
            (do (println indent "ERROR" (result-identifier r))
@@ -488,8 +491,14 @@
       (= (+ a b) (+ b a)))
 
     (success? (random-addition))
-    ;;=> true
-    (defsuite all-tests [] addition random-addition)
+
+    (deftest failure "This test always fails." [] (= 1 0))
+
+    (defsuite all-tests [] addition random-addition failure)
 
     (success? (all-tests))
-    ;;=> true
+    ;;=> false
+
+
+
+

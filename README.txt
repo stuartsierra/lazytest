@@ -72,7 +72,25 @@ And used as values in Test Cases:
 Multiple Test Cases can be combined into Test Suites with defsuite.
 Test Suites can also be run as functions:
 
-    (defsuite all-tests [] addition random-addition)
+    (deftest failure "This test always fails." [] (= 1 0))
+
+    (defsuite all-tests [] addition random-addition failure)
 
     (success? (all-tests))
-    ;;=> true
+    ;;=> false
+
+You probably want some more information that just whether or not the
+tests passed.  Try the simple-report function:
+
+    (simple-report (all-tests))
+     FAIL all-tests
+          OK addition
+             OK (integer? a)
+             OK (integer? b)
+             OK (integer? (+ a b))
+          OK random-addition
+             OK (integer? (+ a b))
+             OK (= (+ a b) (+ b a))
+          FAIL failure
+               FAIL (= 1 0)
+
