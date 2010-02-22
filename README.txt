@@ -137,3 +137,37 @@ execute only ONCE for the entire suite.
       my-test my-test my-test)
 
    (short-suite) ;; context-one runs once
+
+
+
+REALLY ADVANCED
+
+Test Cases are both instances of the datatype TestCase.  You can
+create instances of TestCase containing assertions:
+
+    (TestCase [contexts...] [assertions...])
+
+Assertions can be created with the macros defassert (like defn) or
+assertion (like fn):
+
+    (defassert name [args...]  ... body ...)
+
+    (assertion [args...]  ... body ...)
+
+When the TestCase is run, the results of its contexts' "before"
+functions will passed as arguments to each assertion.  Each assertion,
+therefore, must have the same number of arguments as there are
+contexts in its parent TestCase.
+
+Test Suites are also instances of TestCase, containing other TestCases
+instead of assertions:
+
+   (TestCase [contexts...] [TestCases...])
+
+
+
+REPORTING
+
+The reporting functions look for :name and :doc metadata on the
+TestCases and assertions.  The macros defassert, deftest, and defsuite
+add this metadata automatically.
