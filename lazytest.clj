@@ -20,9 +20,14 @@
 (def *defining-context-bindings* [])
 
 (defprotocol Successful
-  (success? [r] "Returns true if the result r was 100% successful."))
+  (success? [r] "Returns true if the TestResult or 
+  SuiteResult was 100% successful."))
 
-(deftype Assertion [form])
+(defprotocol TestCompilable
+  (compile [x active-contexts] "Compiles the Test or Suite to a fn."))
+
+(defprotocol TestRunnable
+  (run [x] "Executes the Test or Suite."))
 
 (deftype Test [locals contexts assertions])
 
@@ -30,20 +35,30 @@
 
 (deftype Suite [contexts children])
 
-(deftype AssertionSuccess [assertion]
+(deftype AssertionSuccess [form]
   Successful (success? [] true))
 
-(deftype AssertionFailure [assertion]
+(deftype AssertionFailure [form]
   Successful (success? [] false))
 
-(deftype AssertionThrown [assertion throwable]
+(deftype AssertionThrown [form throwable]
   Successful (success? [] false))
 
 (deftype TestResult [test assertion-results]
   Successful (success? [] (every? success? assertion-results)))
 
-(deftype SuiteResult [suite test-results]
-  Successful (success? [] (every? success? test-results)))
+(deftype SuiteResult [suite child-results]
+  Successful (success? [] (every? success? child-results)))
+
+(defmulti report-start type)
+
+(defmulti report-done type)
+
+(defmethod report-start TestResult [tr]
+  (println "Starting test" (:name (meta (:test tr)))))
+
+(defmethod report-done TestResult [tr]
+  (println "Finished test" (:name (meta (:test tr)))))
 
 (defn context?
   "Returns true if x is a Context."
@@ -62,210 +77,134 @@
 
 (defn- format-assertion [expr]
   `(try (if ~expr
-          (AssertionSuccess (quote ~expr))
-          (AssertionFailure (quote ~expr)))
+          (AssertionSuccess '~expr)
+          (AssertionFailure '~expr))
         (catch Throwable t#
-          (AssertionThrown (quote ~expr) t#))))
+          (AssertionThrown '~expr t#))))
 
-;; TODO: Lazy evaluation
 (defn- format-test [t]
   {:pre [(test? t)
          (vector? (:locals t))
          (every? symbol? (:locals t))]}
   `(fn ~(:locals t)
-     (list ~@(map format-assertion (:assertions t)))))
+     (lazy-seq
+      ~(loop [r nil, as (reverse (:assertions t))]
+         (if (seq as)
+           (recur (list 'cons (format-assertion (first as)) r)
+                  (next as))
+           r)))))
 
-(defn- compile-test* [t]
-  (eval (format-test t)))
-
-(def #^{:doc "Compile a Test to a function of its locals. (memoized)"
-        :arglists '([t])}
-     compile-test (memoize compile-test*))
+(defn- compile-test
+  "Compile a Test to a function of its locals."
+  [t]
+  (or (::compiled (meta t))
+      (eval (format-test t))))
 
 (defn- open-context 
   "Calls Context c's :before function, returns result."
-  [c]
-  (or (*active-contexts* c)
+  [active-contexts c]
+  (or (active-contexts c)
       (when-let [f (:before c)]
         (f))))
 
 (defn- close-context
   "Calls Context c's :after function on state."
-  [c state]
-  (when-not (contains? *active-contexts* c)
+  [active-contexts c state]
+  (when-not (contains? active-contexts c)
     (when-let [f (:after c)]
       (f state))))
 
-(defn call-with-contexts
-  "Applies f to the result of opening all contexts,
-  then closes contexts in reverse order."
-  [contexts f]
-  {:pre [(every? context? contexts)]}
-  (let [states (map open-context contexts)
-        result (binding [*active-contexts*
-                         (merge *active-contexts*
-                                (zipmap contexts states))]
-                 (apply f states))]
-    (dorun (map close-context
-                (reverse contexts) (reverse states)))
-    result))
+(defn- call-with-context
+  "Opens all contexts, applies f to their state, closes all contexts
+  in reverse order, and returns f's return value.  Executes strictly
+  if any contexts has an :after function; otherwise executes lazily."
+  [active-contexts f contexts]
+  {:pre [(every? context? contexts) (fn? f)]}
+  (if (some :after contexts)
+    ;; strict (non-lazy)
+    (let [states (doall (map (partial open-context active-contexts)
+                             contexts))
+          result (doall (apply f states))]
+      (doall (map (partial close-context active-contexts)
+                  (reverse contexts) (reverse states)))
+      result)
+    ;; lazy
+    (apply f (map open-context contexts))))
 
-(defn run-test
-  "Run a Test t, return a TestResult."
-  [t]
-  {:pre [(test? t)]}
-  (TestResult t (call-with-contexts (:contexts t)
-                  (compile-test t))))
+(defn- compile-suite [active-contexts s]
+  (or (::compiled (meta s))
+      (fn [& _] (map (partial active-contexts run)
+                     (:children s)))))
 
-(declare run)
+(extend-protocol TestCompilable
+  ::Test
+  (run [active-contexts t]
+       (TestResult t (call-with-context
+                        active-contexts
+                        (compile-test s) (:contexts t))))
+  ::Suite
+  (run [active-contexts s]
+       (SuiteResult s (call-with-context
+                        active-contexts
+                        (compile-suite s) (:contexts s)))))
 
-(defn run-suite
-  "Run a Suite s, return a SuiteResult."
-  [s]
-  (SuiteResult s (call-with-contexts (:contexts s)
-                   (fn [& _]
-                     (doall (map run (:children s)))))))
-
-
-(defn run [x]
-  (cond (suite? x) (run-suite x)
-        (test? x) (run-test x)
-        :else (throw (IllegalArgumentException.
-                      "Suites may only contain Tests and other Suites"))))
-
-
-
-;;; CONVENIENCE MACROS
-
-(defn- reformat-context [x]
-  (if (symbol? x) x
-      `(Context (fn [] ~x) nil)))
-
-(defmacro make-test
-  "args => docstring? [bindings*] assertions*
-
-  bindings => local-name context
-
-  If context is an expression, will create an anonymous 
-  context using that expression in its :before function."
-  [& args]
-  (let [docstring (if (string? (first args))
-                    (first args)
-                    nil)
-        args (if (string? (first args))
-                (next args) args)
-        context-bindings (if (vector? (first args))
-                           (first args)
-                           [])
-        assertions (if (vector? (first args))
-                     (next args) args)]
-    `(Test (quote ~(vec (map first (partition 2 context-bindings))))
-           ~(vec (map (comp reformat-context second)
-                      (partition 2 context-bindings)))
-           (quote ~(vec assertions))
-           {:doc ~docstring} {})))
-
-(defmacro deftest [name & args]
-  `(def ~name (let [t# (make-test ~@args)]
-                (with-meta t# (assoc (meta t#)
-                                :name '~name
-                                :ns *ns*
-                                :file *file*
-                                :line @clojure.lang.Compiler/LINE)))))
-
-(declare reformat-child)
-
-(defmacro make-child-test [parent-bindings & args]
-  (let [docstring (if (string? (first args))
-                    (first args)
-                    nil)
-        args (if (string? (first args))
-                (next args) args)
-        context-bindings (if (vector? (first args))
-                           (vec (concat parent-bindings (first args)))
-                           parent-bindings)
-        assertions (if (vector? (first args))
-                     (next args) args)]
-    `(Test (quote ~(vec (map first (partition 2 context-bindings))))
-           ~(vec (map (comp reformat-context second)
-                      (partition 2 context-bindings)))
-           (quote ~(vec assertions))
-           {:doc ~docstring} {})))
-
-(defmacro make-child-suite [parent-bindings & args]
-  (let [docstring (if (string? (first args))
-                    (first args)
-                    nil)
-        args (if (string? (first args))
-                (next args)
-                args)
-        context-bindings (if (vector? (first args))
-                           (vec (concat parent-bindings (first args)))
-                           parent-bindings)
-        children (if (vector? (first args))
-                   (next args) args)]
-    `(Suite ~(vec (map (comp reformat-context second) (partition 2 context-bindings)))
-            ~(vec (map (partial reformat-child context-bindings) children))
-            {:doc ~docstring} {})))
-
-(defn reformat-child [parent-bindings args]
-  (cond (symbol? args) args
-        (= :test (first args)) `(make-child-test ~parent-bindings ~@(rest args))
-        (= :suite (first args)) `(make-child-suite ~parent-bindings ~@(rest args))
-        :else args))
-
-(defmacro make-suite [& args]
-  (let [docstring (if (string? (first args))
-                    (first args)
-                    nil)
-        args (if (string? (first args))
-                (next args)
-                args)
-        context-bindings (if (vector? (first args))
-                           (first args) [])
-        children (if (vector? (first args))
-                   (next args) args)]
-    `(Suite ~(vec (map (comp reformat-context second) (partition 2 context-bindings)))
-            ~(vec (map (partial reformat-child context-bindings) children))
-            {:doc ~docstring} {})))
-
-(defmacro defsuite [name & args]
-  `(def ~name (let [s# (make-suite ~@args)]
-                (with-meta s# (assoc (meta s#)
-                                :name '~name
-                                :ns *ns*
-                                :file *file*
-                                :line @clojure.lang.Compiler/LINE)))))
+(defn run-with-active-context [active-contexts x]
+  )
 
 
 ;;; RAW API USAGE:
 
-(def c1 (Context (fn [] 1) nil))
+(def c1 (Context (fn [] (prn "Opening context c1.") 1)
+                 (fn [_] (prn "Closing context c1.") 1)))
 
-(def c2 (Context (fn [] (Thread/sleep 1000) 2) nil))
+(def c2 (Context (fn [] (prn "Opening context c2.") 2)
+                 (fn [_] (prn "Closing context c2."))))
 
-(def t1 (Test '[a b] [c1 c2] '[(integer? a) (integer? b)]))
+(def c3 (Context (fn [] (prn "Opening lazy context c3.") 3)
+                 nil))
 
-(def t2 (Test '[a b] [c1 c2] '[(> b a) (< a b)]))
+(def c4 (Context (fn [] (prn "Opening lazy context c4.") 4)
+                 nil))
+
+(def c5 (Context (fn [] (prn "Opening lazy context c5.") 3)
+                 nil))
+
+(def c6 (Context (fn [] (prn "Opening lazy context c6.") 4)
+                 nil))
+
+(def t1 (Test '[a b] [c1 c2]
+              '[(do (prn "Evaluating test t1-a.") (integer? a))
+                (do (prn "Evaluating test t1-b.") (integer? b))]))
+
+(def t2 (Test '[a b] [c1 c2]
+              '[(do (prn "Evaluating test t2-a.") (integer? a))
+                (do (prn "Evaluating test t2-b.") (integer? b))]))
+
+(def t3 (Test '[a b] [c3 c4]
+              '[(do (prn "Evaluating test t3-a.") (integer? a))
+                (do (prn "Evaluating test t3-b.") (integer? b))]))
+
+(def t4 (Test '[a b] [c5 c6]
+              '[(do (prn "Evaluating test t4-a.") (integer? a))
+                (do (prn "Evaluating test t4-b.") (integer? b))]))
+
+(def s1 (Suite [] [t1 t2]))
 
 ;; Including context c2 in the Suite means it's only executed once for
 ;; all tests in the suite.
-(def s1 (Suite [c2] [t1 t2]))
+(def s2 (Suite [c1] [t1 t2]))
+
+(def s3 (Suite [c1 c2] [t1 t2]))
+
+;; Tests and Suites are evaluated lazily if and only if none of their
+;; Contexts has an :after function.
+(def s4 (Suite [] [t3 t4]))
+
+(def s5 (Suite [c3 c4] [t3 t4]))
 
 ;; Suites may be nested.
-(def s2 (Suite nil [s1]))
 
-;; user=> (run-suite s2)
+;; user=> (run s2)
 ;; ...
 ;; user=> (success? *1)
 ;; true
-
-
-;;; DEFSUITE USAGE
-
-(defsuite s3 [a c1 b 2]
-  t1 t2
-  (:test [b 2] (> b a)) 
-  (:suite [c 3]
-          (:test (integer? c))
-          (:test (< a c))))
