@@ -75,7 +75,8 @@
   (eval (format-assertion a)))
  
 (defmacro assertion [locals & body]
-  (format-assertion (Assertion locals `(do ~@body))))
+  (format-assertion (Assertion locals (if (= 1 (count body))
+                                        (first body) `(do ~@body)))))
 
 (defmacro defassert
   "Defines an Assertion.
@@ -111,6 +112,10 @@
       (apply f (active c) states))
     (let [active (reduce close-context active (:parents c))]
       (dissoc active c))))
+
+(defn- coerce-context [c]
+  (if (and (symbol? c) (= ::Context (type (var-get (resolve c)))))
+    c (Context [] (fn [] c) nil)))
 
 (defmacro defcontext
   "Defines a context.
@@ -174,10 +179,6 @@
         (TestResult t results))
       (catch Throwable e (TestThrown t e)))))
 
-(defn- coerce-context [c]
-  (if (and (symbol? c) (= ::Context (type (var-get (resolve c)))))
-    c (Context [] (fn [] c) nil)))
-
 (defmacro deftest
   "Defines a test case containing assertions that share the same contexts.
   decl => docstring? [binding*] assertion*
@@ -200,9 +201,11 @@
                                     (if (seq as)
                                       (if (string? (first as))
                                         (recur (conj r `(with-meta (assertion ~locals ~(next as))
-                                                          {:doc ~(first as)}))
+                                                          {:doc ~(first as), :form '~(next as)}))
                                                (nnext as))
-                                        (recur (conj r `(assertion ~locals ~(first as))) (next as)))
+                                        (recur (conj r `(with-meta (assertion ~locals ~(first as))
+                                                          {:form '~(first as)}))
+                                               (next as)))
                                       r)))
               '~m)))))
 
@@ -227,6 +230,39 @@
   TestResult and all its children."
   [r]
   (tree-seq :children :children r))
+
+(require 'clojure.stacktrace)
+
+(defn result-identifier [r]
+  (let [m (meta (:source r))]
+    (or (:name m) (:form m)
+        (:source r))))
+
+(defn simple-report
+  ([r] (simple-report r ""))
+  ([r indent]
+     (cond (= ::TestResult (type r))
+           (do (println indent (if (success? r) "OK" "TEST")
+                        (result-identifier r))
+               (doseq [c (:children r)]
+                 (simple-report c (str indent "   "))))
+
+           (= ::TestThrown (type r))
+           (do (println indent "ERROR" (result-identifier r))
+               (when-let [d (:doc (meta r))] (prn d))
+               (clojure.stacktrace/print-cause-trace (:error r)))
+
+           (= ::AssertionPassed (type r))
+           (println indent "OK" (result-identifier r))
+
+           (= ::AssertionFailed (type r))
+           (do (println indent "FAIL" (result-identifier r))
+               (when-let [d (:doc (meta r))] (prn d)))
+
+           (= ::AssertionThrown (type r))
+           (do (println indent "ERROR" (result-identifier r))
+               (when-let [d (:doc (meta r))] (prn d))
+               (clojure.stacktrace/print-cause-trace (:error r))))))
 
 
 ;;; TESTABLE IMPLEMENTATIONS
@@ -417,6 +453,8 @@
 (assert (every? fn? (:children t10)))
 (assert (= "a is less than b"
            (:doc (meta (second (:children t10))))))
+(assert (= '(= a b)
+           (:form (meta (first (:children t10))))))
 
 ;; defsuite form
 (defsuite t11 "Suite t11" [c4 c5] t9 t10)
@@ -427,3 +465,31 @@
 (assert (= ::TestCase (type t11)))
 (assert (= [c4 c5] (:contexts t11)))
 (assert (= [t9 t10] (:children t11)))
+
+
+;; README examples
+    (defassert positive [x] (pos? x))
+    (success? (positive 1))
+    ;;=> true
+    (success? (positive -1))
+    ;;=> false
+    (success? (positive "hello"))
+    ;;=> false
+    (deftest addition [a 1, b 2]
+      (integer? a)
+      (integer? b)
+      (integer? (+ a b)))
+    (success? (addition))
+    ;;=> true
+    (defcontext random-int []
+      (rand-int Integer/MAX_VALUE))
+    (deftest random-addition [a random-int, b random-int]
+      (integer? (+ a b))
+      (= (+ a b) (+ b a)))
+
+    (success? (random-addition))
+    ;;=> true
+    (defsuite all-tests [] addition random-addition)
+
+    (success? (all-tests))
+    ;;=> true
