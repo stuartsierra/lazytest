@@ -247,6 +247,7 @@
                  (doseq [c (:children r)]
                    (simple-report c (str indent "   "))))
              (do (println indent "FAIL" (result-identifier r))
+                 (when-let [d (:doc (meta (:source r)))] (prn d))
                  (doseq [c (:children r)]
                    (simple-report c (str indent "     ")))))
 
