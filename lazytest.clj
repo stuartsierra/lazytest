@@ -21,11 +21,11 @@
   (run-tests [x] "Runs tests defined for the Namespace, Var, or TestCase."))
 
 (defprotocol TestInvokable
-  (invoke-test [t states active strategy]
+  (invoke-test [t states strategy active]
                "(private) Executes the TestCase or Assertion."))
 
 (extend-class clojure.lang.Fn TestInvokable
-              (invoke-test [f states active strategy] (apply f states)))
+              (invoke-test [f states strategy active] (apply f states)))
 
 ;;; DATATYPES
 
@@ -36,9 +36,10 @@
 (deftype TestCase [contexts children] :as this
   clojure.lang.IFn
   (invoke [] (run-test-case this))
-  (invoke [active] (run-test-case this active))
-  TestInvokable (invoke-test [states active strategy]
-                             (run-test-case this active strategy)))
+  (invoke [strategy] (run-test-case this strategy))
+  (invoke [strategy active] (run-test-case this strategy active))
+  TestInvokable (invoke-test [states strategy active]
+                             (run-test-case this strategy active)))
 
 (deftype Assertion [locals form])
 
@@ -183,9 +184,9 @@
   "Executes a test case in context.  active is the map of currently
   active Contexts.  strategy is a function that determines how tests
   are executed."
-  ([t] (run-test-case t {}))
-  ([t active] (run-test-case t {} default-strategy))
-  ([t active strategy]
+  ([t] (run-test-case t default-strategy))
+  ([t strategy] (run-test-case t strategy {}))
+  ([t strategy active]
      {:pre [(= ::TestCase (type t))
             (every? #(= ::Context (type %)) (:contexts t))]}
      (try
@@ -193,7 +194,7 @@
             merged (reduce open-context active (:contexts t))
             states (map merged (:contexts t))
             results (mapper
-                     #(invoke-test % states merged child-strategy)
+                     #(invoke-test % states child-strategy merged)
                      (:children t))]
         ;; Force non-lazy execution to handle shutdown properly:
         (when (some has-after? (:contexts t))
@@ -436,7 +437,7 @@
 (def t6 (TestCase [c5] [t4 t4]))
 
 (with-log
-  (dorun (result-seq (run-test-case t6 {} lazy-strategy)))
+  (dorun (result-seq (run-test-case t6 lazy-strategy)))
   (assert (= @*log* [:c5-open :a3 :a4 :a3 :a4 :c5-close])))
 
 ;; Lazy Evaluation
@@ -445,7 +446,7 @@
 (def t7 (TestCase [c6] [a3 a4]))
 
 (with-log
-  (let [results (run-test-case t7 {} lazy-strategy)]
+  (let [results (run-test-case t7 lazy-strategy)]
     (assert (= @*log* [:c6-open]))
     (dorun (result-seq results))
     (assert (= @*log* [:c6-open :a3 :a4]))))
@@ -454,7 +455,7 @@
 (def t8 (TestCase [] [t7 t7]))
 
 (with-log
-  (let [results (run-test-case t8 {} lazy-strategy)]
+  (let [results (run-test-case t8 lazy-strategy)]
     (assert (= @*log* []))
     (dorun (:children (first (:children results))))
     (assert (= @*log* [:c6-open :a3 :a4]))
@@ -464,7 +465,7 @@
 (def t9 (TestCase [c6] [t7 t7]))
 
 (with-log
-  (let [results (run-test-case t9 {} lazy-strategy)]
+  (let [results (run-test-case t9 lazy-strategy)]
     (assert (= @*log* [:c6-open]))
     (dorun (result-seq results))
     (assert (= @*log* [:c6-open :a3 :a4 :a3 :a4]))))
