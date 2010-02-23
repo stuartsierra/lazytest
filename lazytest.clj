@@ -272,24 +272,52 @@
 ;;; TESTABLE IMPLEMENTATIONS
 
 (defn var-test-case
-  "Creates a TestCase for a Var, using clojure.core/test."
-  [v]
-   #^{:name (:name (meta v))}
-   (TestCase [] [(assertion [] (clojure.core/test v))]))
+  "Returns a TestCase for a Var.  If the Var's value is a TestCase,
+  returns that.  If the Var's :test metadata is a TestCase, returns
+  that.  If the Var's :test metadata is a function, generates a
+  TestCase with an assertion that calls the function.  If none of
+  these are true, returns nil."  [v]
+  (cond (= ::TestCase (type (var-get v)))
+        (var-get v)
+
+        (= ::TestCase (type (:test (meta v))))
+        (:test (meta v))
+
+        (fn? (:test (meta v)))
+        (with-meta (TestCase [] [(assertion [] ((:test (meta v))))])
+          {:doc "Var :test metadata function."
+           :name (:name (meta v))
+           :ns (:ns (meta v))})
+
+        :else nil))
  
 (defn test-var
-  "Creates and runs a TestCase for the Var."
+  "Finds and runs a TestCase for the Var."
   [v]
   (run-test-case (var-test-case v)))
  
 (defn ns-test-case
-  "Creates a TestCase for the namespace that tests all its Vars."
-  [n]
-  #^{:name (ns-name n)}
-  (TestCase [] (map var-test-case (ns-interns n))))
+  "Returns a TestCase for a Namespace.  If the namespace's :test
+  metadata is a TestCase, returns that.  If the namespace's :test
+  metadata is another namespace, recurses on that.  If the
+  namespace's :test metadata is a function, generates a TestCase with
+  an assertion that calls the function.  If none of these are true,
+  returns nil."  [n]
+  (cond (= ::TestCase (type (:test (meta n))))
+        (:test (meta n))
+
+        (instance? clojure.lang.Namespace (:test (meta n)))
+        (ns-test-case (:test (meta n)))
+
+        (fn? (:test (meta n)))
+        (with-meta (TestCase [] [(assertion [] ((:test (meta n))))])
+          {:doc "Namespace :test metadata function."
+           :name (ns-name n)})
+
+        :else nil))
  
 (defn test-ns
-  "Creates and runs a TestCase for the namespace."
+  "Finds and runs a TestCase for the namespace."
   [n]
   (run-test-case (ns-test-case n)))
  
