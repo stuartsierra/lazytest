@@ -21,11 +21,11 @@
   (run-tests [x] "Runs tests defined for the Namespace, Var, or TestCase."))
 
 (defprotocol TestInvokable
-  (invoke-test [t states active]
+  (invoke-test [t states active strategy]
                "(private) Executes the TestCase or Assertion."))
 
 (extend-class clojure.lang.Fn TestInvokable
-              (invoke-test [f states active] (apply f states)))
+              (invoke-test [f states active strategy] (apply f states)))
 
 ;;; DATATYPES
 
@@ -37,8 +37,8 @@
   clojure.lang.IFn
   (invoke [] (run-test-case this))
   (invoke [active] (run-test-case this active))
-  TestInvokable (invoke-test [states active]
-                             (run-test-case this active)))
+  TestInvokable (invoke-test [states active strategy]
+                             (run-test-case this active strategy)))
 
 (deftype Assertion [locals form])
 
@@ -141,15 +141,37 @@
                       '~m))))))
 
 
-;;; TEST CASE HANDLING
+;;; TEST RUNNING STRATEGIES
 
-(defn- unchunked-map
+(defn- map1
   "Like map but does not chunk results; slower but lazier than map."
   [f coll]
   (lazy-seq
    (when (seq coll)
      (cons (f (first coll))
-           (unchunked-map f (next coll))))))
+           (map1 f (next coll))))))
+
+(defn default-strategy []
+  "Default test execution strategy; uses (chunked) map."
+  [map default-strategy])
+
+(defn lazy-strategy []
+  "Truly lazy test execution strategy; uses (unchunked) map1."
+  [map1 lazy-strategy])
+
+(defn parallel-strategy []
+  [pmap parallel-strategy])
+
+(defn parallel-upto
+  "Returns a strategy that is parallel up to n levels of recursion,
+  then reverts to default-strategy."
+  [n]
+  (if (zero? n)
+    default-strategy
+    [pmap #(parallel-upto (dec n))]))
+
+
+;;; TEST CASE HANDLING
 
 (defn- has-after?
   "True if Context c or any of its parents has an :after function."
@@ -158,17 +180,21 @@
       (some has-after? (:parents c))))
 
 (defn run-test-case
-  "Executes a test case in context."
+  "Executes a test case in context.  active is the map of currently
+  active Contexts.  strategy is a function that determines how tests
+  are executed."
   ([t] (run-test-case t {}))
-  ([t active]
+  ([t active] (run-test-case t {} default-strategy))
+  ([t active strategy]
      {:pre [(= ::TestCase (type t))
             (every? #(= ::Context (type %)) (:contexts t))]}
      (try
-      (let [merged (reduce open-context active (:contexts t))
+      (let [[mapper child-strategy] (strategy)
+            merged (reduce open-context active (:contexts t))
             states (map merged (:contexts t))
-            ;; Prevent chunking for truly lazy execution:
-            results (unchunked-map #(invoke-test % states merged)
-                                   (:children t))]
+            results (mapper
+                     #(invoke-test % states merged child-strategy)
+                     (:children t))]
         ;; Force non-lazy execution to handle shutdown properly:
         (when (some has-after? (:contexts t))
           (dorun results)
@@ -410,7 +436,7 @@
 (def t6 (TestCase [c5] [t4 t4]))
 
 (with-log
-  (dorun (result-seq (run-test-case t6)))
+  (dorun (result-seq (run-test-case t6 {} lazy-strategy)))
   (assert (= @*log* [:c5-open :a3 :a4 :a3 :a4 :c5-close])))
 
 ;; Lazy Evaluation
@@ -419,7 +445,7 @@
 (def t7 (TestCase [c6] [a3 a4]))
 
 (with-log
-  (let [results (run-test-case t7)]
+  (let [results (run-test-case t7 {} lazy-strategy)]
     (assert (= @*log* [:c6-open]))
     (dorun (result-seq results))
     (assert (= @*log* [:c6-open :a3 :a4]))))
@@ -428,7 +454,7 @@
 (def t8 (TestCase [] [t7 t7]))
 
 (with-log
-  (let [results (run-test-case t8)]
+  (let [results (run-test-case t8 {} lazy-strategy)]
     (assert (= @*log* []))
     (dorun (:children (first (:children results))))
     (assert (= @*log* [:c6-open :a3 :a4]))
@@ -438,7 +464,7 @@
 (def t9 (TestCase [c6] [t7 t7]))
 
 (with-log
-  (let [results (run-test-case t9)]
+  (let [results (run-test-case t9 {} lazy-strategy)]
     (assert (= @*log* [:c6-open]))
     (dorun (result-seq results))
     (assert (= @*log* [:c6-open :a3 :a4 :a3 :a4]))))
