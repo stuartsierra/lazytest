@@ -171,3 +171,21 @@ REPORTING
 The reporting functions look for :name and :doc metadata on the
 TestCases and assertions.  The macros defassert, deftest, and defsuite
 add this metadata automatically.
+
+
+
+PARALLEL TEST EXECUTION
+
+Finally, the reason why I wrote this library.  Tests are run with a
+Test Execution Strategy, passed as an argument to the Test Case or
+Test Suite.  There are three built-in strategies:
+
+ * default-strategy  - mostly lazy, uses map
+ * lazy-strategy     - completely lazy, avoids chunked sequences
+ * parallel-strategy - uses pmap
+
+The function parallel-upto takes an integer, n, and returns a strategy
+that will be parallel only n levels deep in the tree of test cases.
+After that, the default strategy resumes.  This is useful when you
+have several large test suites that you want to run in parallel, but
+the overhead of pmap is not worthwhile for tests within each suite.
