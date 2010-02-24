@@ -142,13 +142,15 @@ execute only ONCE for the entire suite.
 
 REALLY ADVANCED
 
-Test Cases are both instances of the datatype TestCase.  You can
-create instances of TestCase containing assertions:
+Test Cases and Test Suites are both instances of the datatype
+TestCase.  You can create an instance of TestCase containing
+assertions:
 
     (TestCase [contexts...] [assertions...])
 
-Assertions can be created with the macros defassert (like defn) or
-assertion (like fn):
+Named assertions can be created with the defassert macroq (like defn);
+anonymous assertions can be created with the assertion macro (like
+fn):
 
     (defassert name [args...]  ... body ...)
 
