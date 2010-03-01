@@ -34,7 +34,7 @@
 
 ;;; DATATYPES
 
-(declare run-test-case)
+(declare run-test-case compile-assertion)
 
 (deftype Context [parents before after])
 
@@ -46,7 +46,11 @@
   TestInvokable (invoke-test [states strategy active]
                              (run-test-case this strategy active)))
 
-(deftype Assertion [locals form])
+(deftype Assertion [locals form] :as this
+  TestInvokable
+  (invoke-test [states strategy active]
+               (invoke-test (compile-assertion this)
+                            states strategy active)))
 
 (deftype TestResult [source children]
   TestSuccess (success? [] (every? success? children)))

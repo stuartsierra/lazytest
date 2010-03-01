@@ -175,6 +175,11 @@
 (assert (= [c4 c5] (:contexts t11)))
 (assert (= [t9 t10] (:children t11)))
 
+;; Assertions can be compiled on-the-fly
+(def t12 (TestCase [c2] [(Assertion '[a] '(= a 2))
+                         (Assertion '[a] '(> a 1))]))
+(assert (success? (t12)))
+
 
 ;; README examples
     (defassert positive [x] (pos? x))
