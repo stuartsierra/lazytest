@@ -4,7 +4,8 @@ by Stuart Sierra, http://stuartsierra.com/
 
 
 
-= Why? =
+Why?
+====
 
 Why another test framework?  The clojure.test (formerly
 clojure.contrib.test-is) library is pretty good.  But it isn't
@@ -15,7 +16,8 @@ which they are run.
 
 
 
-= The Basics =
+The Basics
+==========
 
 A Test Case is a collection of assertions about one or more values.
 Create a Test Case with deftest:
@@ -78,7 +80,8 @@ tests passed.  Try the simple-report function:
                FAIL (= 1 0)
 
 
-= More Advanced =
+More Advanced
+=============
 
 A Context is actually a *pair* of functions, one that runs before the
 test and one that runs after it.  These correspond to the
@@ -140,7 +143,8 @@ execute only ONCE for the entire suite.
 
 
 
-= Really Advanced =
+Really Advanced
+===============
 
 Test Cases and Test Suites are both instances of the datatype
 TestCase.  You can create an instance of TestCase containing
@@ -168,7 +172,8 @@ instead of assertions:
 
 
 
-== Reporting ==
+Reporting
+---------
 
 The reporting functions look for :name and :doc metadata on the
 TestCases and assertions.  The macros defassert, deftest, and defsuite
@@ -176,7 +181,8 @@ add this metadata automatically.
 
 
 
-= Parallel Test Execution =
+Parallel Test Execution
+=======================
 
 Finally, the reason why I wrote this library.  Tests are run with a
 Test Execution Strategy, passed as an argument to the Test Case or
