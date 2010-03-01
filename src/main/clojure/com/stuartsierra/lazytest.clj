@@ -15,20 +15,25 @@
 
 (ns #^{:doc "Lazy Testing Framework"
        :author "Stuart Sierra"}
-  com.stuartsierra.lazytest)
+  com.stuartsierra.lazytest
+  (:require clojure.stacktrace))
 
 ;;; PROTOCOLS
 
+;; Generic reporting function for any Test/Assertion Result
 (defprotocol TestSuccess
   (success? [r] "Returns true if r is a 100% successful result."))
 
+;; Generic entry-point for running tests.
 (defprotocol Testable
   (run-tests [x] "Runs tests defined for the Namespace, Var, or TestCase."))
 
+;; Internal generic Test/Assertion invocation.
 (defprotocol TestInvokable
   (invoke-test [t states strategy active]
                "(private) Executes the TestCase or Assertion."))
 
+;; Fn is assumed to be a compiled Assertion
 (extend-class clojure.lang.Fn TestInvokable
               (invoke-test [f states strategy active] (apply f states)))
 
@@ -36,8 +41,19 @@
 
 (declare run-test-case compile-assertion)
 
+;; Context sets up state for TestCases that depend on it.  parents is
+;; a vector of parent Contexts.  before and after are functions.
+;; before takes the same number of arguments as there are parent
+;; Contexts.  after takes the same arguments, plus an additional first
+;; argument, which is the state returned by the before function.
 (deftype Context [parents before after])
 
+;; TestCase represents either a "test", which associates Contexts
+;; and Assertions, or a "test suite", which is a collection of tests.
+;;
+;; contexts is a vector of Contexts.  children is a vector of
+;; Assertions (optionally compiled into Fns) or a vector of other
+;; TestCases.
 (deftype TestCase [contexts children] :as this
   clojure.lang.IFn
   (invoke [] (run-test-case this))
@@ -46,24 +62,40 @@
   TestInvokable (invoke-test [states strategy active]
                              (run-test-case this strategy active)))
 
+;; Assertion is like a function.  locals is a vector of (quoted)
+;; symbols.  form is a (quoted) expression using those symbols,
+;; returning logical true or false.  When compiled, an Assertion
+;; becomes a function like (fn [locals] form).
 (deftype Assertion [locals form] :as this
   TestInvokable
   (invoke-test [states strategy active]
                (invoke-test (compile-assertion this)
                             states strategy active)))
 
+;; TestResult represents the result of executing a TestCase.  source
+;; is the TestCase.  children is a sequence of results from child
+;; TestCases or Assertions.
 (deftype TestResult [source children]
   TestSuccess (success? [] (every? success? children)))
  
+;; TestThrown represents that a TestCase threw an exception somewhere
+;; NOT in an Assertion, such as during setup or in a Context function.
+;; source is the TestCase, error is the java.lang.Throwable.
 (deftype TestThrown [source error]
   TestSuccess (success? [] false))
- 
+
+;; AssertionPassed is returned by an Assertion whose expression
+;; evaluates logical true.
 (deftype AssertionPassed [source]
   TestSuccess (success? [] true))
- 
+
+;; AssertionFailed is returned by an Assertion whose expression
+;; evaluates logical false without throwing an exception.
 (deftype AssertionFailed [source]
   TestSuccess (success? [] false))
- 
+
+;; AssertionThrown is returned by an Assertion whose expression threw
+;; an exception.  error is the java.lang.Throwable.
 (deftype AssertionThrown [source error]
   TestSuccess (success? [] false))
 
@@ -81,10 +113,14 @@
             (catch Throwable t#
               (AssertionThrown '~form t#))))))
  
-(defn compile-assertion [a]
+(defn compile-assertion
+  "Compiles an Assertion a into a function of its locals."
+  [a]
   (eval (format-assertion a)))
  
-(defmacro assertion [locals & body]
+(defmacro assertion
+  "Returns a compiled Assertion function like (fn [locals] body)."
+  [locals & body]
   (format-assertion (Assertion locals (if (= 1 (count body))
                                         (first body) `(do ~@body)))))
 
@@ -129,7 +165,8 @@
 
 (defmacro defcontext
   "Defines a context.
-  decl => docstring? [bindings*] before-body* (:after [state] after-body*)?"
+  decl => docstring? [bindings*] before-body* after-fn?
+  after-fn => :after [state] after-body*"
   [name & decl]
   (let [m {:name name, :ns *ns*}
         m (if (string? (first decl)) (assoc m :doc (first decl)) m)
@@ -169,7 +206,9 @@
   "Truly lazy test execution strategy; uses (unchunked) map1."
   [map1 lazy-strategy])
 
-(defn parallel-strategy []
+(defn parallel-strategy
+  "Parallel execution strategy; uses pmap."
+  []
   [pmap parallel-strategy])
 
 (defn parallel-upto
@@ -191,8 +230,8 @@
 
 (defn run-test-case
   "Executes a test case in context.  active is the map of currently
-  active Contexts.  strategy is a function that determines how tests
-  are executed."
+  active Contexts, empty by default.  strategy is a function that
+  determines how tests are executed, default-strategy by default."
   ([t] (run-test-case t default-strategy))
   ([t strategy] (run-test-case t strategy {}))
   ([t strategy active]
@@ -266,8 +305,6 @@
   TestResult and all its children."
   [r]
   (tree-seq :children :children r))
-
-(require 'clojure.stacktrace)
 
 (defn result-identifier [r]
   (let [m (meta (:source r))]
