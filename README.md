@@ -20,26 +20,26 @@ The Basics
 ==========
 
 A Test Case is a collection of assertions about one or more values.
-Create a Test Case with deftest:
+Create a Test Case with `deftest`:
 
     (deftest addition [a 1, b 2]
       (integer? a)
       (integer? b)
       (integer? (+ a b)))
 
-The deftest macro takes a vector of bindings, like "let".  Each
-expression in the body of the deftest is an assertion about the values
+The deftest macro takes a vector of bindings, like `let`.  Each
+expression in the body of the `deftest` is an assertion about the values
 of those bindings.
 
 Test Cases can be called like functions, with no arguments.  They
-return a result object.  Use the success? function to find out if the
+return a result object.  Use the `success?` function to find out if the
 test passed:
 
     (success? (addition))
     ;;=> true
 
 A Context is a function that supplies values to a Test Case.  Contexts
-are created with defcontext:
+are created with `defcontext`:
 
     (defcontext random-int []
       (rand-int Integer/MAX_VALUE))
@@ -53,7 +53,7 @@ And used as values in Test Cases:
     (success? (random-addition))
     ;;=> true
 
-Multiple Test Cases can be combined into Test Suites with defsuite.
+Multiple Test Cases can be combined into Test Suites with `defsuite`.
 Test Suites can also be run as functions:
 
     (deftest failure "This test always fails." [] (= 1 0))
@@ -64,7 +64,7 @@ Test Suites can also be run as functions:
     ;;=> false
 
 You probably want some more information that just whether or not the
-tests passed.  Try the simple-report function:
+tests passed.  Try the `simple-report` function:
 
     (simple-report (all-tests))
      FAIL all-tests
@@ -88,13 +88,13 @@ test and one that runs after it.  These correspond to the
 "setup/teardown" functions in other test frameworks.
 
 The body of the "before" function will consist of the expressions
-inside defcontext up to the keyword :after.  Expressions following
-:after will become the body of the "after" function.
+inside defcontext up to the keyword `:after`.  Expressions following
+`:after` will become the body of the "after" function.
 
 The "before" function returns a value representing some state.  That
 value will be passed to Test Cases that use the Context.
 
-The keyword :after must be followed by a vector containing a single
+The keyword `:after` must be followed by a vector containing a single
 symbol.  When the "after" function runs, that symbol will be bound to
 the state returned by the "before" function.
 
@@ -106,7 +106,7 @@ the state returned by the "before" function.
        ... where x is the state ...)
 
 Contexts may be composed.  The vector immediately following the name
-in defcontext is a bindings vector, just like in deftest.  These
+in `defcontext` is a bindings vector, just like in `deftest`.  These
 bindings are available in both the "before" and "after" functions.
 
     (defcontext name [a context-one
@@ -120,26 +120,26 @@ bindings are available in both the "before" and "after" functions.
 
 
 Contexts may also be attached to Test Suites, by placing them in the
-vector following the name in defsuite:
+vector following the name in `defsuite`:
 
     (defsuite name [contexts...] ... test cases ...)
 
 When a Context is attached to a Test Suite, its before/after functions
-execute only ONCE for the entire suite.
+execute only *once* for the entire suite.
 
-   (defcontext context-one [] 1)
+    (defcontext context-one [] 1)
 
-   (deftest my-test [x context-one] (pos? x) (= x 1))
+    (deftest my-test [x context-one] (pos? x) (= x 1))
 
-   (defsuite long-suite []
-      my-test my-test my-test)
+    (defsuite long-suite []
+       my-test my-test my-test)
 
-   (long-suite) ;; context-one runs three times
+    (long-suite) ;; context-one runs three times
 
-   (defsuite short-suite [context-one]
-      my-test my-test my-test)
+    (defsuite short-suite [context-one]
+       my-test my-test my-test)
 
-   (short-suite) ;; context-one runs once
+    (short-suite) ;; context-one runs once
 
 
 
@@ -147,13 +147,13 @@ Really Advanced
 ===============
 
 Test Cases and Test Suites are both instances of the datatype
-TestCase.  You can create an instance of TestCase containing
+`TestCase`.  You can create an instance of `TestCase` containing
 assertions:
 
     (TestCase [contexts...] [assertions...])
 
-Named assertions can be created with the defassert macroq (like defn);
-anonymous assertions can be created with the assertion macro (like
+Named assertions can be created with the `defassert` macro (like defn);
+anonymous assertions can be created with the `assertion` macro (like
 fn):
 
     (defassert name [args...]  ... body ...)
@@ -165,19 +165,19 @@ functions will passed as arguments to each assertion.  Each assertion,
 therefore, must have the same number of arguments as there are
 contexts in its parent TestCase.
 
-Test Suites are also instances of TestCase, containing other TestCases
+Test Suites are also instances of `TestCase`, containing other `TestCase`s
 instead of assertions:
 
-   (TestCase [contexts...] [TestCases...])
+    (TestCase [contexts...] [TestCases...])
 
 
 
 Reporting
 ---------
 
-The reporting functions look for :name and :doc metadata on the
-TestCases and assertions.  The macros defassert, deftest, and defsuite
-add this metadata automatically.
+The reporting functions look for `:name` and `:doc` metadata on the
+`TestCase`s and assertions.  The macros `defassert`, `deftest`, and
+`defsuite` add this metadata automatically.
 
 
 
@@ -188,13 +188,14 @@ Finally, the reason why I wrote this library.  Tests are run with a
 Test Execution Strategy, passed as an argument to the Test Case or
 Test Suite.  There are three built-in strategies:
 
-* default-strategy  - mostly lazy, uses map
-* lazy-strategy     - completely lazy, avoids chunked sequences
-* parallel-strategy - uses pmap
-* (parallel-upto n) - parallel up to n level deep
+* `default-strategy`  - mostly lazy, uses `map`
+* `lazy-strategy`     - completely lazy, avoids chunked sequences
+* `parallel-strategy` - uses `pmap`
+* `(parallel-upto n)` - parallel up to *n* levels deep
 
-The function parallel-upto takes an integer, n, and returns a strategy
-that will be parallel only n levels deep in the tree of test cases.
-After that, the default strategy resumes.  This is useful when you
-have several large test suites that you want to run in parallel, but
-the overhead of pmap is not worthwhile for tests within each suite.
+The function parallel-upto takes an integer, *n*, and returns a
+strategy that will be parallel only *n* levels deep in the tree of
+test cases.  After that, the default strategy resumes.  This is useful
+when you have several large test suites that you want to run in
+parallel, but the overhead of pmap is not worthwhile for tests within
+each suite.
