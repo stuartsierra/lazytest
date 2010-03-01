@@ -19,6 +19,9 @@ which they are run.
 The Basics
 ==========
 
+Test and Assertions
+-------------------
+
 A Test Case is a collection of assertions about one or more values.
 Create a Test Case with `deftest`:
 
@@ -38,6 +41,10 @@ test passed:
     (success? (addition))
     ;;=> true
 
+
+Contexts
+--------
+
 A Context is a function that supplies values to a Test Case.  Contexts
 are created with `defcontext`:
 
@@ -52,6 +59,10 @@ And used as values in Test Cases:
 
     (success? (random-addition))
     ;;=> true
+
+
+Test Suites
+-----------
 
 Multiple Test Cases can be combined into Test Suites with `defsuite`.
 Test Suites can also be run as functions:
@@ -78,6 +89,7 @@ tests passed.  Try the `simple-report` function:
           FAIL failure
     "This test always fails."
                FAIL (= 1 0)
+
 
 
 More Advanced
@@ -152,23 +164,40 @@ assertions:
 
     (TestCase [contexts...] [assertions...])
 
-Named assertions can be created with the `defassert` macro (like defn);
-anonymous assertions can be created with the `assertion` macro (like
-fn):
-
-    (defassert name [args...]  ... body ...)
-
-    (assertion [args...]  ... body ...)
-
 When the TestCase is run, the results of its contexts' "before"
 functions will passed as arguments to each assertion.  Each assertion,
 therefore, must have the same number of arguments as there are
 contexts in its parent TestCase.
 
-Test Suites are also instances of `TestCase`, containing other `TestCase`s
-instead of assertions:
+Test Suites are also instances of `TestCase`, containing other
+`TestCase`s instead of assertions:
 
     (TestCase [contexts...] [TestCases...])
+
+While it is possible to have a `TestCase` containing both assertions
+and other TestCases, it is not recommended.
+
+Contexts are instances of the datatype `Context`. You can create
+instances of Context directly:
+
+    (Context [parents...] before-fn after-fn)
+
+Assertions are instances of the datatype `Assertion`.  A raw,
+uncompiled Assertion can be created with quoted argument vectors and
+body expressions:
+
+    (Assertion '[args...] 'body)
+
+Uncompiled Assertions are compiled into functions on-the-fly while
+running tests.
+
+Most assertions will be created with the macros `defassert` and
+`assertion`, which produce functions at compile-time.  `defassert`
+looks like `defn` and `assertion` looks like `fn`.
+
+    (defassert name [args...]  ... body ...)
+
+    (assertion [args...]  ... body ...)
 
 
 
