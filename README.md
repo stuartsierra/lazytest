@@ -7,7 +7,7 @@ by Stuart Sierra, http://stuartsierra.com/
 Why?
 ====
 
-Why another test framework?  The clojure.test (formerly
+Why another test framework?  The `clojure.test` (formerly
 clojure.contrib.test-is) library is pretty good.  But it isn't
 perfect.  It relies heavily on dynamic context, making it difficult to
 parallelize.  It doesn't support lazy evaluation.  Finally, it
@@ -19,8 +19,8 @@ which they are run.
 The Basics
 ==========
 
-Test and Assertions
--------------------
+Test Cases and Assertions
+-------------------------
 
 A Test Case is a collection of assertions about one or more values.
 Create a Test Case with `deftest`:
@@ -69,13 +69,16 @@ Test Suites can also be run as functions:
 
     (deftest failure "This test always fails." [] (= 1 0))
 
-    (defsuite all-tests [] addition random-addition failure)
+    (defsuite all-tests []
+       addition
+       random-addition
+       failure)
 
     (success? (all-tests))
     ;;=> false
 
-You probably want some more information that just whether or not the
-tests passed.  Try the `simple-report` function:
+You probably want some more information that just pass/fail.  Try the
+`simple-report` function:
 
     (simple-report (all-tests))
      FAIL all-tests
@@ -90,6 +93,18 @@ tests passed.  Try the `simple-report` function:
     "This test always fails."
                FAIL (= 1 0)
 
+The `deftest` and `defcontext` macros both accept an optional
+documentation string after the name, which will be used in reports.
+
+The `deftest` macro allows embedded documentation strings, which will
+be attached, as metadata, to the following assertion:
+
+    (deftest some-tests "Doc string for some-tests" []
+      (assertion one)
+      "Doc string for assertion two"
+      (assertion two)
+      (assertion three))
+
 
 
 More Advanced
@@ -100,7 +115,7 @@ test and one that runs after it.  These correspond to the
 "setup/teardown" functions in other test frameworks.
 
 The body of the "before" function will consist of the expressions
-inside defcontext up to the keyword `:after`.  Expressions following
+inside `defcontext` up to the keyword `:after`.  Expressions following
 `:after` will become the body of the "after" function.
 
 The "before" function returns a value representing some state.  That
@@ -137,11 +152,12 @@ vector following the name in `defsuite`:
     (defsuite name [contexts...] ... test cases ...)
 
 When a Context is attached to a Test Suite, its before/after functions
-execute only *once* for the entire suite.
+execute only *once* for the entire Suite.
 
     (defcontext context-one [] 1)
 
-    (deftest my-test [x context-one] (pos? x) (= x 1))
+    (deftest my-test [x context-one]
+       (pos? x) (= x 1))
 
     (defsuite long-suite []
        my-test my-test my-test)
@@ -152,6 +168,10 @@ execute only *once* for the entire suite.
        my-test my-test my-test)
 
     (short-suite) ;; context-one runs once
+
+NOTE: Context "after" functions break laziness!  If ANY Context in a
+Test Case or Test Suite has an "after" function, the entire Test Case
+or Test Suite will execute eagerly.
 
 
 
