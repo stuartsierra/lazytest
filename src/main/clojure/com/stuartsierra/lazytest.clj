@@ -341,6 +341,50 @@
                (when-let [d (:doc (meta r))] (prn d))
                (clojure.stacktrace/print-cause-trace (:error r))))))
 
+(defn- print-result [r]
+  (let [m (meta (:source r))]
+    (print (result-identifier r))
+    (let [line (:line m)
+          file (:file m)]
+      (when (or line file) (print (str " (" file ":" line ")"))))
+    (newline)
+    (when-let [d (:doc m)] (prn d))
+    (when-let [e (:error r)]
+      (println "STACK TRACE")
+      (clojure.stacktrace/print-cause-trace e))))
+
+(defn first-fail
+  ([r] (first-fail r nil))
+  ([r stack]
+     (cond (= ::TestResult (type r))
+           (when-not (success? r)
+             (doseq [c (:children r)]
+               (first-fail c (cons r stack))))
+
+           (= ::TestThrown (type r))
+           (do (print "ERROR AT ")
+               (print-result r)
+               (doseq [s stack]
+                 (print "IN ")
+                 (print-result s)))
+
+           (= ::AssertionPassed (type r))
+           nil
+
+           (= ::AssertionFailed (type r))
+           (do (print "FAIL AT ")
+               (print-result r)
+               (doseq [s stack]
+                 (print "IN ")
+                 (print-result s)))
+
+           (= ::AssertionThrown (type r))
+           (do (print "ERROR AT ")
+               (print-result r)
+               (doseq [s stack]
+                 (print "IN ")
+                 (print-result s))))))
+
 
 ;;; TESTABLE IMPLEMENTATIONS
 

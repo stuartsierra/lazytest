@@ -93,6 +93,15 @@ You probably want some more information that just pass/fail.  Try the
     "This test always fails."
                FAIL (= 1 0)
 
+Or the `first-fail` function:
+
+    (first-fail (all-tests))
+    FAIL AT (= 1 0) (:26)
+    IN failure
+    "This test always fails."
+    IN all-tests
+
+
 The `deftest` and `defcontext` macros both accept an optional
 documentation string after the name, which will be used in reports.
 
