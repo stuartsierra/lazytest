@@ -74,8 +74,8 @@ tests passed.  Try the simple-report function:
              OK (integer? (+ a b))
              OK (= (+ a b) (+ b a))
           FAIL failure
+    "This test always fails."
                FAIL (= 1 0)
-
 
 
 MORE ADVANCED
