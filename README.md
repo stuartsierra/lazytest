@@ -251,6 +251,8 @@ Here's an example generating test cases from random data.  Note the
 addition of `:name` metadata on each `TestCase` for more meaningful
 reports.
 
+    ;; Can't use the same context twice because
+    ;; context states are cached.
     (defcontext random-pair []
       [(rand-int 100) (rand-int 100)])
 
@@ -263,7 +265,8 @@ reports.
         (vec (repeatedly 100
                #(TestCase [random-pair]
                           [commutative?]
-                          {:name 'random-addition} nil)))
+                          {:name 'random-addition}
+                          nil)))
         {:name 'integer-tests} nil))
 
 This could probably be made easier with some higher-order functions to
