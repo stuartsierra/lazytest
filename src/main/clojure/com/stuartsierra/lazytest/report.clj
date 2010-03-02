@@ -1,6 +1,7 @@
 (ns com.stuartsierra.lazytest.report
   (:use com.stuartsierra.lazytest
-        [clojure.stacktrace :only (print-cause-trace)]))
+        [clojure.stacktrace :only (print-cause-trace)])
+  (:import (java.io File)))
 
 (defn source-name
   "Given a Test/Assertion result, returns an identifying form for
@@ -26,9 +27,12 @@
   [r]
   (let [m (meta (:source r))
         line (:line m)
-        file (:file m)]
-    (when (or line file)
-      (str "(" file ":" line ")"))))
+        file (:file m)
+        file (when file
+               (.getName (File. file)))]
+    (if (or line file)
+      (str "(" file ":" line ")")
+      "")))
 
 (defn print-result
   "Prints full details of a TestResult, including file and line
@@ -56,7 +60,7 @@
              (do (println indent "FAIL" (source-name r) (line-and-file r))
                  (print-source-doc r)
                  (doseq [c (:children r)]
-                   (simple-report c (str indent "     ")))))
+                   (simple-report c (str indent "   ")))))
 
            (= :com.stuartsierra.lazytest/TestThrown (type r))
            (do (println indent "ERROR" (source-name r) (line-and-file r))
