@@ -39,9 +39,8 @@
   number, doc string, and stack trace if applicable."
   [r]
   (let [m (meta (:source r))]
-    (print (source-name r))
-    
-    (newline)
+    (println (source-name r) (line-and-file r))
+    (println "Context states:" (:states r))
     (print-source-doc r)
     (when-let [e (:error r)]
       (println "STACK TRACE")
@@ -72,10 +71,12 @@
 
            (= :com.stuartsierra.lazytest/AssertionFailed (type r))
            (do (println indent "FAIL" (source-name r) (line-and-file r))
+               (println indent "Context states:" (:states r))
                (print-source-doc r))
 
            (= :com.stuartsierra.lazytest/AssertionThrown (type r))
            (do (println indent "ERROR" (source-name r) (line-and-file r))
+               (println indent "Context states:" (:states r))
                (print-source-doc r)
                (print-cause-trace (:error r))))))
 
@@ -87,8 +88,8 @@
   ([r stack]
      (cond (= :com.stuartsierra.lazytest/TestResult (type r))
            (when-not (success? r)
-             (doseq [c (:children r)]
-               (report-first-fail c (cons r stack))))
+             (report-first-fail (first (drop-while success? (:children r)))
+                                (cons r stack)))
 
            (= :com.stuartsierra.lazytest/TestThrown (type r))
            (do (print "ERROR AT ")
