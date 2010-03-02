@@ -213,7 +213,7 @@
         (TestResult t results))
       (catch Throwable e (TestThrown t e)))))
 
-(defmacro deftest
+(defmacro test-case
   "Defines a test case containing assertions that share the same contexts.
   decl => docstring? [binding*] assertion*
   binding => symbol context
@@ -227,35 +227,45 @@
     (assert (vector? bindings))
     (assert (even? (count bindings)))
     (let [locals (vec (map first (partition 2 bindings)))
-          contexts (vec (map (comp coerce-context second) (partition 2 bindings)))]
+          contexts (vec (map (comp coerce-context second)
+                             (partition 2 bindings)))]
       (assert (every? symbol locals))
-      `(def ~name
-            (TestCase ~contexts
-                      ~(loop [r [], as assertions]
-                         (if (seq as)
-                           (if (string? (first as))
-                             (recur (conj r `(with-meta (fn ~locals ~(second as))
-                                               {:doc ~(first as), :form '~(second as),
-                                                :file *file*, :line @Compiler/LINE}))
-                                    (nnext as))
-                             (recur (conj r `(with-meta (fn ~locals ~(first as))
-                                               {:form '~(first as),
-                                                :file *file*, :line @Compiler/LINE}))
-                                    (next as)))
-                           r))
-                      '~m nil)))))
+      `(TestCase
+        ~contexts
+        ~(loop [r [], as assertions]
+           (if (seq as)
+             (if (string? (first as))
+               (recur (conj r `(with-meta (fn ~locals ~(second as))
+                                 {:doc ~(first as),
+                                  :form '~(second as),
+                                  :file *file*,
+                                  :line @Compiler/LINE}))
+                      (nnext as))
+               (recur (conj r `(with-meta (fn ~locals ~(first as))
+                                 {:form '~(first as),
+                                  :file *file*,
+                                  :line @Compiler/LINE}))
+                      (next as)))
+             r))
+        '~m nil))))
 
-(defmacro defsuite
-  "Defines a test suite containing other test cases or suites.
+(defmacro deftest [name & decl]
+  `(def ~name (test-case ~name ~@decl)))
+
+(defmacro suite
+  "Return a test suite containing other test cases or suites.
   decl => docstring? [context*] children*"
   [name & decl]
-  (let [m {:name name, :ns *ns*}
+  (let [m {:name name, :ns *ns*, :file *file*, :line @Compiler/LINE}
         m (if (string? (first decl)) (assoc m :doc (first decl)) m)
         decl (if (string? (first decl)) (next decl) decl)
         contexts (first decl)
         children (next decl)]
     (assert (vector? contexts))
-    `(def ~name (TestCase ~contexts ~(vec children) '~m nil))))
+    `(TestCase ~contexts ~(vec children) '~m nil)))
+
+(defmacro defsuite [name & decl]
+  `(def ~name (suite ~name ~@decl)))
 
 
 ;;; TEST RESULT HANDLING
