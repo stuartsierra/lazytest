@@ -15,8 +15,7 @@
 
 (ns #^{:doc "Lazy Testing Framework"
        :author "Stuart Sierra"}
-  com.stuartsierra.lazytest
-  (:require clojure.stacktrace))
+  com.stuartsierra.lazytest)
 
 ;;; PROTOCOLS
 
@@ -128,7 +127,7 @@
   "Defines an Assertion.
   decl => docstring? [locals*] body*"
   [name & decl]
-  (let [m {:name name, :ns *ns*}
+  (let [m {:name name, :ns *ns*, :file *file*, :line @Compiler/LINE}
         m (if (string? (first decl)) (assoc m :doc (first decl)) m)
         decl (if (string? (first decl)) (next decl) decl)
         argv (first decl)
@@ -168,7 +167,7 @@
   decl => docstring? [bindings*] before-body* after-fn?
   after-fn => :after [state] after-body*"
   [name & decl]
-  (let [m {:name name, :ns *ns*}
+  (let [m {:name name, :ns *ns*, :file *file*, :line @Compiler/LINE}
         m (if (string? (first decl)) (assoc m :doc (first decl)) m)
         decl (if (string? (first decl)) (next decl) decl)
         bindings (first decl)
@@ -260,7 +259,7 @@
   binding => symbol context
   assertion => docstring? expression"
   [name & decl]
-  (let [m {:name name, :ns *ns*}
+  (let [m {:name name, :ns *ns*, :file *file*, :line @Compiler/LINE}
         m (if (string? (first decl)) (assoc m :doc (first decl)) m)
         decl (if (string? (first decl)) (next decl) decl)
         bindings (first decl)
@@ -305,85 +304,6 @@
   TestResult and all its children."
   [r]
   (tree-seq :children :children r))
-
-(defn result-identifier [r]
-  (let [m (meta (:source r))]
-    (or (:name m) (:form m)
-        (:source r))))
-
-(defn simple-report
-  ([r] (simple-report r ""))
-  ([r indent]
-     (cond (= ::TestResult (type r))
-           (if (success? r)
-             (do (println indent "OK" (result-identifier r))
-                 (doseq [c (:children r)]
-                   (simple-report c (str indent "   "))))
-             (do (println indent "FAIL" (result-identifier r))
-                 (when-let [d (:doc (meta (:source r)))] (prn d))
-                 (doseq [c (:children r)]
-                   (simple-report c (str indent "     ")))))
-
-           (= ::TestThrown (type r))
-           (do (println indent "ERROR" (result-identifier r))
-               (when-let [d (:doc (meta r))] (prn d))
-               (clojure.stacktrace/print-cause-trace (:error r)))
-
-           (= ::AssertionPassed (type r))
-           (println indent "OK" (result-identifier r))
-
-           (= ::AssertionFailed (type r))
-           (do (println indent "FAIL" (result-identifier r))
-               (when-let [d (:doc (meta r))] (prn d)))
-
-           (= ::AssertionThrown (type r))
-           (do (println indent "ERROR" (result-identifier r))
-               (when-let [d (:doc (meta r))] (prn d))
-               (clojure.stacktrace/print-cause-trace (:error r))))))
-
-(defn- print-result [r]
-  (let [m (meta (:source r))]
-    (print (result-identifier r))
-    (let [line (:line m)
-          file (:file m)]
-      (when (or line file) (print (str " (" file ":" line ")"))))
-    (newline)
-    (when-let [d (:doc m)] (prn d))
-    (when-let [e (:error r)]
-      (println "STACK TRACE")
-      (clojure.stacktrace/print-cause-trace e))))
-
-(defn first-fail
-  ([r] (first-fail r nil))
-  ([r stack]
-     (cond (= ::TestResult (type r))
-           (when-not (success? r)
-             (doseq [c (:children r)]
-               (first-fail c (cons r stack))))
-
-           (= ::TestThrown (type r))
-           (do (print "ERROR AT ")
-               (print-result r)
-               (doseq [s stack]
-                 (print "IN ")
-                 (print-result s)))
-
-           (= ::AssertionPassed (type r))
-           nil
-
-           (= ::AssertionFailed (type r))
-           (do (print "FAIL AT ")
-               (print-result r)
-               (doseq [s stack]
-                 (print "IN ")
-                 (print-result s)))
-
-           (= ::AssertionThrown (type r))
-           (do (print "ERROR AT ")
-               (print-result r)
-               (doseq [s stack]
-                 (print "IN ")
-                 (print-result s))))))
 
 
 ;;; TESTABLE IMPLEMENTATIONS
