@@ -53,9 +53,9 @@ are created with `defcontext`:
 
 And used as values in Test Cases:
 
-    (deftest random-addition [a random-int, b random-int]
-      (integer? (+ a b))
-      (= (+ a b) (+ b a)))
+    (deftest random-addition [a random-int]
+      (integer? a)
+      (= 0 (+ a (- a)))
 
     (success? (random-addition))
     ;;=> true
