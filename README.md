@@ -116,6 +116,27 @@ be attached, as metadata, to the following assertion:
 
 
 
+Parallel Test Execution
+=======================
+
+The reason why I wrote this library.  Tests are run with a Test
+Execution Strategy, passed as an argument to the Test Case or Test
+Suite.  There are three built-in strategies:
+
+* `default-strategy`  - mostly lazy, uses `map`
+* `lazy-strategy`     - completely lazy, avoids chunked sequences
+* `parallel-strategy` - uses `pmap`
+* `(parallel-upto n)` - parallel up to *n* levels deep
+
+The function parallel-upto takes an integer, *n*, and returns a
+strategy that will be parallel only *n* levels deep in the tree of
+test cases.  After that, the default strategy resumes.  This is useful
+when you have several large test suites that you want to run in
+parallel, but the overhead of pmap is not worthwhile for tests within
+each suite.
+
+
+
 More Advanced
 =============
 
@@ -187,73 +208,62 @@ or Test Suite will execute eagerly.
 Really Advanced
 ===============
 
-Test Cases and Test Suites are both instances of the datatype
-`TestCase`.  You can create an instance of `TestCase` containing
-assertions:
+Instead of using the "def" macros, you can generate contexts and tests
+programatically.
 
-    (TestCase [contexts...] [assertions...])
+A Test Case is an instance of the datatype `TestCase` that associates
+Contexts with assertion functions.
 
-When the TestCase is run, the results of its contexts' "before"
-functions will passed as arguments to each assertion.  Each assertion,
-therefore, must have the same number of arguments as there are
-contexts in its parent TestCase.
+    (TestCase [contexts...] [fns...])
 
-Test Suites are also instances of `TestCase`, containing other
-`TestCase`s instead of assertions:
+When the TestCase is run, it applies each fn to the states returned by
+the contexts' "before" functions.  Each assertion fn, therefore, must
+accept the same number of arguments as there are contexts in its
+parent TestCase.
+
+Test Suites are also instances of `TestCase` that contain other
+`TestCase`s:
 
     (TestCase [contexts...] [TestCases...])
 
-While it is possible to have a `TestCase` containing both assertions
-and other TestCases, it is not recommended.
+Contexts attached to a Test Suite have their before/after functions
+called only once for the entire suite; the child Test Cases must still
+declare which Contexts they use.
 
-Contexts are instances of the datatype `Context`. You can create
-instances of Context directly:
+While it is possible to have a `TestCase` containing both assertion
+functions and other TestCases, it is not recommended.
+
+Contexts are instances of the datatype `Context`:
 
     (Context [parents...] before-fn after-fn)
 
-Assertions are instances of the datatype `Assertion`.  A raw,
-uncompiled Assertion can be created with quoted argument vectors and
-body expressions:
+Each parent is another Context.  before-fn must accept the same number
+of arguments as there are parent contexts.  The arguments will be the
+state returned by the parents' "before" functions.  after-fn will
+receive the same arguments, plus an additional first argument, which
+will be the state returned by before-fn.
 
-    (Assertion '[args...] 'body)
+The reporting functions look for `:name`, `:doc`, `:file`, and `:line`
+metadata on `TestCase`s and assertion functions.  The `deftest` and
+`defsuite` macros add this metadata automatically.
 
-Uncompiled Assertions are compiled into functions on-the-fly while
-running tests.
+Here's an example generating test cases from random data.  Note the
+addition of `:name` metadata on each `TestCase` for more meaningful
+reports.
 
-Most assertions will be created with the macros `defassert` and
-`assertion`, which produce functions at compile-time.  `defassert`
-looks like `defn` and `assertion` looks like `fn`.
+    (defn commutative? [x y]
+      (not= (+ x y) (+ y x)))
 
-    (defassert name [args...]  ... body ...)
+    (defcontext random-int []
+      (rand-int 100))
 
-    (assertion [args...]  ... body ...)
+    (def integer-tests  ;; a Test Suite
+      (TestCase []
+        (vec (repeatedly 100
+               #(TestCase [random-int random-int]
+                          [commutative?]
+                          {:name 'random-addition} nil)))
+        {:name 'integer-tests} nil))
 
-
-
-Reporting
----------
-
-The reporting functions look for `:name` and `:doc` metadata on the
-`TestCase`s and assertions.  The macros `defassert`, `deftest`, and
-`defsuite` add this metadata automatically.
-
-
-
-Parallel Test Execution
-=======================
-
-Finally, the reason why I wrote this library.  Tests are run with a
-Test Execution Strategy, passed as an argument to the Test Case or
-Test Suite.  There are three built-in strategies:
-
-* `default-strategy`  - mostly lazy, uses `map`
-* `lazy-strategy`     - completely lazy, avoids chunked sequences
-* `parallel-strategy` - uses `pmap`
-* `(parallel-upto n)` - parallel up to *n* levels deep
-
-The function parallel-upto takes an integer, *n*, and returns a
-strategy that will be parallel only *n* levels deep in the tree of
-test cases.  After that, the default strategy resumes.  This is useful
-when you have several large test suites that you want to run in
-parallel, but the overhead of pmap is not worthwhile for tests within
-each suite.
+This could probably be made easier with some higher-order functions to
+map an assertion across a sequence of values.  I'll get to that.
