@@ -83,6 +83,10 @@
 (deftype TestThrown [source error]
   TestSuccess (success? [] false))
 
+;; TODO: fix source field: should be the assertion (optionally
+;; compiled as a fn) with :doc, :name, :line, :file metadata, not the
+;; source form of the assertion.
+
 ;; AssertionPassed is returned by an Assertion whose expression
 ;; evaluates logical true.
 (deftype AssertionPassed [source]
@@ -274,11 +278,13 @@
                                  ~(loop [r [], as assertions]
                                     (if (seq as)
                                       (if (string? (first as))
-                                        (recur (conj r `(with-meta (assertion ~locals ~(next as))
-                                                          {:doc ~(first as), :form '~(next as)}))
+                                        (recur (conj r `(with-meta (assertion ~locals ~(second as))
+                                                          {:doc ~(first as), :form '~(second as),
+                                                           :file *file*, :line @Compiler/LINE}))
                                                (nnext as))
                                         (recur (conj r `(with-meta (assertion ~locals ~(first as))
-                                                          {:form '~(first as)}))
+                                                          {:form '~(first as),
+                                                           :file *file*, :line @Compiler/LINE}))
                                                (next as)))
                                       r)))
               '~m)))))
