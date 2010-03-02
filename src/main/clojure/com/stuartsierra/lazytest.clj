@@ -45,7 +45,7 @@
 
 ;;; DATATYPES
 
-(declare run-test-case compile-assertion)
+(declare run-test-case)
 
 ;; Context sets up state for TestCases that depend on it.  parents is
 ;; a vector of parent Contexts.  before and after are functions.
