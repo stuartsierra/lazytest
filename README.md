@@ -251,16 +251,17 @@ Here's an example generating test cases from random data.  Note the
 addition of `:name` metadata on each `TestCase` for more meaningful
 reports.
 
-    (defn commutative? [x y]
-      (not= (+ x y) (+ y x)))
+    (defcontext random-pair []
+      [(rand-int 100) (rand-int 100)])
 
-    (defcontext random-int []
-      (rand-int 100))
+    (defn commutative? [pair]
+      (let [[x y] pair]
+        (= (+ x y) (+ y x))))
 
     (def integer-tests  ;; a Test Suite
       (TestCase []
         (vec (repeatedly 100
-               #(TestCase [random-int random-int]
+               #(TestCase [random-pair]
                           [commutative?]
                           {:name 'random-addition} nil)))
         {:name 'integer-tests} nil))
