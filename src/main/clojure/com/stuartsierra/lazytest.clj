@@ -144,8 +144,7 @@
       (let [after-fn (when after
                        `(fn ~(vec (concat (first after) locals))
                           ~@after))]
-        `(def ~name (with-meta (Context ~contexts ~before-fn ~after-fn)
-                      '~m))))))
+        `(def ~name (Context ~contexts ~before-fn ~after-fn '~m nil))))))
 
 
 ;;; TEST RUNNING STRATEGIES
@@ -231,20 +230,20 @@
           contexts (vec (map (comp coerce-context second) (partition 2 bindings)))]
       (assert (every? symbol locals))
       `(def ~name
-            (with-meta (TestCase ~contexts
-                                 ~(loop [r [], as assertions]
-                                    (if (seq as)
-                                      (if (string? (first as))
-                                        (recur (conj r `(with-meta (fn ~locals ~(second as))
-                                                          {:doc ~(first as), :form '~(second as),
-                                                           :file *file*, :line @Compiler/LINE}))
-                                               (nnext as))
-                                        (recur (conj r `(with-meta (fn ~locals ~(first as))
-                                                          {:form '~(first as),
-                                                           :file *file*, :line @Compiler/LINE}))
-                                               (next as)))
-                                      r)))
-              '~m)))))
+            (TestCase ~contexts
+                      ~(loop [r [], as assertions]
+                         (if (seq as)
+                           (if (string? (first as))
+                             (recur (conj r `(with-meta (fn ~locals ~(second as))
+                                               {:doc ~(first as), :form '~(second as),
+                                                :file *file*, :line @Compiler/LINE}))
+                                    (nnext as))
+                             (recur (conj r `(with-meta (fn ~locals ~(first as))
+                                               {:form '~(first as),
+                                                :file *file*, :line @Compiler/LINE}))
+                                    (next as)))
+                           r))
+                      '~m nil)))))
 
 (defmacro defsuite
   "Defines a test suite containing other test cases or suites.
@@ -256,8 +255,7 @@
         contexts (first decl)
         children (next decl)]
     (assert (vector? contexts))
-    `(def ~name (with-meta (TestCase ~contexts ~(vec children))
-                  '~m))))
+    `(def ~name (TestCase ~contexts ~(vec children) '~m nil))))
 
 
 ;;; TEST RESULT HANDLING
