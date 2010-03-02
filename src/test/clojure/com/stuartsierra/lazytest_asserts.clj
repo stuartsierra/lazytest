@@ -7,11 +7,7 @@
 ;;; SELF-TESTS
 
 ;; Assertions
-(def a1 (assertion [a] (pos? a)))
-
-(assert (= :com.stuartsierra.lazytest/AssertionPassed (type (a1 1))))
-(assert (= :com.stuartsierra.lazytest/AssertionFailed (type (a1 -1))))
-(assert (= :com.stuartsierra.lazytest/AssertionThrown (type (a1 "string"))))
+(def a1 pos?)
 
 ;; Contexts
 (def c1 (Context nil nil nil))
@@ -48,7 +44,7 @@
            (type (first (:children (run-test-case t2))))))
 
 ;; TestCase with multiple Contexts
-(def a2 (assertion [x y] (< x y)))
+(def a2 <)
 
 (def t3 (TestCase [c2 c4] [a2 a2]))
 
@@ -65,9 +61,9 @@
   `(binding [*log* (atom [])]
      ~@body))
 
-(def a3 (assertion [x] (log :a3) (pos? x)))
+(def a3 (fn [x] (log :a3) (pos? x)))
 
-(def a4 (assertion [x] (log :a4) (pos? x)))
+(def a4 (fn [x] (log :a4) (pos? x)))
 
 (def c5 (Context [] (fn [] (log :c5-open) 5)
                  (fn [x] (assert (= x 5)) (log :c5-close))))
@@ -120,18 +116,6 @@
     (dorun (result-seq results))
     (assert (= @*log* [:c6-open :a3 :a4 :a3 :a4]))))
 
-;; defassert form
-(defassert a5 "Assertion a5" [a b]
-  (comment "stuff")
-  (< a b))
-
-(assert (fn? a5))
-(assert (= 'a5 (:name (meta a5))))
-(assert (= *ns* (:ns (meta a5))))
-(assert (= "Assertion a5" (:doc (meta a5))))
-(assert (= :com.stuartsierra.lazytest/AssertionPassed (type (a5 1 2))))
-(assert (= :com.stuartsierra.lazytest/AssertionFailed (type (a5 2 1))))
-(assert (= :com.stuartsierra.lazytest/AssertionThrown (type (a5 "a" "b"))))
 
 ;; defcontext form
 (defcontext c7 "Context c7" [s5 c5]
@@ -175,37 +159,31 @@
 (assert (= [c4 c5] (:contexts t11)))
 (assert (= [t9 t10] (:children t11)))
 
-;; Assertions can be compiled on-the-fly
-(def t12 (TestCase [c2] [(Assertion '[a] '(= a 2))
-                         (Assertion '[a] '(> a 1))]))
-(assert (success? (t12)))
-
-
 ;; README examples
-    (defassert positive [x] (pos? x))
-    (success? (positive 1))
-    ;;=> true
-    (success? (positive -1))
-    ;;=> false
-    (success? (positive "hello"))
-    ;;=> false
-    (deftest addition [a 1, b 2]
-      (integer? a)
-      (integer? b)
-      (integer? (+ a b)))
-    (success? (addition))
-    ;;=> true
-    (defcontext random-int []
-      (rand-int Integer/MAX_VALUE))
-    (deftest random-addition [a random-int, b random-int]
-      (integer? (+ a b))
-      (= (+ a b) (+ b a)))
+;;     (defassert positive [x] (pos? x))
+;;     (success? (positive 1))
+;;     ;;=> true
+;;     (success? (positive -1))
+;;     ;;=> false
+;;     (success? (positive "hello"))
+;;     ;;=> false
+;;     (deftest addition [a 1, b 2]
+;;       (integer? a)
+;;       (integer? b)
+;;       (integer? (+ a b)))
+;;     (success? (addition))
+;;     ;;=> true
+;;     (defcontext random-int []
+;;       (rand-int Integer/MAX_VALUE))
+;;     (deftest random-addition [a random-int, b random-int]
+;;       (integer? (+ a b))
+;;       (= (+ a b) (+ b a)))
 
-    (success? (random-addition))
+;;     (success? (random-addition))
 
-    (deftest failure "This test always fails." [] (= 1 0))
+;;     (deftest failure "This test always fails." [] (= 1 0))
 
-    (defsuite all-tests [] addition random-addition failure)
+;;     (defsuite all-tests [] addition random-addition failure)
 
-    (success? (all-tests))
-    ;;=> false
+;;     (success? (all-tests))
+;;     ;;=> false
