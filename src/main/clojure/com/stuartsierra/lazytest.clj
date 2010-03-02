@@ -32,9 +32,16 @@
   (invoke-test [t states strategy active]
                "(private) Executes the TestCase or Assertion."))
 
-;; Fn is assumed to be a compiled Assertion
+(declare AssertionPassed AssertionFailed AssertionThrown)
+
+;; Fn is assumed to be an assertion predicate
 (extend-class clojure.lang.Fn TestInvokable
-              (invoke-test [f states strategy active] (apply f states)))
+  (invoke-test [f states strategy active]
+    (try (if (apply f states)
+           (AssertionPassed f states)
+           (AssertionFailed f states))
+         (catch Throwable t#
+           (AssertionThrown f states t#)))))
 
 ;;; DATATYPES
 
@@ -61,16 +68,6 @@
   TestInvokable (invoke-test [states strategy active]
                              (run-test-case this strategy active)))
 
-;; Assertion is like a function.  locals is a vector of (quoted)
-;; symbols.  form is a (quoted) expression using those symbols,
-;; returning logical true or false.  When compiled, an Assertion
-;; becomes a function like (fn [locals] form).
-(deftype Assertion [locals form] :as this
-  TestInvokable
-  (invoke-test [states strategy active]
-               (invoke-test (compile-assertion this)
-                            states strategy active)))
-
 ;; TestResult represents the result of executing a TestCase.  source
 ;; is the TestCase.  children is a sequence of results from child
 ;; TestCases or Assertions.
@@ -89,57 +86,18 @@
 
 ;; AssertionPassed is returned by an Assertion whose expression
 ;; evaluates logical true.
-(deftype AssertionPassed [source]
+(deftype AssertionPassed [source states]
   TestSuccess (success? [] true))
 
 ;; AssertionFailed is returned by an Assertion whose expression
 ;; evaluates logical false without throwing an exception.
-(deftype AssertionFailed [source]
+(deftype AssertionFailed [source states]
   TestSuccess (success? [] false))
 
 ;; AssertionThrown is returned by an Assertion whose expression threw
 ;; an exception.  error is the java.lang.Throwable.
-(deftype AssertionThrown [source error]
+(deftype AssertionThrown [source states error]
   TestSuccess (success? [] false))
-
-
-;;; ASSERTION HANDLING
-
-(defn- format-assertion [a]
-  {:pre [(= ::Assertion (type a))
-         (vector? (:locals a))]}
-  (let [form (:form a)]
-    `(fn ~(:locals a)
-       (try (if ~form
-              (AssertionPassed '~form)
-              (AssertionFailed '~form))
-            (catch Throwable t#
-              (AssertionThrown '~form t#))))))
- 
-(defn compile-assertion
-  "Compiles an Assertion a into a function of its locals."
-  [a]
-  (eval (format-assertion a)))
- 
-(defmacro assertion
-  "Returns a compiled Assertion function like (fn [locals] body)."
-  [locals & body]
-  (format-assertion (Assertion locals (if (= 1 (count body))
-                                        (first body) `(do ~@body)))))
-
-(defmacro defassert
-  "Defines an Assertion.
-  decl => docstring? [locals*] body*"
-  [name & decl]
-  (let [m {:name name, :ns *ns*, :file *file*, :line @Compiler/LINE}
-        m (if (string? (first decl)) (assoc m :doc (first decl)) m)
-        decl (if (string? (first decl)) (next decl) decl)
-        argv (first decl)
-        m (assoc m :locals argv)
-        body (next decl)]
-    (assert (vector? argv))
-    `(def ~name (with-meta (assertion ~argv ~@body)
-                  '~m))))
 
 
 ;;; CONTEXT HANDLING
@@ -162,7 +120,9 @@
     (let [active (reduce close-context active (:parents c))]
       (dissoc active c))))
 
-(defn- coerce-context [c]
+(defn- coerce-context
+  "Make a Context out of c, at compile time."
+  [c]
   (if (and (symbol? c) (= ::Context (type (var-get (resolve c)))))
     c (Context [] (fn [] c) nil)))
 
@@ -278,11 +238,11 @@
                                  ~(loop [r [], as assertions]
                                     (if (seq as)
                                       (if (string? (first as))
-                                        (recur (conj r `(with-meta (assertion ~locals ~(second as))
+                                        (recur (conj r `(with-meta (fn ~locals ~(second as))
                                                           {:doc ~(first as), :form '~(second as),
                                                            :file *file*, :line @Compiler/LINE}))
                                                (nnext as))
-                                        (recur (conj r `(with-meta (assertion ~locals ~(first as))
+                                        (recur (conj r `(with-meta (fn ~locals ~(first as))
                                                           {:form '~(first as),
                                                            :file *file*, :line @Compiler/LINE}))
                                                (next as)))
@@ -327,7 +287,7 @@
         (:test (meta v))
 
         (fn? (:test (meta v)))
-        (with-meta (TestCase [] [(assertion [] ((:test (meta v))))])
+        (with-meta (TestCase [] [(:test (meta v))])
           {:doc "Var :test metadata function."
            :name (:name (meta v))
            :ns (:ns (meta v))})
@@ -353,7 +313,7 @@
         (ns-test-case (:test (meta n)))
 
         (fn? (:test (meta n)))
-        (with-meta (TestCase [] [(assertion [] ((:test (meta n))))])
+        (with-meta (TestCase [] [(:test (meta n))])
           {:doc "Namespace :test metadata function."
            :name (ns-name n)})
 
