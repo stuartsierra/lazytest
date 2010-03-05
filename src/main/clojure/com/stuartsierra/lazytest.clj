@@ -330,6 +330,7 @@
                      :name (ns-name n)}
                     nil)
 
+;; todo: generate test-all-vars testcase
           :else nil)))
  
 (defn test-ns
