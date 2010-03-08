@@ -270,6 +270,12 @@
 
 ;;; TEST RESULT HANDLING
 
+(defn assertion-result?
+  "True if r is an assertion result (pass, fail, or throw)"
+  [r]
+  (#{::AssertionPassed ::AssertionFailed ::AssertionThrown}
+   (type r)))
+
 (defn result-seq
   "Given a single TestResult, returns a depth-first sequence of that
   TestResult and all its children."
