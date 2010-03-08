@@ -39,9 +39,11 @@
   number, doc string, and stack trace if applicable."
   [r]
   (let [m (meta (:source r))]
-    (println (source-name r) (line-and-file r))
+    (println "Test:" (source-name r))
+    (when-let [f (:file m)] (println "File:" f))
+    (when-let [l (:line m)] (println "Line:" l))
     (println "Context states:" (:states r))
-    (print-source-doc r)
+    (when-let [d (source-doc r)] (println "Doc:" d))
     (when-let [e (:error r)]
       (println "STACK TRACE")
       (print-cause-trace e))))
