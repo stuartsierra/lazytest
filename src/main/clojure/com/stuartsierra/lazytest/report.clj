@@ -86,34 +86,10 @@
   "Lazy test result reporter.  Takes a TestResult and prints the
   details of only the first failed test.  If all tests pass, prints
   nothing."
-  ([r] (report-first-fail r nil))
-  ([r stack]
-     (cond (= :com.stuartsierra.lazytest/TestResult (type r))
-           (when-not (success? r)
-             (report-first-fail (first (drop-while success? (:children r)))
-                                (cons r stack)))
-
-           (= :com.stuartsierra.lazytest/TestThrown (type r))
-           (do (print "ERROR AT ")
-               (print-result r)
-               (doseq [s stack]
-                 (print "IN ")
-                 (print-result s)))
-
-           (= :com.stuartsierra.lazytest/AssertionPassed (type r))
-           nil
-
-           (= :com.stuartsierra.lazytest/AssertionFailed (type r))
-           (do (print "FAIL AT ")
-               (print-result r)
-               (doseq [s stack]
-                 (print "IN ")
-                 (print-result s)))
-
-           (= :com.stuartsierra.lazytest/AssertionThrown (type r))
-           (do (print "ERROR AT ")
-               (print-result r)
-               (doseq [s stack]
-                 (print "IN ")
-                 (print-result s))))))
+  [r]
+  (if (assertion-result? r)
+    (when-not (success? r)
+      (println "FAILURE")
+      (print-result r))
+    (report-first-fail (first (drop-while success? (:children r))))))
 
