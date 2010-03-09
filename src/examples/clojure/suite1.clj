@@ -31,3 +31,5 @@
 
 (defsuite all-tests []
   numbers arithmetic)
+
+(alter-meta! *ns* assoc :test all-tests)
