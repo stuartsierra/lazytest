@@ -29,14 +29,14 @@
 
 ;; Internal generic Test/Assertion invocation.
 (defprotocol TestInvokable
-  (invoke-test [t states strategy active]
+  (invoke-test [t states active]
                "(private) Executes the TestCase or Assertion."))
 
 (declare AssertionPassed AssertionFailed AssertionThrown)
 
 ;; Fn is assumed to be an assertion predicate
 (extend-class clojure.lang.Fn TestInvokable
-  (invoke-test [f states strategy active]
+  (invoke-test [f states active]
     (try (if (apply f states)
            (AssertionPassed f states)
            (AssertionFailed f states))
@@ -63,11 +63,10 @@
 (deftype TestCase [contexts children] :as this
   clojure.lang.IFn
   (invoke [] (run-test-case this))
-  (invoke [strategy] (run-test-case this strategy))
-  (invoke [strategy active] (run-test-case this strategy active))
+  (invoke [active] (run-test-case this active))
   TestInvokable
-  (invoke-test [states strategy active]
-    (run-test-case this strategy active)))
+  (invoke-test [states active]
+    (run-test-case this active)))
 
 ;; TestResult represents the result of executing a TestCase.  source
 ;; is the TestCase.  children is a sequence of results from child
@@ -191,17 +190,16 @@
   "Executes a test case in context.  active is the map of currently
   active Contexts, empty by default.  strategy is a function that
   determines how tests are executed, default-strategy by default."
-  ([t] (run-test-case t default-strategy))
-  ([t strategy] (run-test-case t strategy {}))
-  ([t strategy active]
+  ([t] (run-test-case t {}))
+  ([t active]
      {:pre [(= ::TestCase (type t))
             (every? #(= ::Context (type %)) (:contexts t))]}
      (try
-      (let [[mapper child-strategy] (strategy)
+      (let [[mapper child-strategy] (default-strategy)
             merged (reduce open-context active (:contexts t))
             states (map merged (:contexts t))
             results (mapper
-                     #(invoke-test % states child-strategy merged)
+                     #(invoke-test % states merged)
                      (:children t))]
         ;; Force non-lazy execution to handle shutdown properly:
         (when (some has-after? (:contexts t))
