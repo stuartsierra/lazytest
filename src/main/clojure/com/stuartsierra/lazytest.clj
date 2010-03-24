@@ -266,6 +266,69 @@
   `(def ~name (suite ~name ~@decl)))
 
 
+(defmacro given [& decl]
+  (let [name (if (symbol? (first decl)) (first decl) (gensym "testing"))
+        named? (symbol? (first decl))
+        decl (if (symbol? (first decl)) (next decl) decl)
+        doc  (if (string? (first decl)) (first decl) nil)
+        decl (if (string? (first decl)) (next decl) decl)
+        bindings (first decl)
+        assertions (next decl)
+        metadata {:name name, :ns *ns*, :file *file*, :line @Compiler/LINE}]
+    (assert (vector? bindings))
+    (assert (even? (count bindings)))
+    (let  [locals (vec (map first (partition 2 bindings)))
+           contexts (vec (map second (partition 2 bindings)))
+           children (loop [r [], as assertions]
+                      (if (seq as)
+                        (if (string? (first as))
+                          (recur (conj r `(with-meta (fn ~locals ~(second as))
+                                            {:doc ~(first as),
+                                             :form '~(second as),
+                                             :file *file*,
+                                             :line @Compiler/LINE}))
+                                 (nnext as))
+                          (recur (conj r `(with-meta (fn ~locals ~(first as))
+                                            {:form '~(first as),
+                                             :file *file*,
+                                             :line @Compiler/LINE}))
+                                 (next as)))
+                        r))]
+      `(let [tc# (TestCase ~contexts ~(vec children) '~metadata nil)]
+         (when ~named? (intern *ns* '~name tc#))
+         tc#))))
+
+(defmacro testing [& decl]
+  (let [name (if (symbol? (first decl)) (first decl) (gensym "testing"))
+        named? (symbol? (first decl))
+        decl (if (symbol? (first decl)) (next decl) decl)
+        doc  (if (string? (first decl)) (first decl) nil)
+        decl (if (string? (first decl)) (next decl) decl)
+        [opt val] (if (keyword? (first decl))
+                    [(first decl) (second decl)] [nil nil])
+        decl (if (keyword? (first decl)) (nnext decl) decl)
+        metadata {:doc doc, :name name, :ns *ns*,
+                  :file *file*, :line @Compiler/LINE}
+        locals (if (= opt :given)
+                 (vec (map first (partition 2 val))) [])
+        contexts (cond (= opt :given) (vec (map second (partition 2 val)))
+                       (= opt :using) val
+                       (nil? opt) [])
+        children (loop [r [], cs decl]
+                   (if (seq cs)
+                     (let [it (first cs)]
+                       (if (and (list? it)
+                                (symbol? (first it))
+                                (= #'testing (resolve (first it))))
+                         (recur (conj r it) (next cs))
+                         (recur (conj r `(fn ~locals ~it)) (next cs))))
+                     r))]
+    (assert (vector? contexts))
+    `(let [tc# (TestCase ~contexts ~children '~metadata nil)]
+       (when ~named? (intern *ns* '~name tc#))
+       tc#)))
+
+
 ;;; TEST RESULT HANDLING
 
 (defn assertion-result?
