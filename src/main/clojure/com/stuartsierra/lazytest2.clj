@@ -224,10 +224,37 @@
         [opts decl] (options decl)
         {:keys [contexts strategy]} opts
         children (vec decl)
-        csym (gensym "c")]
-    `(let [~csym ~(if contexts
+        sym (gensym "c")]
+    `(let [~sym ~(if contexts
                     (do (assert (vector? contexts))
                         `(ContextualContainer ~contexts ~children '~m nil))
                     `(SimpleContainer ~children '~m nil))]
-       ~(when (:name m) `(intern *ns* '~(:name m) ~csym))
-       ~csym)))
+       ~(when (:name m) `(intern *ns* '~(:name m) ~sym))
+       ~sym)))
+
+(defmacro dotest
+  "Creates an assertion function consisting of arbitrary code.
+  Passes if it does not throw an exception.  Use assert for value
+  tests.
+
+  decl    => name? docstring? [binding*] body*
+  binding => symbol context
+
+  name  => a symbol, will def a Var if provided.
+"
+  [& decl]
+  (let [[m decl] (attributes decl)
+        bindings (first decl)
+        body (next decl)
+        sym (gensym "c")]
+    (assert (vector? bindings))
+    (assert (even? (count bindings)))
+    (let [pairs (partition 2 bindings)
+          locals (map first pairs)
+          contexts (map second pairs)]
+      `(let [~sym ~(if (seq contexts)
+                     `(ContextualAssertion ~contexts (fn ~locals ~@body :ok)
+                                           '~m nil)
+                     `(SimpleAssertion (fn [] ~@body :ok) '~m nil))]
+         ~(when (:name m) `(intern *ns* '~(:name m) ~sym))
+         ~sym))))
