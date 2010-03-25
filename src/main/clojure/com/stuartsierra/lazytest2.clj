@@ -2,7 +2,7 @@
 
 (deftype Context [parents before after])
 
-(defn open-context
+(defn- open-context
   "Opens context c, and all its parents, unless it is already active."
   [active c]
   (let [active (reduce open-context active (:parents c))
@@ -11,7 +11,7 @@
       (assoc active c (or (active c) (apply f states)))
       active)))
 
-(defn close-context
+(defn- close-context
   "Closes context c and removes it from active."
   [active c]
   (let [states (map active (:parents c))]
@@ -155,7 +155,7 @@
                  nxt))
         `(SimpleContainer ~r)))))
 
-(defn attributes
+(defn- attributes
   "Reads optional name symbol and doc string from args,
   returns [m a] where m is a map containing keys
   [:name :doc :ns :file :line] and a is remaining arguments."
@@ -167,7 +167,7 @@
         args (if (string? (first args)) (next args) args)]
     [m args]))
 
-(defn options
+(defn- options
   "Reads keyword-value pairs from args, returns [m a] where m is a map
   of keyword/value options and a is remaining arguments."
   [args]
@@ -180,8 +180,8 @@
   "Creates a test container.
   decl   => name? docstring? option* child*
 
-  name   => a symbol, will def a Var if provided.
-  child  => 'should' or 'given' or nested 'testing'
+  name  => a symbol, will def a Var if provided.
+  child => 'should' or 'given' or nested 'testing'.
 
   options => keyword/value pairs, recognized keys are:
     :contexts => vector of contexts to run only once for this container.
@@ -198,4 +198,3 @@
                     `(SimpleContainer ~children '~m nil))]
        ~(when (:name m) `(intern *ns* '~(:name m) ~csym))
        ~csym)))
-
