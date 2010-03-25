@@ -1,5 +1,31 @@
 (ns com.stuartsierra.lazytest2)
 
+;;; PROTOCOLS
+
+(defprotocol TestInvokable
+  (invoke-test [t active]))
+
+(defprotocol Successful
+  (success? [r]))
+
+
+;;; Results
+
+(deftype TestResults [source children]
+  Successful (success? [] (every? success? children)))
+
+(deftype TestPassed [source states]
+  Successful (success? [] true))
+
+(deftype TestFailed [source states]
+  Successful (success? [] false))
+
+(deftype TestThrown [source states throwable]
+  Successful (success? [] false))
+
+
+;;; Contexts
+
 (deftype Context [parents before after])
 
 (defn- open-context
@@ -44,16 +70,24 @@
                           ~@after))]
         `(def ~name (Context ~contexts ~before-fn ~after-fn '~m nil))))))
 
-(defprotocol TestInvokable
-  (invoke-test [t active]))
+(defn- has-after?
+  "True if Context c or any of its parents has an :after function."
+  [c]
+  (or (:after c)
+      (some has-after? (:parents c))))
 
-(deftype TestResults [source children])
 
-(deftype TestPassed [source states])
+;;; Assertion types
 
-(deftype TestFailed [source states])
-
-(deftype TestThrown [source states throwable])
+(deftype SimpleAssertion [pred] :as this
+  TestInvokable
+    (invoke-test [active]
+      (try
+        (if (pred)
+          (TestPassed this nil)
+          (TestFailed this nil))
+        (catch Throwable t
+          (TestThrown this nil t)))))
 
 (deftype ContextualAssertion [contexts pred] :as this
   TestInvokable
@@ -72,15 +106,8 @@
                   (filter #(not (contains? active %))
                           (reverse contexts))))))))
 
-(deftype SimpleAssertion [pred] :as this
-  TestInvokable
-    (invoke-test [active]
-      (try
-        (if (pred)
-          (TestPassed this nil)
-          (TestFailed this nil))
-        (catch Throwable t
-          (TestThrown this nil t)))))
+
+;;; Container types
 
 (deftype SimpleContainer [children] :as this
   TestInvokable
@@ -89,12 +116,6 @@
      (TestResults this (map #(invoke-test % active) children))
      (catch Throwable t
        (TestThrown this active t)))))
-
-(defn- has-after?
-  "True if Context c or any of its parents has an :after function."
-  [c]
-  (or (:after c)
-      (some has-after? (:parents c))))
 
 (deftype ContextualContainer [contexts children] :as this
   TestInvokable
@@ -114,7 +135,14 @@
                 (filter #(not (contains? active %))
                         (reverse contexts))))))))
 
-(defmacro should [& assertions]
+
+;;; Public API
+
+(defmacro should
+  "A series of assertions.  Each assertion is a simple expression,
+  which will be compiled into a function.  A string will be attached
+  as :doc metadata on the following assertion."
+  [& assertions]
   (loop [r [], as assertions]
     (if (seq as)
       (let [[doc form nxt]
@@ -131,7 +159,12 @@
                nxt))
       `(SimpleContainer ~r))))
 
-(defmacro given [bindings & assertions]
+(defmacro given
+  "A series of assertions using values from contexts.
+  bindings is a vector of name-value pairs, like let, where each value
+  is a context created with defcontext.  A string will be attached
+  as :doc metadata on the following assertion."
+  [bindings & assertions]
   (assert (vector? bindings))
   (assert (even? (count bindings)))
   (let [pairs (partition 2 bindings)
