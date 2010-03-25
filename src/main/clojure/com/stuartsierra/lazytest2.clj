@@ -23,6 +23,17 @@
 (deftype TestThrown [source states throwable]
   Successful (success? [] false))
 
+(defn result-seq
+  "Given a single TestResult, returns a depth-first sequence of that
+  TestResult and all its children."
+  [r]
+  (tree-seq :children :children r))
+
+(defn result-meta
+  "Given a TestResult, returns the metadata map of its source."
+  [r]
+  (meta (:source r)))
+
 
 ;;; Contexts
 
