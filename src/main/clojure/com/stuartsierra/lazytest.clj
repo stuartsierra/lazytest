@@ -221,12 +221,12 @@
       (recur (assoc opts (first as) (second as)) (nnext as))
       [opts as])))
 
-(defmacro testing
+(defmacro spec
   "Creates a test container.
   decl   => name? docstring? option* child*
 
   name  => a symbol, will def a Var if provided.
-  child => 'is' or 'given' or nested 'testing'.
+  child => 'is' or 'given' or nested 'spec'.
 
   options => keyword/value pairs, recognized keys are:
     :contexts => vector of contexts to run only once for this container.
@@ -234,7 +234,7 @@
   [& decl]
   (let [[m decl] (attributes decl)
         m (assoc m :line (:line (meta &form))
-                 :generator `testing
+                 :generator `spec
                  :form &form)
         [opts decl] (options decl)
         {:keys [contexts strategy]} opts

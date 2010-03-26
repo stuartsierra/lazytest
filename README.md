@@ -19,11 +19,11 @@ which they are run.
 The Basics
 ==========
 
-Tests are always defined within the `testing` macro:
+Tests are always defined within the `spec` macro:
 
-    (testing name? "docstring?" body...)
+    (spec name? "docstring?" body...)
 
-`testing` takes an optional name (a symbol), which will be def'd in
+`spec` takes an optional name (a symbol), which will be def'd in
 the current namespace.  You can call that symbol like a function.
 
 After the name comes an optional doc string.
@@ -36,27 +36,27 @@ are created with the `is` macro:
 Each assertion is an isolated expression that returns logical true or
 false:
 
-    (testing simple-addition
+    (spec simple-addition
        (is (= 2 (+ 1 1))
            (= 4 (+ 2 2))))
 
 Within `is`, any assertion may be preceded by a doc string:
 
-    (testing confused-addition
+    (spec confused-addition
        (is "Two plus two is four"
            (= 4 (+ 2 2))
            "Two plus two is five?!"
            (= 5 (+ 2 2))))
 
-`testing` expressions may be nested to any depth:
+`spec` expressions may be nested to any depth:
 
-    (testing minus "The minus function"
-      (testing "when called with one argument"
-        (testing "negates that argument"
+    (spec minus "The minus function"
+      (spec "when called with one argument"
+        (spec "negates that argument"
           (is (= -1 (- 1))
               (= -2 (- 2)))))
-      (testing "when called with two arguments"
-        (testing "subtracts"
+      (spec "when called with two arguments"
+        (spec "subtracts"
           (is (= 0 (- 5 5))
               (= 1 (- 3 2))))))
 
@@ -79,7 +79,7 @@ The :after function is optional.
 
 Contexts are used in tests with the `given` macro:
 
-    (testing ... (given [bindings...] assertions...))
+    (spec ... (given [bindings...] assertions...))
 
 `given` is like `is` but starts with a binding vector.  The binding
 vector consists of name-value pairs, like `let`, where each value is a
@@ -90,7 +90,7 @@ functions.  Example:
     (defcontext calculate-pi []
       Math/PI)
 
-    (testing pi-tests
+    (spec pi-tests
       (given [pi (calculate-pi)]
         (is (< (* pi pi) 10))))
 
