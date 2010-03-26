@@ -155,7 +155,7 @@
 
 ;;; Public API
 
-(defmacro should
+(defmacro is
   "A series of assertions.  Each assertion is a simple expression,
   which will be compiled into a function.  A string will be attached
   as :doc metadata on the following assertion."
@@ -174,7 +174,7 @@
                           :line ~(:line (meta form))}
                          nil))
                nxt))
-      `(SimpleContainer ~r {:generator should
+      `(SimpleContainer ~r {:generator is
                             :line ~(:line (meta &form))
                             :form '~&form}
                         nil))))
@@ -237,7 +237,7 @@
   decl   => name? docstring? option* child*
 
   name  => a symbol, will def a Var if provided.
-  child => 'should' or 'given' or nested 'testing'.
+  child => 'is' or 'given' or nested 'testing'.
 
   options => keyword/value pairs, recognized keys are:
     :contexts => vector of contexts to run only once for this container.
