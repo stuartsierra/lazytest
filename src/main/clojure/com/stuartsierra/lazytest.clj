@@ -172,7 +172,10 @@
                           :line ~(:line (meta form))}
                          nil))
                nxt))
-      `(SimpleContainer ~r))))
+      `(SimpleContainer ~r {:generator should
+                            :line ~(:line (meta &form))
+                            :form '~&form}
+                        nil))))
 
 (defmacro given
   "A series of assertions using values from contexts.
@@ -201,14 +204,17 @@
                             :line ~(:line (meta form))}
                            nil))
                  nxt))
-        `(SimpleContainer ~r)))))
+        `(SimpleContainer ~r {:generator given
+                              :line ~(:line (meta &form))
+                              :form '~&form}
+                          nil)))))
 
 (defn- attributes
   "Reads optional name symbol and doc string from args,
   returns [m a] where m is a map containing keys
-  [:name :doc :ns :file :line] and a is remaining arguments."
+  [:name :doc :ns :file] and a is remaining arguments."
   [args]
-  (let [m {:ns *ns*, :file *file*, :line @Compiler/LINE}
+  (let [m {:ns *ns*, :file *file*}
         m    (if (symbol? (first args)) (assoc m :name (first args)))
         args (if (symbol? (first args)) (next args) args)
         m    (if (string? (first args)) (assoc m :doc (first args)))
@@ -235,7 +241,10 @@
     :contexts => vector of contexts to run only once for this container.
     :strategy => a test-running strategy."
   [& decl]
-  (let [[m decl] (attributes decl)
+  (let [[m decl] (assoc (attributes decl)
+                   :line (:line (meta &form))
+                   :generator `testing
+                   :form &form)
         [opts decl] (options decl)
         {:keys [contexts strategy]} opts
         children (vec decl)
@@ -258,7 +267,10 @@
   name  => a symbol, will def a Var if provided.
 "
   [& decl]
-  (let [[m decl] (attributes decl)
+  (let [[m decl] (assoc (attributes decl)
+                   :line (:line (meta &form))
+                   :generator `dotest
+                   :form &form)
         bindings (first decl)
         body (next decl)
         sym (gensym "c")]
