@@ -95,7 +95,7 @@
   `(let [active# ~active
          contexts# ~contexts
          merged# (reduce open-context active# contexts#)
-         ~states (map merged contexts#)]
+         ~states (map merged# contexts#)]
      (try
       ~@body
       (finally
@@ -155,7 +155,7 @@
 
 ;;; Public API
 
-(defmacro should
+(defmacro is
   "A series of assertions.  Each assertion is a simple expression,
   which will be compiled into a function.  A string will be attached
   as :doc metadata on the following assertion."
@@ -174,7 +174,7 @@
                           :line ~(:line (meta form))}
                          nil))
                nxt))
-      `(SimpleContainer ~r {:generator should
+      `(SimpleContainer ~r {:generator 'is
                             :line ~(:line (meta &form))
                             :form '~&form}
                         nil))))
@@ -206,7 +206,7 @@
                             :line ~(:line (meta form))}
                            nil))
                  nxt))
-        `(SimpleContainer ~r {:generator given
+        `(SimpleContainer ~r {:generator 'given
                               :line ~(:line (meta &form))
                               :form '~&form}
                           nil)))))
@@ -217,9 +217,9 @@
   [:name :doc :ns :file] and a is remaining arguments."
   [args]
   (let [m {:ns *ns*, :file *file*}
-        m    (if (symbol? (first args)) (assoc m :name (first args)))
+        m    (if (symbol? (first args)) (assoc m :name (first args)) m)
         args (if (symbol? (first args)) (next args) args)
-        m    (if (string? (first args)) (assoc m :doc (first args)))
+        m    (if (string? (first args)) (assoc m :doc (first args)) m)
         args (if (string? (first args)) (next args) args)]
     [m args]))
 
@@ -237,16 +237,16 @@
   decl   => name? docstring? option* child*
 
   name  => a symbol, will def a Var if provided.
-  child => 'should' or 'given' or nested 'testing'.
+  child => 'is' or 'given' or nested 'testing'.
 
   options => keyword/value pairs, recognized keys are:
     :contexts => vector of contexts to run only once for this container.
     :strategy => a test-running strategy."
   [& decl]
-  (let [[m decl] (assoc (attributes decl)
-                   :line (:line (meta &form))
-                   :generator `testing
-                   :form &form)
+  (let [[m decl] (attributes decl)
+        m (assoc m :line (:line (meta &form))
+                 :generator `testing
+                 :form &form)
         [opts decl] (options decl)
         {:keys [contexts strategy]} opts
         children (vec decl)
@@ -269,10 +269,10 @@
   name  => a symbol, will def a Var if provided.
 "
   [& decl]
-  (let [[m decl] (assoc (attributes decl)
-                   :line (:line (meta &form))
-                   :generator `dotest
-                   :form &form)
+  (let [[m decl] (attributes decl)
+        m (assoc m :line (:line (meta &form))
+                 :generator `dotest
+                 :form &form)
         bindings (first decl)
         body (next decl)
         sym (gensym "c")]
