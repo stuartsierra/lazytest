@@ -1,95 +1,33 @@
 (ns com.stuartsierra.lazytest.report
-  (:use com.stuartsierra.lazytest
+  (:use [com.stuartsierra.lazytest :only (success?)]
         [clojure.stacktrace :only (print-cause-trace)])
   (:import (java.io File)))
 
-(defn source-name
-  "Given a Test/Assertion result, returns an identifying form for
-  the originating Test, Suite, or Assertion."  [r]
-  (let [m (meta (:source r))]
-    (or (:name m) (:form m) (:source r))))
-
-(defn source-doc
-  "Given a Test/Assertion result, returns the doc string of the
-  originating Test, Suite, or Assertion."
+(defn result-seq
+  "Given a single TestResult, returns a depth-first sequence of that
+  TestResult and all its children."
   [r]
-  (:doc (meta (:source r))))
+  (tree-seq :children :children r))
 
-(defn print-source-doc 
-  "Given a Test/Assertion result, prints the doc string of the
-  originating Test, Suite, or Assertion, if it exists."
+(defn details
+  "Given a TestResult, returns the map of :name, :ns, :file, :line,
+  :generator, and :form."
   [r]
-  (when-let [d (source-doc r)] (prn d)))
+  (meta (:source r)))
 
-(defn line-and-file
-  "Returns a string like (FILENAME:LINE) for the TestResult's
-  originating Test or Assertion."
-  [r]
-  (let [m (meta (:source r))
-        line (:line m)
-        file (:file m)
-        file (when file
-               (.getName (File. file)))]
-    (if (or line file)
-      (str "(" file ":" line ")")
-      "")))
-
-(defn print-result
+(defn print-details
   "Prints full details of a TestResult, including file and line
   number, doc string, and stack trace if applicable."
   [r]
-  (let [m (meta (:source r))]
-    (println "Test:" (source-name r))
+  (let [m (details r)]
+    (when-let [n (:name m)] (println "Name:" n))
+    (when-let [d (:doc m)] (println "Doc: " d))
+    (when (and (:form m) (not (:name m)))
+      (println "Form:" (:form m)))
     (when-let [f (:file m)] (println "File:" f))
     (when-let [l (:line m)] (println "Line:" l))
-    (println "Context states:" (:states r))
-    (when-let [d (source-doc r)] (println "Doc:" d))
-    (when-let [e (:error r)]
+    (when (seq (:states r)) (println "Context states:" (:states r)))
+    (when-let [e (:throwable r)]
       (println "STACK TRACE")
       (print-cause-trace e))))
-
-(defn simple-report
-  "Simple test result reporter.  Takes a TestResult and prints a tree
-  of child results tagged as OK/FAIL/ERROR."
-  ([r] (simple-report r ""))
-  ([r indent]
-     (cond (= :com.stuartsierra.lazytest/TestResult (type r))
-           (if (success? r)
-             (do (println indent "OK" (source-name r) (line-and-file r))
-                 (doseq [c (:children r)]
-                   (simple-report c (str indent "   "))))
-             (do (println indent "FAIL" (source-name r) (line-and-file r))
-                 (print-source-doc r)
-                 (doseq [c (:children r)]
-                   (simple-report c (str indent "   ")))))
-
-           (= :com.stuartsierra.lazytest/TestThrown (type r))
-           (do (println indent "ERROR" (source-name r) (line-and-file r))
-               (print-source-doc r)
-               (print-cause-trace (:error r) (line-and-file r)))
-
-           (= :com.stuartsierra.lazytest/AssertionPassed (type r))
-           (println indent "OK" (source-name r) (line-and-file r))
-
-           (= :com.stuartsierra.lazytest/AssertionFailed (type r))
-           (do (println indent "FAIL" (source-name r) (line-and-file r))
-               (println indent "Context states:" (:states r))
-               (print-source-doc r))
-
-           (= :com.stuartsierra.lazytest/AssertionThrown (type r))
-           (do (println indent "ERROR" (source-name r) (line-and-file r))
-               (println indent "Context states:" (:states r))
-               (print-source-doc r)
-               (print-cause-trace (:error r))))))
-
-(defn report-first-fail
-  "Lazy test result reporter.  Takes a TestResult and prints the
-  details of only the first failed test.  If all tests pass, prints
-  nothing."
-  [r]
-  (if (assertion-result? r)
-    (when-not (success? r)
-      (println "FAILURE")
-      (print-result r))
-    (report-first-fail (first (drop-while success? (:children r))))))
 
