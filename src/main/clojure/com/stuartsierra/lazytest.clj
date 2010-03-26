@@ -1,104 +1,45 @@
-;;; lazytest.clj
-
-;; by Stuart Sierra, http://stuartsierra.com/
-
-;; Copyright (c) 2010 Stuart Sierra. All rights reserved.  The use and
-;; distribution terms for this software are covered by the Eclipse
-;; Public License 1.0, which can be found at
-;; http://opensource.org/licenses/eclipse-1.0.php
-;; and in the file LICENSE.html at the root if this distribution.
-;;
-;; By using this software in any fashion, you are agreeing to be bound
-;; by the terms of this license.  You must not remove this notice, or
-;; any other, from this software.
-
-
-(ns #^{:doc "Lazy Testing Framework"
-       :author "Stuart Sierra"}
-  com.stuartsierra.lazytest)
+(ns com.stuartsierra.lazytest)
 
 ;;; PROTOCOLS
 
-;; Generic reporting function for any Test/Assertion Result
-(defprotocol TestSuccess
-  (success? [r] "Returns true if r is a 100% successful result."))
-
-;; Generic entry-point for running tests.
-(defprotocol Testable
-  (run-tests [x] "Runs tests defined for the Namespace, Var, or TestCase."))
-
-;; Internal generic Test/Assertion invocation.
 (defprotocol TestInvokable
-  (invoke-test [t states active]
-               "(private) Executes the TestCase or Assertion."))
+  (invoke-test [t active]))
 
-(declare AssertionPassed AssertionFailed AssertionThrown)
+(defprotocol Successful
+  (success? [r]))
 
-;; Fn is assumed to be an assertion predicate
-(extend-class clojure.lang.Fn TestInvokable
-  (invoke-test [f states active]
-    (try (if (apply f states)
-           (AssertionPassed f states)
-           (AssertionFailed f states))
-         (catch Throwable t#
-           (AssertionThrown f states t#)))))
 
-;;; DATATYPES
+;;; Results
 
-(declare run-test-case)
+(deftype TestResults [source children]
+  Successful (success? [] (every? success? children)))
 
-;; Context sets up state for TestCases that depend on it.  parents is
-;; a vector of parent Contexts.  before and after are functions.
-;; before takes the same number of arguments as there are parent
-;; Contexts.  after takes the same arguments, plus an additional first
-;; argument, which is the state returned by the before function.
+(deftype TestPassed [source states]
+  Successful (success? [] true))
+
+(deftype TestFailed [source states]
+  Successful (success? [] false))
+
+(deftype TestThrown [source states throwable]
+  Successful (success? [] false))
+
+(defn result-seq
+  "Given a single TestResult, returns a depth-first sequence of that
+  TestResult and all its children."
+  [r]
+  (tree-seq :children :children r))
+
+(defn result-meta
+  "Given a TestResult, returns the metadata map of its source."
+  [r]
+  (meta (:source r)))
+
+
+;;; Contexts
+
 (deftype Context [parents before after])
 
-;; TestCase represents either a "test", which associates Contexts
-;; and Assertions, or a "test suite", which is a collection of tests.
-;;
-;; contexts is a vector of Contexts.  children is a vector of
-;; Assertions (optionally compiled into Fns) or a vector of other
-;; TestCases.
-(deftype TestCase [contexts children] :as this
-  clojure.lang.IFn
-  (invoke [] (run-test-case this))
-  (invoke [active] (run-test-case this active))
-  TestInvokable
-  (invoke-test [states active]
-    (run-test-case this active)))
-
-;; TestResult represents the result of executing a TestCase.  source
-;; is the TestCase.  children is a sequence of results from child
-;; TestCases or Assertions.
-(deftype TestResult [source children]
-  TestSuccess (success? [] (every? success? children)))
- 
-;; TestThrown represents that a TestCase threw an exception somewhere
-;; NOT in an Assertion, such as during setup or in a Context function.
-;; source is the TestCase, error is the java.lang.Throwable.
-(deftype TestThrown [source error]
-  TestSuccess (success? [] false))
-
-;; AssertionPassed is returned by an Assertion whose expression
-;; evaluates logical true.
-(deftype AssertionPassed [source states]
-  TestSuccess (success? [] true))
-
-;; AssertionFailed is returned by an Assertion whose expression
-;; evaluates logical false without throwing an exception.
-(deftype AssertionFailed [source states]
-  TestSuccess (success? [] false))
-
-;; AssertionThrown is returned by an Assertion whose expression threw
-;; an exception.  error is the java.lang.Throwable.
-(deftype AssertionThrown [source states error]
-  TestSuccess (success? [] false))
-
-
-;;; CONTEXT HANDLING
-
-(defn open-context
+(defn- open-context
   "Opens context c, and all its parents, unless it is already active."
   [active c]
   (let [active (reduce open-context active (:parents c))
@@ -107,7 +48,7 @@
       (assoc active c (or (active c) (apply f states)))
       active)))
 
-(defn close-context
+(defn- close-context
   "Closes context c and removes it from active."
   [active c]
   (let [states (map active (:parents c))]
@@ -115,12 +56,6 @@
       (apply f (active c) states))
     (let [active (reduce close-context active (:parents c))]
       (dissoc active c))))
-
-(defn- coerce-context
-  "Make a Context out of c, at compile time."
-  [c]
-  (if (and (symbol? c) (= ::Context (type (var-get (resolve c)))))
-    c (Context [] (fn [] c) nil)))
 
 (defmacro defcontext
   "Defines a context.
@@ -134,8 +69,9 @@
         bodies (next decl)]
     (assert (vector? bindings))
     (assert (even? (count bindings)))
-    (let [locals (vec (map first (partition 2 bindings)))
-          contexts (vec (map (comp coerce-context second) (partition 2 bindings)))
+    (let [pairs (partition 2 bindings)
+          locals (vec (map first pairs))
+          contexts (vec (map second pairs))
           before (take-while #(not= :after %) bodies)
           after (next (drop-while #(not= :after %) bodies))
           before-fn `(fn ~locals ~@before)]
@@ -145,272 +81,195 @@
                           ~@after))]
         `(def ~name (Context ~contexts ~before-fn ~after-fn '~m nil))))))
 
-
-;;; TEST RUNNING STRATEGIES
-
-(defn- map1
-  "Like map but does not chunk results; slower but lazier than map."
-  [f coll]
-  (lazy-seq
-   (when (seq coll)
-     (cons (f (first coll))
-           (map1 f (next coll))))))
-
-(defn default-strategy []
-  "Default test execution strategy; uses (chunked) map."
-  [map default-strategy])
-
-(defn lazy-strategy []
-  "Truly lazy test execution strategy; uses (unchunked) map1."
-  [map1 lazy-strategy])
-
-(defn parallel-strategy
-  "Parallel execution strategy; uses pmap."
-  []
-  [pmap parallel-strategy])
-
-(defn parallel-upto
-  "Returns a strategy that is parallel up to n levels of recursion,
-  then reverts to default-strategy."
-  [n]
-  (if (zero? n)
-    default-strategy
-    [pmap #(parallel-upto (dec n))]))
-
-
-;;; TEST CASE HANDLING
-
 (defn- has-after?
   "True if Context c or any of its parents has an :after function."
   [c]
   (or (:after c)
       (some has-after? (:parents c))))
 
-(defn run-test-case
-  "Executes a test case in context.  active is the map of currently
-  active Contexts, empty by default.  strategy is a function that
-  determines how tests are executed, default-strategy by default."
-  ([t] (run-test-case t {}))
-  ([t active]
-     {:pre [(= ::TestCase (type t))
-            (every? #(= ::Context (type %)) (:contexts t))]}
-     (try
-      (let [[mapper child-strategy] (default-strategy)
-            merged (reduce open-context active (:contexts t))
-            states (map merged (:contexts t))
-            results (mapper
-                     #(invoke-test % states merged)
-                     (:children t))]
-        ;; Force non-lazy execution to handle shutdown properly:
-        (when (some has-after? (:contexts t))
-          (dorun results)
-          (dorun (reduce close-context merged
-                         ;; Only close contexts that weren't active at start:
-                         (filter #(not (contains? active %))
-                                 (reverse (:contexts t))))))
-        (TestResult t results))
-      (catch Throwable e (TestThrown t e)))))
 
-(defmacro test-case
-  "Defines a test case containing assertions that share the same contexts.
-  decl => docstring? [binding*] assertion*
+;;; Assertion types
+
+(deftype SimpleAssertion [pred] :as this
+  TestInvokable
+    (invoke-test [active]
+      (try
+        (if (pred)
+          (TestPassed this nil)
+          (TestFailed this nil))
+        (catch Throwable t
+          (TestThrown this nil t)))))
+
+(deftype ContextualAssertion [contexts pred] :as this
+  TestInvokable
+    (invoke-test [active]
+      (let [merged (reduce open-context active contexts)
+            states (map merged contexts)]
+        (try
+         (if (apply pred states)
+           (TestPassed this states)
+           (TestFailed this states))
+         (catch Throwable t
+           (TestThrown this states t))
+         (finally
+          (reduce close-context merged
+                  ;; Only close contexts that weren't active at start:
+                  (filter #(not (contains? active %))
+                          (reverse contexts))))))))
+
+
+;;; Container types
+
+(deftype SimpleContainer [children] :as this
+  clojure.lang.IFn
+    (invoke [] (invoke-test this {}))
+  TestInvokable
+    (invoke-test [active]
+      (try
+       (TestResults this (map #(invoke-test % active) children))
+       (catch Throwable t
+         (TestThrown this active t)))))
+
+(deftype ContextualContainer [contexts children] :as this
+  clojure.lang.IFn
+    (invoke [] (invoke-test this {}))
+  TestInvokable
+    (invoke-test [active]
+      (let [merged (reduce open-context active contexts)
+            states (map merged contexts)]
+        (try
+         (let [results (map #(invoke-test % active) children)]
+           ;; Force non-lazy evaluation when contexts need closing:
+           (when (some has-after? contexts) (dorun results))
+           (TestResults this results))
+         (catch Throwable t
+           (TestThrown this states t))
+         (finally
+          (reduce close-context merged
+                  ;; Only close contexts that weren't active at start:
+                  (filter #(not (contains? active %))
+                          (reverse contexts))))))))
+
+
+;;; Public API
+
+(defmacro should
+  "A series of assertions.  Each assertion is a simple expression,
+  which will be compiled into a function.  A string will be attached
+  as :doc metadata on the following assertion."
+  [& assertions]
+  (loop [r [], as assertions]
+    (if (seq as)
+      (let [[doc form nxt]
+            (if (string? (first as))
+              [(first as) (second as) (nnext as)]
+              [nil (first as) (next as)])]
+        (recur (conj r `(SimpleAssertion
+                         (fn [] ~form)
+                         {:doc ~doc,
+                          :form '~form
+                          :file *file*,
+                          :line ~(:line (meta form))}
+                         nil))
+               nxt))
+      `(SimpleContainer ~r))))
+
+(defmacro given
+  "A series of assertions using values from contexts.
+  bindings is a vector of name-value pairs, like let, where each value
+  is a context created with defcontext.  A string will be attached
+  as :doc metadata on the following assertion."
+  [bindings & assertions]
+  (assert (vector? bindings))
+  (assert (even? (count bindings)))
+  (let [pairs (partition 2 bindings)
+        locals (vec (map first pairs))
+        contexts (vec (map second pairs))]
+    (loop [r [], as assertions]
+      (if (seq as)
+        (let [[doc form nxt]
+              (if (string? (first as))
+                [(first as) (second as) (nnext as)]
+                [nil (first as) (next as)])]
+          (recur (conj r `(ContextualAssertion
+                           ~contexts
+                           (fn ~locals ~form)
+                           {:doc ~doc,
+                            :locals '~locals
+                            :form '~form
+                            :file *file*,
+                            :line ~(:line (meta form))}
+                           nil))
+                 nxt))
+        `(SimpleContainer ~r)))))
+
+(defn- attributes
+  "Reads optional name symbol and doc string from args,
+  returns [m a] where m is a map containing keys
+  [:name :doc :ns :file :line] and a is remaining arguments."
+  [args]
+  (let [m {:ns *ns*, :file *file*, :line @Compiler/LINE}
+        m    (if (symbol? (first args)) (assoc m :name (first args)))
+        args (if (symbol? (first args)) (next args) args)
+        m    (if (string? (first args)) (assoc m :doc (first args)))
+        args (if (string? (first args)) (next args) args)]
+    [m args]))
+
+(defn- options
+  "Reads keyword-value pairs from args, returns [m a] where m is a map
+  of keyword/value options and a is remaining arguments."
+  [args]
+  (loop [opts {}, as args]
+    (if (and (seq as) (keyword? (first as)))
+      (recur (assoc opts (first as) (second as)) (nnext as))
+      [opts as])))
+
+(defmacro testing
+  "Creates a test container.
+  decl   => name? docstring? option* child*
+
+  name  => a symbol, will def a Var if provided.
+  child => 'should' or 'given' or nested 'testing'.
+
+  options => keyword/value pairs, recognized keys are:
+    :contexts => vector of contexts to run only once for this container.
+    :strategy => a test-running strategy."
+  [& decl]
+  (let [[m decl] (attributes decl)
+        [opts decl] (options decl)
+        {:keys [contexts strategy]} opts
+        children (vec decl)
+        sym (gensym "c")]
+    `(let [~sym ~(if contexts
+                    (do (assert (vector? contexts))
+                        `(ContextualContainer ~contexts ~children '~m nil))
+                    `(SimpleContainer ~children '~m nil))]
+       ~(when (:name m) `(intern *ns* '~(:name m) ~sym))
+       ~sym)))
+
+(defmacro dotest
+  "Creates an assertion function consisting of arbitrary code.
+  Passes if it does not throw an exception.  Use assert for value
+  tests.
+
+  decl    => name? docstring? [binding*] body*
   binding => symbol context
-  assertion => docstring? expression"
-  [name & decl]
-  (let [m {:name name, :ns *ns*, :file *file*, :line @Compiler/LINE}
-        m (if (string? (first decl)) (assoc m :doc (first decl)) m)
-        decl (if (string? (first decl)) (next decl) decl)
+
+  name  => a symbol, will def a Var if provided.
+"
+  [& decl]
+  (let [[m decl] (attributes decl)
         bindings (first decl)
-        assertions (next decl)]
+        body (next decl)
+        sym (gensym "c")]
     (assert (vector? bindings))
     (assert (even? (count bindings)))
-    (let [locals (vec (map first (partition 2 bindings)))
-          contexts (vec (map (comp coerce-context second)
-                             (partition 2 bindings)))]
-      (assert (every? symbol locals))
-      `(TestCase
-        ~contexts
-        ~(loop [r [], as assertions]
-           (if (seq as)
-             (if (string? (first as))
-               (recur (conj r `(with-meta (fn ~locals ~(second as))
-                                 {:doc ~(first as),
-                                  :form '~(second as),
-                                  :file *file*,
-                                  :line @Compiler/LINE}))
-                      (nnext as))
-               (recur (conj r `(with-meta (fn ~locals ~(first as))
-                                 {:form '~(first as),
-                                  :file *file*,
-                                  :line @Compiler/LINE}))
-                      (next as)))
-             r))
-        '~m nil))))
-
-(defmacro deftest [name & decl]
-  `(def ~name (test-case ~name ~@decl)))
-
-(defmacro suite
-  "Return a test suite containing other test cases or suites.
-  decl => docstring? [context*] children*"
-  [name & decl]
-  (let [m {:name name, :ns *ns*, :file *file*, :line @Compiler/LINE}
-        m (if (string? (first decl)) (assoc m :doc (first decl)) m)
-        decl (if (string? (first decl)) (next decl) decl)
-        contexts (first decl)
-        children (next decl)]
-    (assert (vector? contexts))
-    `(TestCase ~contexts ~(vec children) '~m nil)))
-
-(defmacro defsuite [name & decl]
-  `(def ~name (suite ~name ~@decl)))
-
-
-(defmacro given [& decl]
-  (let [name (if (symbol? (first decl)) (first decl) (gensym "testing"))
-        named? (symbol? (first decl))
-        decl (if (symbol? (first decl)) (next decl) decl)
-        doc  (if (string? (first decl)) (first decl) nil)
-        decl (if (string? (first decl)) (next decl) decl)
-        bindings (first decl)
-        assertions (next decl)
-        metadata {:name name, :ns *ns*, :file *file*, :line @Compiler/LINE}]
-    (assert (vector? bindings))
-    (assert (even? (count bindings)))
-    (let  [locals (vec (map first (partition 2 bindings)))
-           contexts (vec (map second (partition 2 bindings)))
-           children (loop [r [], as assertions]
-                      (if (seq as)
-                        (if (string? (first as))
-                          (recur (conj r `(with-meta (fn ~locals ~(second as))
-                                            {:doc ~(first as),
-                                             :form '~(second as),
-                                             :file *file*,
-                                             :line @Compiler/LINE}))
-                                 (nnext as))
-                          (recur (conj r `(with-meta (fn ~locals ~(first as))
-                                            {:form '~(first as),
-                                             :file *file*,
-                                             :line @Compiler/LINE}))
-                                 (next as)))
-                        r))]
-      `(let [tc# (TestCase ~contexts ~(vec children) '~metadata nil)]
-         (when ~named? (intern *ns* '~name tc#))
-         tc#))))
-
-(defmacro testing [& decl]
-  (let [name (if (symbol? (first decl)) (first decl) (gensym "testing"))
-        named? (symbol? (first decl))
-        decl (if (symbol? (first decl)) (next decl) decl)
-        doc  (if (string? (first decl)) (first decl) nil)
-        decl (if (string? (first decl)) (next decl) decl)
-        [opt val] (if (keyword? (first decl))
-                    [(first decl) (second decl)] [nil nil])
-        decl (if (keyword? (first decl)) (nnext decl) decl)
-        metadata {:doc doc, :name name, :ns *ns*,
-                  :file *file*, :line @Compiler/LINE}
-        locals (if (= opt :given)
-                 (vec (map first (partition 2 val))) [])
-        contexts (cond (= opt :given) (vec (map second (partition 2 val)))
-                       (= opt :using) val
-                       (nil? opt) [])
-        children (loop [r [], cs decl]
-                   (if (seq cs)
-                     (let [it (first cs)]
-                       (if (and (list? it)
-                                (symbol? (first it))
-                                (= #'testing (resolve (first it))))
-                         (recur (conj r it) (next cs))
-                         (recur (conj r `(fn ~locals ~it)) (next cs))))
-                     r))]
-    (assert (vector? contexts))
-    `(let [tc# (TestCase ~contexts ~children '~metadata nil)]
-       (when ~named? (intern *ns* '~name tc#))
-       tc#)))
-
-
-;;; TEST RESULT HANDLING
-
-(defn assertion-result?
-  "True if r is an assertion result (pass, fail, or throw)"
-  [r]
-  (#{::AssertionPassed ::AssertionFailed ::AssertionThrown}
-   (type r)))
-
-(defn result-seq
-  "Given a single TestResult, returns a depth-first sequence of that
-  TestResult and all its children."
-  [r]
-  (tree-seq :children :children r))
-
-
-;;; TESTABLE IMPLEMENTATIONS
-
-(defn var-test-case
-  "Returns a TestCase for a Var.  If the Var's value is a TestCase,
-  returns that.  If the Var's :test metadata is a TestCase, returns
-  that.  If the Var's :test metadata is a function, generates a
-  TestCase with an assertion that calls the function.  If none of
-  these are true, returns nil."  [v]
-  (let [value (try (var-get v)
-                   (catch Exception e nil))]
-    (cond (= ::TestCase (type value))
-          value
-
-          (= ::TestCase (type (:test (meta v))))
-          (:test (meta v))
-
-          (fn? (:test (meta v)))
-          (TestCase [] [(:test (meta v))]
-                    {:doc "Var :test metadata function."
-                     :name (:name (meta v))
-                     :ns (:ns (meta v))}
-                    nil)
-
-          :else nil)))
- 
-(defn test-var
-  "Finds and runs a TestCase for the Var."
-  [v]
-  (run-test-case (var-test-case v)))
- 
-(defn all-vars-test-case
-  "Returns a TestCase that tests all Vars in namespace n."
-  [n]
-  (TestCase [] (vec (filter identity
-                            (map var-test-case (vals (ns-interns n)))))
-            {:name 'all-vars-test
-             :doc "Generated by all-vars-test-case"}
-            nil))
-
-(defn ns-test-case
-  "Returns a TestCase for namespace n.  If the namespace's :test
-  metadata is a TestCase, returns that.  Otherwise, generates a
-  TestCase that tests all Vars interned in the namespace."
-  [n]
-  (let [n (the-ns n)
-        t (:test (meta n))]
-    (if (= ::TestCase (type t))
-      t
-      (all-vars-test-case n))))
- 
-(defn test-ns
-  "Finds and runs a TestCase for the namespace."
-  [n]
-  (run-test-case (ns-test-case n)))
- 
-(extend ::TestCase Testable {:run-tests run-test-case})
-(extend clojure.lang.Var Testable {:run-tests test-var})
-(extend clojure.lang.Namespace Testable {:run-tests test-ns})
-
-(defn all-ns-test-case
-  "Returns a generated TestCase for tests in all namespaces."
-  []
-  (TestCase [] (vec (map ns-test-case (all-ns)))
-            {:name 'all-ns-test
-             :doc "Generated by all-ns-test-case"}
-            nil))
-
-(defn test-all-ns
-  "Runs tests in all namespaces."
-  [] (run-test-case (all-ns-test-case)))
+    (let [pairs (partition 2 bindings)
+          locals (map first pairs)
+          contexts (map second pairs)]
+      `(let [~sym ~(if (seq contexts)
+                     `(ContextualAssertion ~contexts (fn ~locals ~@body :ok)
+                                           '~m nil)
+                     `(SimpleAssertion (fn [] ~@body :ok) '~m nil))]
+         ~(when (:name m) `(intern *ns* '~(:name m) ~sym))
+         ~sym))))
