@@ -87,6 +87,22 @@
   (or (:after c)
       (some has-after? (:parents c))))
 
+(defmacro #^{:private true} try-contexts
+  "Creates a try/finally block that opens contexts, stores their state
+  in states, and finally closes contexts.  active is the current map
+  of opened contexts."
+  [active contexts states & body]
+  `(let [active# ~active
+         contexts# ~contexts
+         merged# (reduce open-context active# contexts#)
+         ~states (map merged contexts#)]
+     (try
+      ~@body
+      (finally
+       (reduce close-context merged#
+               ;; Only close contexts that weren't active at start:
+               (filter #(not (contains? active# %))
+                       (reverse contexts#)))))))
 
 ;;; Assertion types
 
@@ -103,19 +119,12 @@
 (deftype ContextualAssertion [contexts pred] :as this
   TestInvokable
     (invoke-test [active]
-      (let [merged (reduce open-context active contexts)
-            states (map merged contexts)]
-        (try
-         (if (apply pred states)
-           (TestPassed this states)
-           (TestFailed this states))
-         (catch Throwable t
-           (TestThrown this states t))
-         (finally
-          (reduce close-context merged
-                  ;; Only close contexts that weren't active at start:
-                  (filter #(not (contains? active %))
-                          (reverse contexts))))))))
+      (try-contexts active contexts states
+        (if (apply pred states)
+          (TestPassed this states)
+          (TestFailed this states))
+        (catch Throwable t
+          (TestThrown this states t)))))
 
 
 ;;; Container types
@@ -128,27 +137,20 @@
       (try
        (TestResults this (map #(invoke-test % active) children))
        (catch Throwable t
-         (TestThrown this active t)))))
+         (TestThrown this nil t)))))
 
 (deftype ContextualContainer [contexts children] :as this
   clojure.lang.IFn
     (invoke [] (invoke-test this {}))
   TestInvokable
     (invoke-test [active]
-      (let [merged (reduce open-context active contexts)
-            states (map merged contexts)]
-        (try
-         (let [results (map #(invoke-test % active) children)]
-           ;; Force non-lazy evaluation when contexts need closing:
-           (when (some has-after? contexts) (dorun results))
-           (TestResults this results))
-         (catch Throwable t
-           (TestThrown this states t))
-         (finally
-          (reduce close-context merged
-                  ;; Only close contexts that weren't active at start:
-                  (filter #(not (contains? active %))
-                          (reverse contexts))))))))
+      (try-contexts active contexts states
+        (let [results (map #(invoke-test % active) children)]
+          ;; Force non-lazy evaluation when contexts need closing:
+          (when (some has-after? contexts) (dorun results))
+          (TestResults this results))
+        (catch Throwable t
+          (TestThrown this states t)))))
 
 
 ;;; Public API
