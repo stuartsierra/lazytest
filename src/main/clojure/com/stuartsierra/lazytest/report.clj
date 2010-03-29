@@ -19,14 +19,21 @@
   "Prints full details of a TestResult, including file and line
   number, doc string, and stack trace if applicable."
   [r]
+  (println
+   (cond (success? r) "SUCCESS"
+         (:throwable r) "ERROR"
+         :else "FAIL"))
   (let [m (details r)]
     (when-let [n (:name m)] (println "Name:" n))
     (when-let [d (:doc m)] (println "Doc: " d))
     (when (and (:form m) (not (:name m)))
-      (println "Form:" (:form m)))
+      (print "Form: ")
+      (prn (:form m)))
     (when-let [f (:file m)] (println "File:" f))
     (when-let [l (:line m)] (println "Line:" l))
-    (when (seq (:states r)) (println "Context states:" (:states r)))
+    (when (seq (:states r))
+      (print "Context states: ")
+      (prn (:states r)))
     (when-let [e (:throwable r)]
       (println "STACK TRACE")
       (print-cause-trace e))))
