@@ -12,15 +12,19 @@
 ;;; Results
 
 (deftype TestResults [source children]
+  clojure.lang.IPersistentMap
   Successful (success? [] (every? success? children)))
 
 (deftype TestPassed [source states]
+  clojure.lang.IPersistentMap
   Successful (success? [] true))
 
 (deftype TestFailed [source states]
+  clojure.lang.IPersistentMap
   Successful (success? [] false))
 
 (deftype TestThrown [source states throwable]
+  clojure.lang.IPersistentMap
   Successful (success? [] false))
 
 

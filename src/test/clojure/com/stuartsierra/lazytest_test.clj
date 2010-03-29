@@ -41,6 +41,22 @@
 (assert (success? (first-child)))
 (assert (not (success? (second-child))))
 
+;;; RSpec-style definitions
+
+(spec psycho "Psychotic addition"
+      (spec "with positive numbers"
+            (spec "should work for"
+                  (is "three"
+                      (= 3 (+ 1 1))
+                      "five"
+                      (= 5 (+ 2 2)))))
+      (spec "with negative numbers"
+            (spec "should work for"
+                  (is "three"
+                      (= -3 (+ -1 -1))
+                      "five"
+                      (= -5 (+ -2 -2))))))
+
 ;;; Contexts
 
 (declare *log*)
