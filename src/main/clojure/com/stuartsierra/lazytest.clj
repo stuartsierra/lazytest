@@ -157,6 +157,7 @@
                nxt))
       `(SimpleContainer ~r {:generator 'is
                             :line ~(:line (meta &form))
+                            :file *file*
                             :form '~&form}
                         nil))))
 
@@ -180,11 +181,24 @@
           (= (+ 8 -1) 7))
 "
   [argv expr & values]
-  (let [argc (count argv)]
+  (let [argc (count argv)
+        sym (gensym "f")]
     (assert (vector? argv))
     (assert (zero? (rem (count values) argc)))
-    `(is ~@(map (fn [vs] `((fn ~argv ~expr) ~@vs))
-                (partition argc values)))))
+    `(let [~sym (fn ~argv ~expr)]
+       (SimpleContainer ~(vec (map (fn [vs]
+                                     `(SimpleAssertion
+                                       (fn [] (~sym ~@vs))
+                                       {:form '(are ~argv ~expr ~@vs)
+                                        :file *file*
+                                        :line ~(some #(:line (meta %)) vs)}
+                                       nil))
+                                   (partition argc values)))
+                        {:generator 'are
+                         :file *file*
+                         :line ~(:line (meta &form))
+                         :form '~&form}
+                        nil))))
 
 (defmacro given
   "A series of assertions using values from contexts.
