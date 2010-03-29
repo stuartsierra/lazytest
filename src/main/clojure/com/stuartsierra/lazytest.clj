@@ -279,7 +279,7 @@
        ~(when (:name m) `(intern *ns* '~(:name m) ~sym))
        ~sym)))
 
-(defmacro dotest
+(defmacro spec-do
   "Creates an assertion function consisting of arbitrary code.
   Passes if it does not throw an exception.  Use assert for value
   tests.
@@ -292,7 +292,7 @@
   [& decl]
   (let [[m decl] (attributes decl)
         m (assoc m :line (:line (meta &form))
-                 :generator `dotest
+                 :generator `spec-do
                  :form &form)
         bindings (first decl)
         body (next decl)
