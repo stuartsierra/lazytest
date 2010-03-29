@@ -160,6 +160,32 @@
                             :form '~&form}
                         nil))))
 
+(defmacro are
+  "A series of assertions reusing a single expression.
+  Creates a function of (fn argv expr).  Values will be partitioned
+  into groups of the same size as argv.  The function will be applied
+  to each group.
+
+  Example:
+
+      (are [x y z] (= (+ x y) z)
+          2 2  4
+          3 2  5
+          8 -1 7)
+
+      ;; Compiles to:
+
+      (is (= (+ 2 2) 4)
+          (= (+ 3 2) 5)
+          (= (+ 8 -1) 7))
+"
+  [argv expr & values]
+  (let [argc (count argv)]
+    (assert (vector? argv))
+    (assert (zero? (rem (count values) argc)))
+    `(is ~@(map (fn [vs] `((fn ~argv ~expr) ~@vs))
+                (partition argc values)))))
+
 (defmacro given
   "A series of assertions using values from contexts.
   bindings is a vector of name-value pairs, like let, where each value
@@ -268,3 +294,4 @@
                      `(SimpleAssertion (fn [] ~@body :ok) '~m nil))]
          ~(when (:name m) `(intern *ns* '~(:name m) ~sym))
          ~sym))))
+
