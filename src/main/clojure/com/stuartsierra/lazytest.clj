@@ -174,7 +174,7 @@
           3 2  5
           8 -1 7)
 
-      ;; Compiles to:
+      ;; Equivalent to:
 
       (is (= (+ 2 2) 4)
           (= (+ 3 2) 5)
