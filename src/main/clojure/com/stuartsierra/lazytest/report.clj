@@ -71,25 +71,28 @@
       (do (print ".") (flush))
       (do (newline) (print-details c))))
   (newline)
-  (println "Done."))
+  (print-summary r))
 
 (defn- spec-report* [r parents]
   (if (seq (:children r))
     (doseq [c (:children r)]
       (spec-report* c (conj parents r)))
-    (when-not (success? r)
-      (newline)
-      (print-details
-       (assoc r :source
-              (vary-meta (:source r) assoc :doc
-                         (apply str (interpose " "
-                                               (filter identity
-                                                       (map #(:doc (details %))
-                                                            (conj parents r)))))))))))
+    (if (success? r)
+      (do (print ".") (flush))
+      (do (newline)
+          (print-details
+           (assoc r :source
+                  (vary-meta (:source r) assoc :doc
+                             (apply str (interpose " "
+                                                   (filter identity
+                                                           (map #(:doc (details %))
+                                                                (conj parents r))))))))))))
 
-(defn spec-report [r]
+(defn spec-report
+  "Like dot-report but concatenates :doc strings for nested specs."
+  [r]
   (println "Running" (:name (details r)))
   (spec-report* r [])
   (newline)
-  (println "Done."))
+  (print-summary r))
 
