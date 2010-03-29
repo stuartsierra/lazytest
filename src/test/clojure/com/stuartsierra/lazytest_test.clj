@@ -2,6 +2,8 @@
   (:use com.stuartsierra.lazytest
         com.stuartsierra.lazytest.report))
 
+;;; Basics
+
 (spec simple-asserts
       (is (= 2 (+ 1 1))
           (= 4 (+ 2 2))
@@ -26,20 +28,35 @@
 (assert (success? (first (:children (simple-suite)))))
 (assert (not (success? (second (:children (simple-suite))))))
 
+;;; Nested definitions
+
+(spec top-level
+      (spec first-child
+            (is (= 1 1)))
+      (spec second-child
+            (is (= 2 1))))
+
+(assert (not (success? (top-level))))
+(assert (success? (first (:children (top-level)))))
+(assert (success? (first-child)))
+(assert (not (success? (second-child))))
+
+;;; Contexts
+
 (declare *log*)
 
 (defcontext c1 []
   (swap! *log* conj :open-c1)
   1
   :after [s]
-;; (assert (= s 1))
+  (assert (= s 1))
   (swap! *log* conj :close-c1))
 
 (defcontext c2 []
   (swap! *log* conj :open-c2)
   2
   :after [s]
-;; (assert (= s 2))
+  (assert (= s 2))
   (swap! *log* conj :close-c2))
 
 (defmacro with-log [& body]
