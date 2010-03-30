@@ -1,5 +1,6 @@
 (ns com.stuartsierra.lazytest.report
   (:use [com.stuartsierra.lazytest :only (success?)]
+        [com.stuartsierra.lazytest.color :only (colorize)]
         [clojure.stacktrace :only (print-cause-trace)])
   (:import (java.io File)))
 
@@ -20,9 +21,9 @@
   number, doc string, and stack trace if applicable."
   [r]
   (println
-   (cond (success? r) "SUCCESS"
-         (:throwable r) "ERROR"
-         :else "FAIL"))
+   (cond (success? r) (colorize "SUCCESS" :fg-green)
+         (:throwable r) (colorize "ERROR" :fg-red)
+         :else (colorize "FAIL" :fg-red)))
   (let [m (details r)]
     (when-let [n (:name m)] (println "Name:" n))
     (when-let [d (:doc m)] (println "Doc: " d))
@@ -59,16 +60,22 @@
 (defn print-summary [r]
   (let [{:keys [assertions pass fail error]} (summary r)]
     (println "Ran" assertions "assertions.")
-    (println fail "failures," error "errors.")))
+    (print (colorize (str fail " failures")
+                     (if (zero? fail) :fg-green :fg-red)))
+    (print ", ")
+    (print (colorize (str error " errors")
+                     (if (zero? error) :fg-green :fg-red)))
+    (newline)))
 
 (defn dot-report
   "Simple spec report.  Prints a dot for each passed assertion; prints
   details for each failure."
   [r]
-  (println "Running" (:name (details r)))
+  (println "Running" (:name (details r))
+           "at" (str (java.util.Date.)))
   (doseq [c (assertion-results r)]
     (if (success? c)
-      (do (print ".") (flush))
+      (do (print (colorize "." :fg-green)) (flush))
       (do (newline) (print-details c))))
   (newline)
   (print-summary r))
@@ -78,7 +85,7 @@
     (doseq [c (:children r)]
       (spec-report* c (conj parents r)))
     (if (success? r)
-      (do (print ".") (flush))
+      (do (print (colorize "." :fg-green)) (flush))
       (do (newline)
           (print-details
            (assoc r :source
@@ -91,7 +98,8 @@
 (defn spec-report
   "Like dot-report but concatenates :doc strings for nested specs."
   [r]
-  (println "Running" (:name (details r)))
+  (println "Running" (:name (details r))
+           "at" (str (java.util.Date.)))
   (spec-report* r [])
   (newline)
   (print-summary r))
