@@ -81,19 +81,6 @@
                      (if (zero? pending) :fg-green :fg-yellow)))
     (newline)))
 
-(defn dot-report
-  "Simple spec report.  Prints a dot for each passed assertion; prints
-  details for each failure."
-  [r]
-  (println "Running" (:name (details r))
-           "at" (str (java.util.Date.)))
-  (doseq [c (assertion-results r)]
-    (if (and (success? c) (not (pending? c)))
-      (do (print (colorize "." :fg-green)) (flush))
-      (do (newline) (print-details c))))
-  (newline)
-  (print-summary r))
-
 (defn- spec-report* [r parents]
   (if (seq (:children r))
     (doseq [c (:children r)]
@@ -110,7 +97,10 @@
                                                                 (conj parents r))))))))))))
 
 (defn spec-report
-  "Like dot-report but concatenates :doc strings for nested specs."
+  "Simple report of spec results.  Prints a dot for each passed
+  assertion; prints details for each failure or pending spec.
+  Concatenates :doc strings for nested specs.  Uses ANSI color if
+  com.stuartsierra.lazytest.color/colorize? is true."
   [r]
   (println "Running" (:name (details r))
            "at" (str (java.util.Date.)))
