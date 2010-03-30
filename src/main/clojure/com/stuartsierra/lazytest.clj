@@ -5,27 +5,46 @@
 (defprotocol TestInvokable
   (invoke-test [t active]))
 
-(defprotocol Successful
-  (success? [r]))
+(defprotocol TestResult
+  (success? [r] "True if this result and all its children passed.")
+  (pending? [r] "True if this is the result of an empty test.")
+  (error? [r] "True if this is the result of a thrown exception.")
+  (container? [r] "True if this is a container for other results."))
 
 
 ;;; Results
 
-(deftype TestResults [source children]
+(deftype TestResultContainer [source children]
   clojure.lang.IPersistentMap
-  Successful (success? [] (every? success? children)))
+  TestResult
+    (success? [] (every? success? children))
+    (pending? [] (if (seq children) false true))
+    (error? [] false)
+    (container? [] true))
 
 (deftype TestPassed [source states]
   clojure.lang.IPersistentMap
-  Successful (success? [] true))
+  TestResult
+    (success? [] true)
+    (pending? [] false)
+    (error? [] false)
+    (container? [] false))
 
 (deftype TestFailed [source states]
   clojure.lang.IPersistentMap
-  Successful (success? [] false))
+  TestResult
+    (success? [] false)
+    (pending? [] false)
+    (error? [] false)
+    (container? [] false))
 
 (deftype TestThrown [source states throwable]
   clojure.lang.IPersistentMap
-  Successful (success? [] false))
+  TestResult
+    (success? [] false)
+    (pending? [] false)
+    (error? [] true)
+    (container? [] false))
 
 
 ;;; Contexts
@@ -119,7 +138,7 @@
   TestInvokable
     (invoke-test [active]
       (try
-       (TestResults this (map #(invoke-test % active) children))
+       (TestResultContainer this (map #(invoke-test % active) children))
        (catch Throwable t
          (TestThrown this nil t)))))
 
@@ -133,7 +152,7 @@
          (let [results (map #(invoke-test % merged) children)]
            ;; Force non-lazy evaluation when contexts need closing:
            (when (some has-after? contexts) (dorun results))
-           (TestResults this results))
+           (TestResultContainer this results))
          (catch Throwable t (TestThrown this nil t))
          (finally (close-local-contexts contexts merged active))))))
 

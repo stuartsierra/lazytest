@@ -1,5 +1,6 @@
 (ns com.stuartsierra.lazytest.report
-  (:use [com.stuartsierra.lazytest :only (success?)]
+  (:use [com.stuartsierra.lazytest :only (success? container?
+                                          error? pending?)]
         [com.stuartsierra.lazytest.color :only (colorize)]
         [clojure.stacktrace :only (print-cause-trace)])
   (:import (java.io File)))
@@ -21,11 +22,13 @@
   number, doc string, and stack trace if applicable."
   [r]
   (println
-   (cond (success? r) (colorize "SUCCESS" :fg-green)
-         (:throwable r) (colorize "ERROR" :fg-red)
+   (cond (pending? r) (colorize "PENDING" :fg-yellow)
+         (success? r) (colorize "SUCCESS" :fg-green)
+         (error? r) (colorize "ERROR" :fg-red)
          :else (colorize "FAIL" :fg-red)))
   (let [m (details r)]
     (when-let [n (:name m)] (println "Name:" n))
+    (when-let [nn (:ns m)] (println "NS:  " (ns-name nn)))
     (when-let [d (:doc m)] (println "Doc: " d))
     (when (and (:form m) (not (:name m)))
       (print "Form: ")
@@ -43,28 +46,39 @@
   "Returns a sequence of all assertion results (not grouped test
   results) in the tree rooted at r."
   [r]
-  (filter #(empty? (:children %)) (result-seq r)))
+  (filter #(not (container? %)) (result-seq r)))
+
+(defn- inc-keys
+  "Increment the value of each key in map m."
+  [m & keys]
+  (reduce (fn [m k] (assoc m k (inc (get m k 0))))
+          m keys))
 
 (defn summary
   "Returns a map of :total, :pass, :fail, and :error
   counts for assertions in the results tree rooted at r."
-  [r]
+  [res]
   (reduce (fn [m r]
-            (assoc (cond (success? r) (assoc m :pass (inc (:pass m)))
-                         (:throwable r) (assoc m :error (inc (:error m)))
-                         :else (assoc m :fail (inc (:fail m))))
-              :assertions (inc (:assertions m 0))))
-          {:assertions 0, :pass 0, :fail 0, :error 0}
-          (assertion-results r)))
+            (cond (pending? r) (inc-keys m :pending)
+                  (container? r) m
+                  (success? r) (inc-keys m :assertions :pass)
+                  (error? r) (inc-keys m :assertions :error)
+                  :else (inc-keys m :assertions :fail)))
+          {:assertions 0, :pass 0, :fail 0, :error 0, :pending 0}
+          (result-seq res)))
 
 (defn print-summary [r]
-  (let [{:keys [assertions pass fail error]} (summary r)]
-    (println "Ran" assertions "assertions.")
+  (let [{:keys [assertions pass fail error pending]} (summary r)]
+    (println (colorize (str "Ran " assertions " assertions.")
+                       (if (zero? assertions) :fg-yellow :reset)))
     (print (colorize (str fail " failures")
                      (if (zero? fail) :fg-green :fg-red)))
     (print ", ")
     (print (colorize (str error " errors")
                      (if (zero? error) :fg-green :fg-red)))
+    (print ", ")
+    (print (colorize (str pending " pending")
+                     (if (zero? pending) :fg-green :fg-yellow)))
     (newline)))
 
 (defn dot-report
@@ -74,7 +88,7 @@
   (println "Running" (:name (details r))
            "at" (str (java.util.Date.)))
   (doseq [c (assertion-results r)]
-    (if (success? c)
+    (if (and (success? c) (not (pending? c)))
       (do (print (colorize "." :fg-green)) (flush))
       (do (newline) (print-details c))))
   (newline)
@@ -84,7 +98,7 @@
   (if (seq (:children r))
     (doseq [c (:children r)]
       (spec-report* c (conj parents r)))
-    (if (success? r)
+    (if (and (success? r) (not (pending? r)))
       (do (print (colorize "." :fg-green)) (flush))
       (do (newline)
           (print-details
@@ -100,7 +114,6 @@
   [r]
   (println "Running" (:name (details r))
            "at" (str (java.util.Date.)))
-  (spec-report* r [])
-  (newline)
+  (time (do (spec-report* r []) (newline)))
   (print-summary r))
 

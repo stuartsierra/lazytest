@@ -28,6 +28,12 @@
 (assert (success? (first (:children (simple-suite)))))
 (assert (not (success? (second (:children (simple-suite))))))
 
+;;; Pending tests
+
+(spec pending-spec)
+
+(assert (pending? (pending-spec)))
+
 ;;; Nested definitions
 
 (spec top-level
