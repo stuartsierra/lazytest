@@ -19,7 +19,9 @@ which they are run.
 The Basics
 ==========
 
-Tests are always defined within the `spec` macro:
+Specs ("specifications") are always defined within the `spec` macro:
+
+    (use 'com.stuartsierra.lazytest)
 
     (spec name? "docstring?" body...)
 
@@ -60,6 +62,31 @@ Within `is`, any assertion may be preceded by a doc string:
           (is (= 0 (- 5 5))
               (= 1 (- 3 2))))))
 
+Any spec may have a symbol name, making it a callable function, but
+only the top-level spec needs a name.
+
+
+Running Specs, Reporting Results
+--------------------------------
+
+Any spec given a symbol name can be called as a function, which
+returns a lazy sequence of test results
+
+To get a nicely-formatted report of those results, use the spec-report
+function:
+
+    (use '[com.stuartsierra.lazytest.report :only (spec-report)])
+
+    (spec-report (confused-addition))
+
+The report uses ANSI color codes by default.  If your environment does
+not support ANSI terminal commands, turn colorizing off:
+
+    (use '[com.stuartsierra.lazytest.color :only (set-colorize)])
+
+    (set-colorize false)
+
+
 
 Contexts
 --------
@@ -77,7 +104,7 @@ test.
 
 The :after function is optional.
 
-Contexts are used in tests with the `given` macro:
+Contexts are used in specs with the `given` macro:
 
     (spec ... (given [bindings...] assertions...))
 
