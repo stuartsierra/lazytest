@@ -58,6 +58,6 @@
 (defn colorize
   "Wrap string s in ANSI colors if colorize? is true."
   [s & colors]
-  (if (and (colorize) (seq s))
-    (str (ansi-color-string colors) (ansi-color-string :reset))
+  (if (and (colorize?) (seq s))
+    (str (apply ansi-color-str colors) s (ansi-color-str :reset))
     s))
