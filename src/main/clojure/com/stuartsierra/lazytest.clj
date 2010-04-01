@@ -332,6 +332,15 @@
          ~(when (:name m) `(intern *ns* '~(:name m) ~sym))
          ~sym))))
 
+(defmacro describe
+  "Attaches :spec metadata to target (a Namespace or a Var).  body is
+  the same as the body of the spec macro.
+
+  By writing (describe *ns* ...) you can attach a single top-level
+  spec container to the current namespace."
+  [target & body]
+  `(alter-meta! ~target assoc :spec (spec ~@body)))
+
 (defn spec?
   "Returns true if x is a spec, meaning it satisfies the TestInvokable
   protocol."
