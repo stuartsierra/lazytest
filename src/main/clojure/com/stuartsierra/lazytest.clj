@@ -351,7 +351,9 @@
   or symbol.  If x is a symbol, attempts to reload the namespace named
   by the symbol."
   [x]
-  (cond (coll? x)
+  (cond (spec? x) x
+
+        (coll? x)
         (let [xs (filter identity (map find-spec x))]
           (if (seq xs)
             (SimpleContainer (vec xs)
@@ -362,7 +364,9 @@
         (instance? clojure.lang.Namespace x)
         (if-let [t (:spec (meta x))]
           (find-spec t)
-          (find-spec (vals (ns-interns x))))
+          ;; Omit the *1/*2/*3 REPL vars, in case they are specs:
+          (find-spec (filter #(not (#{#'*1 #'*2 #'*3} %))
+                             (vals (ns-interns x)))))
 
         (var? x)
         (let [m (meta x)]
@@ -376,12 +380,10 @@
                                   :file (:file m)
                                   :line (:line m)}
                                nil)
-              (let [v (var-get x)]
+              (let [v (try (var-get x) (catch Exception e nil))]
                 (when (spec? v) v)))))
 
         (symbol? x)
         (find-spec (find-ns x))
-
-        (spec? x) x
 
         :else nil))
