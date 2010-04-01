@@ -332,3 +332,47 @@
          ~(when (:name m) `(intern *ns* '~(:name m) ~sym))
          ~sym))))
 
+(defn spec?
+  "Returns true if x is a spec, meaning it satisfies the TestInvokable
+  protocol."
+  [x] (satisfies? TestInvokable x))
+
+(defn find-spec
+  "Finds and returns a spec object for a namespace, var, collection,
+  or symbol.  If x is a symbol, attempts to reload the namespace named
+  by the symbol."
+  [x]
+  (cond (coll? x)
+        (let [xs (filter identity (map find-spec x))]
+          (if (seq xs)
+            (SimpleContainer (vec xs)
+                             {:doc "Generated from collection by find-spec."
+                              :generator `find-spec}
+                             nil)))
+
+        (instance? clojure.lang.Namespace x)
+        (if-let [t (:spec (meta x))]
+          (find-spec t)
+          (find-spec (vals (ns-interns x))))
+
+        (var? x)
+        (let [m (meta x)]
+          (if-let [t (:spec m)]
+            (find-spec t)
+            (if-let [t (:test m)]
+              (SimpleAssertion t {:doc "Generated from :test function by find-spec."
+                                  :generator `find-spec
+                                  :name (:name m)
+                                  :ns (:ns m)
+                                  :file (:file m)
+                                  :line (:line m)}
+                               nil)
+              (let [v (var-get x)]
+                (when (spec? v) v)))))
+
+        (symbol? x)
+        (find-spec (find-ns x))
+
+        (spec? x) x
+
+        :else nil))
