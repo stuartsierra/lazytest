@@ -401,7 +401,8 @@
                                  nil)))))
 
         (coll? x)
-        (let [xs (filter identity (map find-spec x))]
+        ;; distinct so "main" and "spec" ns's don't load same specs
+        (let [xs (distinct (filter identity (map find-spec x)))]
           (if (seq xs)
             (SimpleContainer (vec xs)
                              {:generator `find-spec
