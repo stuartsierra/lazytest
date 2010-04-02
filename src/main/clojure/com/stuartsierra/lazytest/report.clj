@@ -107,3 +107,10 @@
   (time (do (spec-report* r []) (newline)))
   (print-summary r))
 
+(defn report-and-exit
+  "Calls function f (defaults to spec-report) on test result r and
+  exits.  Exit status is 0 if all specs passed, -1 if some failed."
+  ([r] (report-and-exit spec-report r))
+  ([f r]
+     (f r)
+     (System/exit (if (success? r) 0 -1))))
