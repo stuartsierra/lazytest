@@ -62,8 +62,23 @@ Within `is`, any assertion may be preceded by a doc string:
           (is (= 0 (- 5 5))
               (= 1 (- 3 2))))))
 
-Any spec may have a symbol name, making it a callable function, but
-only the top-level spec needs a name.
+Documentation strings for nested specs will be joined together in
+reports.
+
+Any spec may have a symbol name, making it a callable function.  So,
+for example:
+
+    (spec top "This is the top-level spec"
+      (spec one "with one second-level spec"
+        (spec one-a "with a third-level spec"
+          ...))
+      (spec two "and another second-level spec" 
+          ...))
+
+This example creates FOUR functions: top, one, one-a, and two.  Any
+one of them can be called as a function, with no arguments, to run the
+specs it contains.  So call `(top)` to run all the specs, or `(one)` to
+run just those specs inside `(spec one ...)`.
 
 
 Running Specs, Reporting Results
@@ -87,9 +102,58 @@ not support ANSI terminal commands, turn colorizing off:
     (set-colorize false)
 
 
+Finding Specs
+-------------
+
+To attach a spec to a namespace, use the `describe` macro:
+
+    (describe target-ns ...)
+
+The body of `describe` is exactly the same as `spec`; it attaches the
+spec as `:spec` metadata on the target-ns.
+
+The best way to use `describe` is with the current namespace:
+
+    (describe *ns* "specs for this namespace")
+
+I recommend storing specs and "main" code in separate namespaces; link
+them together by putting `:spec` metadata on the "main" namespace,
+giving the symbol name of the "specs" namespace.  For example, if your
+specs look like this:
+
+    (ns com.example.foo-spec)
+
+    (describe *ns* "The Foo library"
+      (spec "should work" ...))
+
+then define your main namespace like this:
+
+    (ns #^{:spec 'com.example.foo-spec} 
+        com.example.foo)
+
+To find and run specs, use the `run-spec` function, which loads a
+namespace and runs the specs associated with it.  Following the above
+example, you could run the specs for the Foo library using either of
+the following:
+
+    (run-spec 'com.example.foo)
+
+    (run-spec 'com.example.foo-spec)
+
+The `run-spec` function accepts the same `:reload` and `:reload-all`
+options as `require` or `use`.
+
+To load specs without running them, use `load-spec` instead.  To find
+specs without loading them, use `find-spec`.
+
+To run all specs in all loaded namespaces, use:
+
+    (run-spec (all-ns))
+
+
 
 Contexts
---------
+========
 
 A Context is a pair of before/after functions that are run around a
 test.
