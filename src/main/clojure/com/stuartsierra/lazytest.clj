@@ -108,6 +108,8 @@
 ;;; Assertion types
 
 (deftype SimpleAssertion [pred] :as this
+  clojure.lang.IFn
+    (invoke [] (invoke-test this {}))
   TestInvokable
     (invoke-test [active]
       (try
@@ -118,6 +120,8 @@
           (TestThrown this nil t)))))
 
 (deftype ContextualAssertion [contexts pred] :as this
+  clojure.lang.IFn
+    (invoke [] (invoke-test this {}))
   TestInvokable
     (invoke-test [active]
       (let [merged (reduce open-context active contexts)
