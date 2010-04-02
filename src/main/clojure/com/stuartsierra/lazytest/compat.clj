@@ -1,10 +1,16 @@
-(ns #^{:doc "Compatibility layer for clojure.test"}
+(ns #^{:doc "Compatibility layer for clojure.test
+
+  :use this namespace instead of clojure.test, and your tests will be
+  runnable with lazytest.  Failures in clojure.test will be reported
+  as AssertionError by lazytest.
+
+  Does not support clojure.test fixtures."}
   com.stuartsierra.lazytest.compat
   (:require clojure.test
             [com.stuartsierra.lazytest :as t]))
 
 (defmacro deftest [name & body]
-  `(t/spec-do ~name [] ~body))
+  `(t/spec-do ~name [] ~@body))
 
 (defmacro testing [string & body]
   `(do ~@body))
@@ -25,5 +31,8 @@
 (defn run-all-tests []
   (t/run-spec (all-ns)))
 
-(defmacro thrown? [& args]
-  true)
+(defmacro thrown? [klass & body]
+  `(try ~@body (catch ~klass e# true)))
+
+(defmacro thrown-with-msg? [klass msg & body]
+  `(try ~@body (catch ~klass e# (re-find ~msg (.getMessage e#)))))
