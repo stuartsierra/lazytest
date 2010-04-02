@@ -347,43 +347,76 @@
   [x] (satisfies? TestInvokable x))
 
 (defn find-spec
-  "Finds and returns a spec object for a namespace, var, collection,
-  or symbol.  If x is a symbol, attempts to reload the namespace named
-  by the symbol."
+  "Finds and returns a spec for x.
+
+  If x is a ...
+
+    Var/namespace with :spec metadata: recurses on that;
+
+    Symbol: recurses on namespace with that name 
+    (must be loaded already, see load-spec);
+
+    Namespace: recurses on all Vars in the namespace;
+
+    Collection: recurses on all elements;
+
+    Spec object: returns it.
+
+  otherwise returns nil."
   [x]
   (cond (spec? x) x
+
+        (:spec (meta x))
+        (find-spec (:spec (meta x)))
+
+        (symbol? x)
+        (find-spec (find-ns x))
+
+        (instance? clojure.lang.Namespace x)
+        ;; Omit the *1/*2/*3 REPL vars, in case they are specs:
+        (when-let [s (find-spec (filter #(not (#{#'*1 #'*2 #'*3} %))
+                                        (vals (ns-interns x))))]
+          (vary-meta s assoc
+                     :name (ns-name x)
+                     :comment (str "Generated from all Vars in namespace "
+                                   (ns-name x) " by find-spec.")))
+
+        (var? x)
+        (let [value (try (var-get x) (catch Exception e nil))]
+          (if (spec? value)
+            value
+            (let [m (meta x)]
+              (when-let [t (:test m)]
+                (SimpleAssertion t {:comment (str "Generated from :test metadata on "
+                                                  x " by find-spec.")
+                                    :generator `find-spec
+                                    :name (:name m)
+                                    :ns (:ns m)
+                                    :file (:file m)
+                                    :line (:line m)}
+                                 nil)))))
 
         (coll? x)
         (let [xs (filter identity (map find-spec x))]
           (if (seq xs)
             (SimpleContainer (vec xs)
-                             {:doc "Generated from collection by find-spec."
-                              :generator `find-spec}
+                             {:generator `find-spec
+                              :comment "Generated from collection by find-spec."}
                              nil)))
 
-        (instance? clojure.lang.Namespace x)
-        (if-let [t (:spec (meta x))]
-          (find-spec t)
-          ;; Omit the *1/*2/*3 REPL vars, in case they are specs:
-          (find-spec (filter #(not (#{#'*1 #'*2 #'*3} %))
-                             (vals (ns-interns x)))))
-
-        (var? x)
-        (let [m (meta x)]
-          (if-let [t (:spec m)]
-            (find-spec t)
-            (if-let [t (:test m)]
-              (SimpleAssertion t {:doc "Generated from :test function by find-spec."
-                                  :generator `find-spec
-                                  :name (:name m)
-                                  :ns (:ns m)
-                                  :file (:file m)
-                                  :line (:line m)}
-                               nil)
-              (let [v (try (var-get x) (catch Exception e nil))]
-                (when (spec? v) v)))))
-
-        (symbol? x)
-        (find-spec (find-ns x))
-
         :else nil))
+
+(defn load-spec
+  "Like find-spec but loads namespaces with require.  options will be
+  passed to require, such as :reload, or :reload-all.  Returns the
+  spec or nil if none found."
+  [sym & options]
+  (if (symbol? sym)
+    (do (apply require sym options) (load-spec sym))
+    (find-spec sym)))
+
+(defn run-spec
+  "Like load-spec but executes the specs once they are found."
+  [sym & options]
+  (when-let [s (apply load-spec sym options)]
+    (s)))
