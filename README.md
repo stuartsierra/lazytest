@@ -84,11 +84,10 @@ run just those specs inside `(spec one ...)`.
 Running Specs, Reporting Results
 --------------------------------
 
-Any spec given a symbol name can be called as a function, which
-returns a lazy sequence of test results
+Running a spec returns a lazy sequence of test results.
 
-To get a nicely-formatted report of those results, use the spec-report
-function:
+To get a nicely-formatted report of those results, use the
+`spec-report` function:
 
     (use '[com.stuartsierra.lazytest.report :only (spec-report)])
 
