@@ -1,7 +1,8 @@
 (ns com.stuartsierra.lazytest.watch
   (:use [clojure.contrib.find-namespaces
          :only (read-file-ns-decl
-                find-clojure-sources-in-dir)]
+                find-clojure-sources-in-dir
+                find-namespaces-in-dir)]
         [clojure.contrib.java :only (as-file)]
         [com.stuartsierra.lazytest :only (run-spec)]
         [com.stuartsierra.lazytest.report :only (spec-report)])
@@ -62,15 +63,17 @@
     agnt))
 
 (defn watch-spec
-  "Watches directory d for changing namespaces, reloads and runs their
-  specs when they change.  Prints reports to current *out*.  Returns
-  the watching agent, send stop to stop watching.
+  "Runs all specs in directory d, then watches d for changing
+  namespaces, reloads and runs their specs when they change.  Prints
+  reports to current *out*.  Returns the watching agent, send stop to
+  stop watching.
 
   Options are
     :reporter - report function, default is spec-report
-    :delay - time between directory scans"
+    :delay - time (ms) between directory scans"
   [d & options]
   (let [{:keys [reporter] :or {reporter spec-report}} options]
+    (reporter (run-spec (find-namespaces-in-dir d)))
     (apply watch-dir d
            (fn [names] (reporter (run-spec names :reload)))
            options)))
