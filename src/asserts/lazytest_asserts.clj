@@ -1,4 +1,4 @@
-(ns com.stuartsierra.lazytest-test
+(ns com.stuartsierra.lazytest-asserts
   (:use com.stuartsierra.lazytest
         com.stuartsierra.lazytest.report))
 
@@ -107,3 +107,7 @@
   (let [result (once-contexts)]
     (assert (success? result))
     (assert (= @*log* [:open-c1 :open-c2 :close-c2 :close-c1]))))
+
+
+;; empty describe to block run-spec
+(describe *ns* )
