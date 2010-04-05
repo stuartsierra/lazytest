@@ -1,5 +1,6 @@
-(ns com.stuartsierra.lazytest.refs-test
-  (:use [com.stuartsierra.lazytest :only (spec is given defcontext)]))
+(ns refs-test
+  (:use [com.stuartsierra.lazytest
+         :only (spec describe given defcontext)]))
 
 (defcontext two-refs []
   [(ref 1) (ref 1)])
@@ -14,10 +15,13 @@
   (doseq [t threads]
     (.stop t)))
 
-(spec ref-stress-test
-      (given [rs two-refs
-              tt buncha-threads]
-        (let [[ra rb] rs]
-          (every? true? (for [i (range 1000000)]
-                          (let [[a b] (dosync [@ra @rb])]
-                            (= a b)))))))
+(describe *ns*
+ (spec ref-stress-test
+   "Two refs, updated and read in transactions"
+   (given [rs two-refs
+           tt buncha-threads]
+     "should always have consistent values."
+     (let [[ra rb] rs]
+       (every? true? (for [i (range 1000000)]
+                       (let [[a b] (dosync [@ra @rb])]
+                         (= a b))))))))
