@@ -74,6 +74,7 @@
   [d & options]
   (let [{:keys [reporter] :or {reporter spec-report}} options]
     (apply watch-dir d
-           (fn [names] 
-             (reporter (run-spec names :reload)))
+           (fn [names]
+             (when-let [results (run-spec names :reload)]
+               (reporter results)))
            options)))
