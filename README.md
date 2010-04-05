@@ -135,9 +135,9 @@ namespace and runs the specs associated with it.  Following the above
 example, you could run the specs for the Foo library using either of
 the following:
 
-    (run-spec 'com.example.foo)
+    (spec-report (run-spec 'com.example.foo))
 
-    (run-spec 'com.example.foo-spec)
+    (spec-report (run-spec 'com.example.foo-spec))
 
 The `run-spec` function accepts the same `:reload` and `:reload-all`
 options as `require` or `use`.
@@ -147,7 +147,12 @@ specs without loading them, use `find-spec`.
 
 To run all specs in all loaded namespaces, use:
 
-    (run-spec (all-ns))
+    (spec-report (run-spec (all-ns)))
+
+Alternatively, to load and run specs in all namespaces found under a
+certain directory, call `run-spec` with the name of the directory:
+
+    (spec-report (run-spec "src/test/clojure"))
 
 
 
