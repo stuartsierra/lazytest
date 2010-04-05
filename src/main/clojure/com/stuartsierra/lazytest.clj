@@ -1,4 +1,6 @@
-(ns com.stuartsierra.lazytest)
+(ns com.stuartsierra.lazytest
+  (:use [clojure.contrib.find-namespaces
+         :only (find-namespaces-in-dir)]))
 
 ;;; PROTOCOLS
 
@@ -427,14 +429,29 @@
 (defn load-spec
   "Like find-spec but loads namespaces with require.  options will be
   passed to require, such as :reload, or :reload-all.  Returns the
-  spec or nil if none found."
-  [sym & options]
-  (if (symbol? sym)
-    (do (apply require sym options) (load-spec sym))
-    (find-spec sym)))
+  spec or nil if none found.
+
+  Argument may also be a java.io.File or String, which will load all
+  namespaces in the named directory."
+  [x & options]
+  (cond (symbol? x)
+        (do (apply require x options) (load-spec x))
+
+        (string? x)
+        (load-spec (java.io.File. x))
+
+        (instance? java.io.File x)
+        (if (.isDirectory x)
+          (let [names (find-namespaces-in-dir x)]
+            (doseq [n names] (apply require n options))
+            (find-spec names))
+          (throw (IllegalArgumentException.
+                  "File argument to load-spec must be a directory")))
+
+        :else (find-spec x)))
 
 (defn run-spec
   "Like load-spec but executes the specs once they are found."
-  [sym & options]
-  (when-let [s (apply load-spec sym options)]
+  [x & options]
+  (when-let [s (apply load-spec x options)]
     (s)))
