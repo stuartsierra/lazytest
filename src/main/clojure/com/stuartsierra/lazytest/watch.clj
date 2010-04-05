@@ -21,7 +21,7 @@
   "Sent as an agent action, stops a directory-watching agent."
   [state]
   (remove-watch *agent* ::watch)
-  false)
+  nil)
 
 (defn ns-mod-time-agent
   "Creates an agent that monitors namespaces for changes to their
@@ -35,7 +35,7 @@
                     (Thread/sleep delay)
                     (send *agent* upd)
                     (ns-mod-times dir)))]
-    (doto (agent true)
+    (doto (agent {})
       (send updater))))
 
 (defn- newer-namespaces [older newer]
@@ -73,7 +73,7 @@
     :delay - time (ms) between directory scans"
   [d & options]
   (let [{:keys [reporter] :or {reporter spec-report}} options]
-    (reporter (run-spec (find-namespaces-in-dir d)))
     (apply watch-dir d
-           (fn [names] (reporter (run-spec names :reload)))
+           (fn [names] 
+             (reporter (run-spec names :reload)))
            options)))
