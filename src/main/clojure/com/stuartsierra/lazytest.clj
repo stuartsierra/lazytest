@@ -435,7 +435,7 @@
   namespaces in the named directory."
   [x & options]
   (cond (symbol? x)
-        (do (apply require x options) (load-spec x))
+        (do (apply require x options) (load-spec (the-ns x)))
 
         (string? x)
         (load-spec (java.io.File. x))
