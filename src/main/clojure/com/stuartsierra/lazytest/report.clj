@@ -79,7 +79,8 @@
     (print ", ")
     (print (colorize (str pending " pending")
                      (if (zero? pending) :fg-green :fg-yellow)))
-    (newline)))
+    (newline)
+    (flush)))
 
 (defn- spec-report* [r parents]
   (if (seq (:children r))
