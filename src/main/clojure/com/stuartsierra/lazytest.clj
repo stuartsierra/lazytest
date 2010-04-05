@@ -188,6 +188,19 @@
                             :form '~&form}
                         nil))))
 
+(defmacro thrown?
+  "Returns true if body throws an instance of class c."
+  [c & body]
+  `(try ~@body false
+        (catch ~c e# true)))
+
+(defmacro thrown-with-msg?
+  "Returns true if body throws an instance of class c whose message
+  matches re (with re-find)."
+  [c re & body]
+  `(try ~@body false
+        (catch ~c e# (re-find ~re (.getMessage e#)))))
+
 (defmacro are
   "A series of assertions reusing a single expression.
   Creates a function of (fn argv expr).  Values will be partitioned

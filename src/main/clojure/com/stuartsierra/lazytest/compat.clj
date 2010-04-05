@@ -31,8 +31,8 @@
 (defn run-all-tests []
   (t/run-spec (all-ns)))
 
-(defmacro thrown? [klass & body]
-  `(try ~@body (catch ~klass e# true)))
+(defmacro thrown? [& args]
+  `(t/thrown? ~@args))
 
-(defmacro thrown-with-msg? [klass msg & body]
-  `(try ~@body (catch ~klass e# (re-find ~msg (.getMessage e#)))))
+(defmacro thrown-with-msg? [& args]
+  `(t/thrown-with-msg? ~@args))
