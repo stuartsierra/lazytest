@@ -59,8 +59,8 @@
       (add-watch agnt ::watch
                  (fn [key agnt older newer]
                    (let [names (newer-namespaces older newer)]
-                     (when (seq names) (bf names))))))
-    agnt))
+                     (when (seq names) (bf names)))))
+      agnt)))
 
 (defn watch-spec
   "Runs all specs in directory d, then watches d for changing
