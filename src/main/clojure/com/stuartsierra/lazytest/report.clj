@@ -9,7 +9,7 @@
   "Given a single TestResult, returns a depth-first sequence of that
   TestResult and all its children."
   [r]
-  (tree-seq :children :children r))
+  (tree-seq container? :children r))
 
 (defn details
   "Given a TestResult, returns the map of :name, :ns, :file, :line,
@@ -83,7 +83,7 @@
     (flush)))
 
 (defn- spec-report* [r parents]
-  (if (seq (:children r))
+  (if (container? r)
     (doseq [c (:children r)]
       (spec-report* c (conj parents r)))
     (if (and (success? r) (not (pending? r)))
