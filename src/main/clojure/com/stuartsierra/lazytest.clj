@@ -19,34 +19,34 @@
 (deftype TestResultContainer [source children]
   clojure.lang.IPersistentMap
   TestResult
-    (success? [] (every? success? children))
-    (pending? [] (if (seq children) false true))
-    (error? [] false)
-    (container? [] true))
+    (success? [this] (every? success? children))
+    (pending? [this] (if (seq children) false true))
+    (error? [this] false)
+    (container? [this] true))
 
 (deftype TestPassed [source states]
   clojure.lang.IPersistentMap
   TestResult
-    (success? [] true)
-    (pending? [] false)
-    (error? [] false)
-    (container? [] false))
+    (success? [this] true)
+    (pending? [this] false)
+    (error? [this] false)
+    (container? [this] false))
 
 (deftype TestFailed [source states]
   clojure.lang.IPersistentMap
   TestResult
-    (success? [] false)
-    (pending? [] false)
-    (error? [] false)
-    (container? [] false))
+    (success? [this] false)
+    (pending? [this] false)
+    (error? [this] false)
+    (container? [this] false))
 
 (deftype TestThrown [source states throwable]
   clojure.lang.IPersistentMap
   TestResult
-    (success? [] false)
-    (pending? [] false)
-    (error? [] true)
-    (container? [] false))
+    (success? [this] false)
+    (pending? [this] false)
+    (error? [this] true)
+    (container? [this] false))
 
 
 ;;; Contexts
@@ -109,11 +109,11 @@
 
 ;;; Assertion types
 
-(deftype SimpleAssertion [pred] :as this
+(deftype SimpleAssertion [pred]
   clojure.lang.IFn
-    (invoke [] (invoke-test this {}))
+    (invoke [this] (invoke-test this {}))
   TestInvokable
-    (invoke-test [active]
+    (invoke-test [this active]
       (try
         (if (pred)
           (TestPassed this nil)
@@ -121,11 +121,11 @@
         (catch Throwable t
           (TestThrown this nil t)))))
 
-(deftype ContextualAssertion [contexts pred] :as this
+(deftype ContextualAssertion [contexts pred]
   clojure.lang.IFn
-    (invoke [] (invoke-test this {}))
+    (invoke [this] (invoke-test this {}))
   TestInvokable
-    (invoke-test [active]
+    (invoke-test [this active]
       (let [merged (reduce open-context active contexts)
             states (map merged contexts)]
         (try
@@ -138,21 +138,21 @@
 
 ;;; Container types
 
-(deftype SimpleContainer [children] :as this
+(deftype SimpleContainer [children]
   clojure.lang.IFn
-    (invoke [] (invoke-test this {}))
+    (invoke [this] (invoke-test this {}))
   TestInvokable
-    (invoke-test [active]
+    (invoke-test [this active]
       (try
        (TestResultContainer this (map #(invoke-test % active) children))
        (catch Throwable t
          (TestThrown this nil t)))))
 
-(deftype ContextualContainer [contexts children] :as this
+(deftype ContextualContainer [contexts children]
   clojure.lang.IFn
-    (invoke [] (invoke-test this {}))
+    (invoke [this] (invoke-test this {}))
   TestInvokable
-    (invoke-test [active]
+    (invoke-test [this active]
       (let [merged (reduce open-context active contexts)]
         (try 
          (let [results (map #(invoke-test % merged) children)]
