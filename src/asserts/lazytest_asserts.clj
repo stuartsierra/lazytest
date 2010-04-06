@@ -1,4 +1,4 @@
-(ns com.stuartsierra.lazytest-asserts
+(ns lazytest-asserts
   (:use com.stuartsierra.lazytest
         com.stuartsierra.lazytest.report))
 
