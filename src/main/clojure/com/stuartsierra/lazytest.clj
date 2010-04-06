@@ -448,6 +448,14 @@
           (throw (IllegalArgumentException.
                   "File argument to load-spec must be a directory")))
 
+        (coll? x)
+        (let [xs (distinct (filter identity (map #(apply load-spec % options) x)))]
+          (if (seq xs)
+            (SimpleContainer (vec xs)
+                             {:generator `load-spec
+                              :comment "Generated from collection by load-spec."}
+                             nil)))
+
         :else (find-spec x)))
 
 (defn run-spec
