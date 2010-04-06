@@ -68,10 +68,10 @@
       agnt)))
 
 (defn watch-spec
-  "Runs all specs in directory d, then watches d for changing
-  namespaces, reloads and runs their specs when they change.  Prints
-  reports to current *out*.  Returns the watching agent, send stop to
-  stop watching.
+  "Runs all specs in directory d, which must be on classpath, then
+  watches d for changing namespaces, reloads and runs their specs when
+  they change.  Prints reports to current *out*.  Returns the watching
+  agent, send stop to stop watching.
 
   Options are
     :reporter - report function, default is spec-report
