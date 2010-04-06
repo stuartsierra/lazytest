@@ -23,6 +23,11 @@
   (remove-watch *agent* ::watch)
   nil)
 
+(defn reset
+  "Send as an agent action, restarts a directory-watching agent."
+  [state]
+  {})
+
 (defn ns-mod-time-agent
   "Creates an agent that monitors namespaces for changes to their
   source files.  The state of the agent will always be a map from
