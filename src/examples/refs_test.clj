@@ -22,6 +22,6 @@
            tt buncha-threads]
      "should always have consistent values."
      (let [[ra rb] rs]
-       (every? true? (for [i (range 1000000)]
+       (every? true? (for [i (range 100000)]
                        (let [[a b] (dosync [@ra @rb])]
                          (= a b))))))))
