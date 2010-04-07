@@ -83,7 +83,7 @@
     (flush)))
 
 (defn- spec-report* [r parents]
-  (if (container? r)
+  (if (and (container? r) (not (pending? r)))
     (doseq [c (:children r)]
       (spec-report* c (conj parents r)))
     (if (and (success? r) (not (pending? r)))
