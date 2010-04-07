@@ -103,9 +103,11 @@
   Concatenates :doc strings for nested specs.  Uses ANSI color if
   com.stuartsierra.lazytest.color/colorize? is true."
   [r]
-  (println "Running" (:name (details r))
+  (newline)
+  (println "Running" (or (:name (details r)) "specs")
            "at" (str (java.util.Date.)))
-  (time (do (spec-report* r []) (newline)))
+  (spec-report* r [])
+  (newline)
   (print-summary r))
 
 (defn report-and-exit
