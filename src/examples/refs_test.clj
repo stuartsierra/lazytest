@@ -1,6 +1,6 @@
 (ns refs-test
   (:use [com.stuartsierra.lazytest
-         :only (spec describe given defcontext)]))
+         :only (spec describe given is defcontext)]))
 
 (defcontext two-refs []
   [(ref 1) (ref 1)])
@@ -21,7 +21,7 @@
    (given [rs two-refs
            tt buncha-threads]
      "should always have consistent values."
-     (let [[ra rb] rs]
-       (every? true? (for [i (range 100000)]
-                       (let [[a b] (dosync [@ra @rb])]
-                         (= a b))))))))
+     (is (let [[ra rb] rs]
+           (every? true? (for [i (range 100000)]
+                           (let [[a b] (dosync [@ra @rb])]
+                             (= a b)))))))))
