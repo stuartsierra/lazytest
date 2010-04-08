@@ -213,3 +213,8 @@ Example:
        (create-tables db)
        :after [x]
        (drop-tables db))
+
+    (spec db-tests "With the database"
+       (given [t tables]
+         "tables were created"
+         (tables-exist? ["foo" "bar"] t)))
