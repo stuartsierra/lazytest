@@ -163,6 +163,12 @@
          (finally (close-local-contexts contexts merged active))))))
 
 
+(defn- firsts [coll]
+  (vec (map first (partition 2 coll))))
+
+(defn- seconds [coll]
+  (vec (map second (partition 2 coll))))
+
 ;;; Public API
 
 (defmacro is
@@ -170,25 +176,29 @@
   which will be compiled into a function.  A string will be attached
   as :doc metadata on the following assertion."
   [& assertions]
-  (loop [r [], as assertions]
-    (if (seq as)
-      (let [[doc form nxt]
-            (if (string? (first as))
-              [(first as) (second as) (nnext as)]
-              [nil (first as) (next as)])]
-        (recur (conj r `(SimpleAssertion
-                         (fn [] ~form)
-                         {:doc ~doc,
-                          :form '~form
-                          :file *file*,
-                          :line ~(:line (meta form))}
-                         nil))
-               nxt))
-      `(SimpleContainer ~r {:generator 'is
-                            :line ~(:line (meta &form))
-                            :file *file*
-                            :form '~&form}
-                        nil))))
+  (let [givens (vec (filter #(::given (meta %)) (keys &env)))]
+    (loop [r [], as assertions]
+      (if (seq as)
+        (let [[doc form nxt] (if (string? (first as))
+                               [(first as) (second as) (nnext as)]
+                               [nil (first as) (next as)])
+              metadata {:doc doc,
+                        :form form
+                        :file *file*
+                        :line (:line (meta form))
+                        :locals givens}]
+          (recur (conj r (if (seq givens)
+                           `(ContextualAssertion
+                             ~givens (fn ~givens ~form)
+                             '~metadata nil)
+                           `(SimpleAssertion
+                             (fn [] ~form) '~metadata nil)))
+                 nxt))
+        `(SimpleContainer ~r {:generator 'is
+                              :line ~(:line (meta &form))
+                              :file *file*
+                              :form '~&form}
+                          nil)))))
 
 (defmacro thrown?
   "Returns true if body throws an instance of class c."
@@ -223,18 +233,28 @@
           (= (+ 8 -1) 7))
 "
   [argv expr & values]
-  (let [argc (count argv)
+  (let [givens (vec (filter #(::given (meta %)) (keys &env)))
+        argc (count argv)
         sym (gensym "f")]
     (assert (vector? argv))
     (assert (zero? (rem (count values) argc)))
     `(let [~sym (fn ~argv ~expr)]
        (SimpleContainer ~(vec (map (fn [vs]
-                                     `(SimpleAssertion
-                                       (fn [] (~sym ~@vs))
-                                       {:form '(are ~argv ~expr ~@vs)
-                                        :file *file*
-                                        :line ~(some #(:line (meta %)) vs)}
-                                       nil))
+                                     (if (seq givens)
+                                       `(ContextualAssertion
+                                         ~givens
+                                         (fn ~givens (~sym ~@vs))
+                                         {:form '(~'are ~argv ~expr ~@vs)
+                                          :file *file*
+                                          :line ~(some #(:line (meta %)) vs)
+                                          :locals '~givens}
+                                         nil)
+                                       `(SimpleAssertion
+                                         (fn [] (~sym ~@vs))
+                                         {:form '(~'are ~argv ~expr ~@vs)
+                                          :file *file*
+                                          :line ~(some #(:line (meta %)) vs)}
+                                         nil)))
                                    (partition argc values)))
                         {:generator 'are
                          :file *file*
@@ -242,37 +262,16 @@
                          :form '~&form}
                         nil))))
 
-(defmacro given
-  "A series of assertions using values from contexts.
-  bindings is a vector of name-value pairs, like let, where each value
-  is a context created with defcontext.  A string will be attached
-  as :doc metadata on the following assertion."
-  [bindings & assertions]
-  (assert (vector? bindings))
-  (assert (even? (count bindings)))
-  (let [pairs (partition 2 bindings)
-        locals (vec (map first pairs))
-        contexts (vec (map second pairs))]
-    (loop [r [], as assertions]
-      (if (seq as)
-        (let [[doc form nxt]
-              (if (string? (first as))
-                [(first as) (second as) (nnext as)]
-                [nil (first as) (next as)])]
-          (recur (conj r `(ContextualAssertion
-                           ~contexts
-                           (fn ~locals ~form)
-                           {:doc ~doc,
-                            :locals '~locals
-                            :form '~form
-                            :file *file*,
-                            :line ~(:line (meta form))}
-                           nil))
-                 nxt))
-        `(SimpleContainer ~r {:generator 'given
-                              :line ~(:line (meta &form))
-                              :form '~&form}
-                          nil)))))
+(defmacro given 
+  "Binds context states to locals.  bindings is a vector of
+  name-value pairs, like let, where each value is a context created
+  with defcontext."
+   [bindings & body]
+   {:pre [(vector? bindings)
+          (even? (count bindings))]}
+  (let [symbols (map #(with-meta % {::given true}) (firsts bindings))]
+    `(let ~(vec (interleave symbols (seconds bindings)))
+       ~@body)))
 
 (defn- attributes
   "Reads optional name symbol and doc string from args,
