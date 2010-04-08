@@ -7,31 +7,32 @@ by Stuart Sierra, http://stuartsierra.com/
 Why?
 ====
 
-Why another test framework?  The `clojure.test` (formerly
-clojure.contrib.test-is) library is pretty good.  But it isn't
-perfect.  It relies heavily on dynamic context, making it difficult to
-parallelize.  It doesn't support lazy evaluation.  Finally, it
-provides insufficient separation of assertions from the contexts in
-which they are run.
+Why another test framework?  The clojure.test library (formerly
+clojure.contrib.test-is) is pretty good.  But it isn't perfect.  It
+relies heavily on dynamic context, making it difficult to parallelize.
+It doesn't support lazy evaluation.  Finally, it provides insufficient
+separation of assertions from the contexts in which they are run.
 
 
 
-The Basics
-==========
+Specifications
+==============
 
-Specs ("specifications") are always defined within the `spec` macro:
+Specs ("specifications") are created with the `spec` macro:
 
     (use 'com.stuartsierra.lazytest)
 
     (spec name? "docstring?" body...)
 
-`spec` takes an optional name (a symbol), which will be def'd in
-the current namespace.  You can call that symbol like a function.
+`spec` takes an optional name (a symbol), which will be defined in the
+current namespace.  After the name comes an optional doc string.
 
-After the name comes an optional doc string.
 
-The body consists of test or assertion expressions.  Simple assertions
-are created with the `is` macro:
+Assertions
+----------
+
+The body of `spec` contains assertion expressions, created with the
+`is` macro:
 
     (is assertions...)
 
@@ -50,7 +51,12 @@ Within `is`, any assertion may be preceded by a doc string:
            "Two plus two is five?!"
            (= 5 (+ 2 2))))
 
-`spec` expressions may be nested to any depth:
+
+Nested Specs
+------------
+
+`spec` expressions may be nested to any depth, and their doc strings
+will be concatenated in reports:
 
     (spec minus "The minus function"
       (spec "when called with one argument"
@@ -60,10 +66,12 @@ Within `is`, any assertion may be preceded by a doc string:
       (spec "when called with two arguments"
         (spec "subtracts"
           (is (= 0 (- 5 5))
+              "2 from 3 to get 1"
               (= 1 (- 3 2))))))
 
-Documentation strings for nested specs will be joined together in
-reports.
+
+Named Specs
+-----------
 
 Any spec may have a symbol name, making it a callable function.  So,
 for example:
@@ -81,8 +89,10 @@ specs it contains.  So call `(top)` to run all the specs, or `(one)` to
 run just those specs inside `(spec one ...)`.
 
 
+
+
 Running Specs, Reporting Results
---------------------------------
+================================
 
 Running a spec returns a lazy sequence of test results.
 
@@ -101,6 +111,7 @@ not support ANSI terminal commands, turn colorizing off:
     (set-colorize false)
 
 
+
 Finding Specs
 -------------
 
@@ -115,12 +126,18 @@ The best way to use `describe` is with the current namespace:
 
     (describe *ns* "specs for this namespace")
 
-I recommend storing specs and "main" code in separate namespaces; link
-them together by putting `:spec` metadata on the "main" namespace,
-giving the symbol name of the "specs" namespace.  For example, if your
-specs look like this:
 
-    (ns com.example.foo-spec)
+
+Organizing Specs
+----------------
+
+I recommend storing specs and "main" code in separate namespaces. You
+can link them together by putting `:spec` metadata on the "main"
+namespace, giving the symbol name of the "specs" namespace.  For
+example, if your specs look like this:
+
+    (ns com.example.foo-spec
+      (:use [com.stuartsierra.lazytest :only (spec describe is)]))
 
     (describe *ns* "The Foo library"
       (spec "should work" ...))
@@ -178,11 +195,11 @@ Contexts are used in specs with the `given` macro:
       (given [bindings...]
         (is ...)))
 
-`given` is like `is` but starts with a binding vector.  The binding
-vector consists of name-value pairs, like `let`, where each value is a
-context object.  When the assertions are run, the names will be
-locally bound to the state returned by the contexts' "before"
-functions.  Example:
+`given` has a binding vector consisting of name-value pairs, like
+`let`, where each value is a context object.
+
+Assertions inside the `given` will run with the names locally bound to
+the state returned by the contexts' "before" functions.  Example:
 
     (defcontext calculate-pi []
       Math/PI)
@@ -190,6 +207,12 @@ functions.  Example:
     (spec pi-tests
       (given [pi (calculate-pi)]
         (is (< (* pi pi) 10))))
+
+`given` may also contain nested `spec`s or other `given`s.
+
+
+Parent Contexts
+---------------
 
 Contexts may be composed.  The vector argument after the docstring in
 `defcontext` defines "parent contexts" and is composed of name-context
