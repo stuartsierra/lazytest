@@ -87,8 +87,8 @@
 
 (spec repeat-contexts
       (given [a c1, b c2]
-             (= a 1)
-             (= b 2)))
+             (is (= a 1)
+                 (= b 2))))
 
 (with-log
   (let [result (repeat-contexts)]
@@ -100,8 +100,8 @@
 
 (spec once-contexts :contexts [c1 c2]
       (given [a c1, b c2]
-             (= a 1)
-             (= b 2)))
+             (is (= a 1)
+                 (= b 2))))
 
 (with-log
   (let [result (once-contexts)]
