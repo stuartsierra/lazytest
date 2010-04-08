@@ -187,7 +187,7 @@ functions.  Example:
 
     (spec pi-tests
       (given [pi (calculate-pi)]
-        (is (< (* pi pi) 10))))
+        (< (* pi pi) 10)))
 
 Contexts may be composed.  The vector argument after the docstring in
 `defcontext` defines "parent contexts" and is composed of name-context
