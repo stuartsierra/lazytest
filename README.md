@@ -243,3 +243,29 @@ Example:
        (given [t tables]
          (is "tables were created"
              (tables-exist? ["foo" "bar"] t))))
+
+
+
+Continuous Testing
+==================
+
+To load and run your specs continuously:
+
+    (use 'com.stuartsierra.lazytest.watch)
+
+    (def watcher (watch-spec "your/source/dir"))
+
+This runs all specs and prints a report.  Every time a file changes,
+its namespace will be reloaded and specs will be run again.
+
+Make sure your "main" namespaces have :spec metadata so that the
+correct specs are run when they change.
+
+To re-run all specs:
+
+    (send watcher reset)
+
+To stop watching and running specs:
+
+    (send watcher stop)
+
