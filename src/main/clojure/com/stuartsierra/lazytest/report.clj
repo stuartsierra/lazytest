@@ -35,9 +35,9 @@
       (prn (:form m)))
     (when-let [f (:file m)] (println "File:" f))
     (when-let [l (:line m)] (println "Line:" l))
-    (when (seq (:states r))
-      (print "Context states: ")
-      (prn (:states r)))
+    (when (seq (:locals m))
+      (print "Givens: ")
+      (prn (zipmap (:locals m) (:states r))))
     (when-let [e (:throwable r)]
       (println "STACK TRACE")
       (print-cause-trace e))))
