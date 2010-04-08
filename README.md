@@ -174,7 +174,9 @@ The :after function is optional.
 
 Contexts are used in specs with the `given` macro:
 
-    (spec ... (given [bindings...] assertions...))
+    (spec ...
+      (given [bindings...]
+        (is ...)))
 
 `given` is like `is` but starts with a binding vector.  The binding
 vector consists of name-value pairs, like `let`, where each value is a
@@ -187,7 +189,7 @@ functions.  Example:
 
     (spec pi-tests
       (given [pi (calculate-pi)]
-        (< (* pi pi) 10)))
+        (is (< (* pi pi) 10))))
 
 Contexts may be composed.  The vector argument after the docstring in
 `defcontext` defines "parent contexts" and is composed of name-context
@@ -216,5 +218,5 @@ Example:
 
     (spec db-tests "With the database"
        (given [t tables]
-         "tables were created"
-         (tables-exist? ["foo" "bar"] t)))
+         (is "tables were created"
+             (tables-exist? ["foo" "bar"] t))))
