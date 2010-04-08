@@ -176,7 +176,7 @@
   which will be compiled into a function.  A string will be attached
   as :doc metadata on the following assertion."
   [& assertions]
-  (let [givens (vec (filter #(::given (meta %)) (keys &env)))]
+  (let [givens (vec (reverse (filter #(::given (meta %)) (keys &env))))]
     (loop [r [], as assertions]
       (if (seq as)
         (let [[doc form nxt] (if (string? (first as))
@@ -233,7 +233,7 @@
           (= (+ 8 -1) 7))
 "
   [argv expr & values]
-  (let [givens (vec (filter #(::given (meta %)) (keys &env)))
+  (let [givens (vec (reverse (filter #(::given (meta %)) (keys &env))))
         argc (count argv)
         sym (gensym "f")]
     (assert (vector? argv))
