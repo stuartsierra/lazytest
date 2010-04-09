@@ -73,6 +73,7 @@
           <testSourceDirectories>
             <testSourceDirectory>src/examples</testSourceDirectory>
             <testSourceDirectory>src/asserts</testSourceDirectory>
+            <testSourceDirectory>src/test/clojure</testSourceDirectory>
           </testSourceDirectories>
         </configuration>
         <executions>
