@@ -1,4 +1,5 @@
-(ns com.stuartsierra.lazytest
+(ns #^{:spec 'com.stuartsierra.lazytest-spec}
+  com.stuartsierra.lazytest
   (:use [clojure.contrib.find-namespaces
          :only (find-namespaces-in-dir)]))
 
@@ -52,6 +53,9 @@
 ;;; Contexts
 
 (deftype Context [parents before after])
+
+(defn context? [x]
+  (isa? (type x) ::Context))
 
 (defn- open-context
   "Opens context c, and all its parents, unless it is already active."
@@ -212,6 +216,11 @@
   [c re & body]
   `(try ~@body false
         (catch ~c e# (re-find ~re (.getMessage e#)))))
+
+(defmacro ok?
+  "Returns true if body does not throw anything."
+  [& body]
+  `(do ~@body true))
 
 (defmacro are
   "A series of assertions reusing a single expression.
