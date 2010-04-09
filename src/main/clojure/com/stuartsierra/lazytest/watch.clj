@@ -4,7 +4,7 @@
                 find-clojure-sources-in-dir
                 find-namespaces-in-dir)]
         [clojure.contrib.java :only (as-file)]
-        [com.stuartsierra.lazytest :only (run-spec)]
+        [com.stuartsierra.lazytest :only (run-spec TestThrown)]
         [com.stuartsierra.lazytest.report :only (spec-report)])
   (:import (java.io File)))
 
@@ -80,6 +80,9 @@
   (let [{:keys [reporter] :or {reporter spec-report}} options]
     (apply watch-dir d
            (fn [names]
-             (when-let [results (run-spec names :reload)]
-               (reporter results)))
+             (try
+              (when-let [results (run-spec names :reload)]
+                (reporter results))
+              (catch Throwable t
+                (reporter (TestThrown names nil t)))))
            options)))
