@@ -435,36 +435,45 @@
         :else nil))
 
 (defn load-spec
-  "Like find-spec but loads namespaces with require.  options will be
-  passed to require, such as :reload, or :reload-all.  Returns the
-  spec or nil if none found.
+  "Like find-spec but loads namespaces with require.  Returns the spec
+  or nil if none found.
+
+  options will be passed to require, such as :reload, or :reload-all.
+  Also accepts an option :replace that removes each namespace before
+  require'ing it.
 
   Argument may also be a java.io.File or String, which will load all
   namespaces in the named directory."
   [x & options]
-  (cond (symbol? x)
-        (do (apply require x options) (load-spec (the-ns x)))
+  (let [unload? (some #{:replace} options)
+        options (filter (not #{:replace} %) options)]
+    (cond (symbol? x)
+          (do (when unload? (remove-ns x))
+              (apply require x options)
+              (load-spec (the-ns x)))
 
-        (string? x)
-        (load-spec (java.io.File. x))
+          (string? x)
+          (load-spec (java.io.File. x))
 
-        (instance? java.io.File x)
-        (if (.isDirectory x)
-          (let [names (find-namespaces-in-dir x)]
-            (doseq [n names] (apply require n options))
-            (find-spec names))
-          (throw (IllegalArgumentException.
-                  "File argument to load-spec must be a directory")))
+          (instance? java.io.File x)
+          (if (.isDirectory x)
+            (let [names (find-namespaces-in-dir x)]
+              (doseq [n names]
+                (when unload? (remove-ns n))
+                (apply require n options))
+              (find-spec names))
+            (throw (IllegalArgumentException.
+                    "File argument to load-spec must be a directory")))
 
-        (coll? x)
-        (let [xs (distinct (filter identity (map #(apply load-spec % options) x)))]
-          (if (seq xs)
-            (SimpleContainer (vec xs)
-                             {:generator `load-spec
-                              :comment "Generated from collection by load-spec."}
-                             nil)))
+          (coll? x)
+          (let [xs (distinct (filter identity (map #(apply load-spec % options) x)))]
+            (if (seq xs)
+              (SimpleContainer (vec xs)
+                               {:generator `load-spec
+                                :comment "Generated from collection by load-spec."}
+                               nil)))
 
-        :else (find-spec x)))
+          :else (find-spec x))))
 
 (defn run-spec
   "Like load-spec but executes the specs once they are found."
