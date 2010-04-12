@@ -446,10 +446,10 @@
   namespaces in the named directory."
   [x & options]
   (let [unload? (some #{:replace} options)
-        options (filter #(not= % :replace) options)]
+        require-opts (filter #(not= % :replace) options)]
     (cond (symbol? x)
           (do (when unload? (remove-ns x))
-              (apply require x options)
+              (apply require x require-opts)
               (load-spec (the-ns x)))
 
           (string? x)
@@ -457,11 +457,7 @@
 
           (instance? java.io.File x)
           (if (.isDirectory x)
-            (let [names (find-namespaces-in-dir x)]
-              (doseq [n names]
-                (when unload? (remove-ns n))
-                (apply require n options))
-              (find-spec names))
+            (apply load-spec (find-namespaces-in-dir x) options)
             (throw (IllegalArgumentException.
                     "File argument to load-spec must be a directory")))
 
