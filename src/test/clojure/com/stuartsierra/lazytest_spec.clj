@@ -14,6 +14,12 @@
   (given [x dummy-context-1]
          (is (= x 1) "hello" (= x 2))))
 
+(defcontext passing-assertion [it is-without-givens]
+  (first (:children it)))
+
+(defcontext failing-assertion [it is-without-givens]
+  (second (:children it)))
+
 (describe
  *ns* 
  (spec is-spec "The 'is' macro"
@@ -75,25 +81,36 @@
                                         (every? context? (:contexts (first (:children it)))))))))))
 
  (spec assertions-spec "Assertions, when invoked"
-       (given [it is-without-givens]
+       (given [it passing-assertion]
               (spec "should return an object"
-                    (is (not (nil? ((first (:children it)))))
+                    (is (not (nil? (it)))
                         "that supports success?"
-                        (ok? (success? ((first (:children it)))))
+                        (ok? (success? (it)))
                         "that supports pending?"
-                        (ok? (pending? ((first (:children it)))))
+                        (ok? (pending? (it)))
                         "that supports error?"
-                        (ok? (error? ((first (:children it)))))
+                        (ok? (error? (it)))
                         "that supports container?"
-                        (ok? (container? ((first (:children it)))))))))
+                        (ok? (container? (it)))))))
 
  (spec passing-assertion "A passing assertion"
-       (given [it is-without-givens]
+       (given [it passing-assertion]
               (is "should return true for success?"
-                  (true? (success? ((first (:children it)))))
+                  (true? (success? (it)))
                   "should return false for error?"
-                  (false? (error? ((first (:children it)))))
+                  (false? (error? (it)))
                   "should return false for pending?"
-                  (false? (pending? ((first (:children it)))))
+                  (false? (pending? (it)))
                   "should return false for container?"
-                  (false? (pending? ((first (:children it)))))))))
+                  (false? (pending? (it))))))
+
+  (spec failing-assertion "A failing assertion"
+       (given [it failing-assertion]
+              (is "should return false for success?"
+                  (false? (success? (it)))
+                  "should return false for error?"
+                  (false? (error? (it)))
+                  "should return false for pending?"
+                  (false? (pending? (it)))
+                  "should return false for container?"
+                  (false? (pending? (it)))))))
