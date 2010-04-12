@@ -446,7 +446,7 @@
   namespaces in the named directory."
   [x & options]
   (let [unload? (some #{:replace} options)
-        options (filter (not #{:replace} %) options)]
+        options (filter #(not #{:replace} %) options)]
     (cond (symbol? x)
           (do (when unload? (remove-ns x))
               (apply require x options)
