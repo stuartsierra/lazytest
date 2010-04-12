@@ -322,12 +322,13 @@
         {:keys [contexts strategy]} opts
         children (vec decl)
         sym (gensym "c")]
-    `(let [~sym ~(if contexts
-                    (do (assert (vector? contexts))
-                        `(ContextualContainer ~contexts ~children '~m nil))
-                    `(SimpleContainer ~children '~m nil))]
-       ~(when (:name m) `(intern *ns* '~(:name m) ~sym))
-       ~sym)))
+    ;; Must wrap in a fn to avoid 'method too big' errors
+    `((fn [] (let [~sym ~(if contexts
+                     (do (assert (vector? contexts))
+                         `(ContextualContainer ~contexts ~children '~m nil))
+                     `(SimpleContainer ~children '~m nil))]
+         ~(when (:name m) `(intern *ns* '~(:name m) ~sym))
+         ~sym)))))
 
 (defmacro spec-do
   "Creates an assertion function consisting of arbitrary code.
