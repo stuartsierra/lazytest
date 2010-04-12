@@ -109,5 +109,5 @@
     (assert (= @*log* [:open-c1 :open-c2 :close-c2 :close-c1]))))
 
 
-;; empty describe to block run-spec
-(describe *ns* )
+(describe *ns* "Dummy spec to thwart run-spec"
+          (is (= 1 1)))
