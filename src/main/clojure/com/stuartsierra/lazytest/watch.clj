@@ -81,7 +81,7 @@
     (apply watch-dir d
            (fn [names]
              (try
-              (when-let [results (run-spec names :reload)]
+              (when-let [results (run-spec names :replace)]
                 (reporter results))
               (catch Throwable t
                 (reporter (TestThrown names nil t)))))
