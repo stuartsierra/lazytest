@@ -3,7 +3,8 @@
          :only (describe spec spec?
                          is given defcontext
                          context? ok? success?
-                         pending? error? container?)]))
+                         pending? error? container?
+                         thrown? thrown-with-msg?)]))
 
 (defcontext dummy-context-1 [] 1)
 
@@ -20,8 +21,26 @@
 (defcontext failing-assertion [it is-without-givens]
   (second (:children it)))
 
+(defcontext is-that-throws []
+  (is (/ 1 0)))
+
+(defcontext throwing-assertion [it is-that-throws]
+  (first (:children it)))
+
+(defcontext is-thrown-assertion []
+  (first (:children (is (thrown? java.lang.ArithmeticException (/ 1 0))))))
+
+(defcontext is-thrown-assertion-wrong-type []
+  (first (:children (is (thrown? java.lang.IndexOutOfBoundsException (/ 1 0))))))
+
+(defcontext is-thrown-assertion-no-throw []
+  (first (:children (is (thrown? java.lang.Exception (= 1 1))))))
+
+(defcontext empty-is []
+  (is ))
+
 (describe
- *ns* 
+ *ns*
  (spec is-spec "The 'is' macro"
        (given [it is-without-givens]
               (spec "without any givens"
@@ -81,36 +100,92 @@
                                         (every? context? (:contexts (first (:children it)))))))))))
 
  (spec assertions-spec "Assertions, when invoked"
-       (given [it passing-assertion]
+       (given [a passing-assertion]
               (spec "should return an object"
-                    (is (not (nil? (it)))
+                    (is (not (nil? (a)))
                         "that supports success?"
-                        (ok? (success? (it)))
+                        (ok? (success? (a)))
                         "that supports pending?"
-                        (ok? (pending? (it)))
+                        (ok? (pending? (a)))
                         "that supports error?"
-                        (ok? (error? (it)))
+                        (ok? (error? (a)))
                         "that supports container?"
-                        (ok? (container? (it)))))))
+                        (ok? (container? (a))))))
 
- (spec passing-assertion "A passing assertion"
-       (given [it passing-assertion]
-              (is "should return true for success?"
+       (spec "and passing"
+             (given [a passing-assertion]
+                    (is "should be success?"
+                        (true? (success? (a)))
+                        "should not be error?"
+                        (false? (error? (a)))
+                        "should not be pending?"
+                        (false? (pending? (a)))
+                        "should not be container?"
+                        (false? (container? (a))))))
+
+       (spec "and failing"
+             (given [a failing-assertion]
+                    (is "should not be success?"
+                        (false? (success? (a)))
+                        "should not be error?"
+                        (false? (error? (a)))
+                        "should not be pending?"
+                        (false? (pending? (a)))
+                        "should not be container?"
+                        (false? (container? (a))))))
+
+       (spec "and throwing an exception"
+             (given [a throwing-assertion]
+                    (is "should not be success?"
+                        (false? (success? (a)))
+                        "should be error?"
+                        (true? (error? (a)))
+                        "should not be pending?"
+                        (false? (pending? (a)))
+                        "should not be container?"
+                        (false? (container? (a)))))))
+
+ (spec empty-is-spec "An empty 'is' expression"
+       (given [it empty-is]
+              (is "should not be success?"
                   (true? (success? (it)))
-                  "should return false for error?"
+                  "should not be error?"
                   (false? (error? (it)))
-                  "should return false for pending?"
-                  (false? (pending? (it)))
-                  "should return false for container?"
-                  (false? (pending? (it))))))
+                  "should be pending?"
+                  (true? (pending? (it)))
+                  "should be container?"
+                  (false? (true? (it))))))
 
-  (spec failing-assertion "A failing assertion"
-       (given [it failing-assertion]
-              (is "should return false for success?"
-                  (false? (success? (it)))
-                  "should return false for error?"
-                  (false? (error? (it)))
-                  "should return false for pending?"
-                  (false? (pending? (it)))
-                  "should return false for container?"
-                  (false? (pending? (it)))))))
+ (spec is-thrown-spec "An (is (thrown? ...)) assertion"
+       (given [a is-thrown-assertion]
+              (spec "that passes"
+                    (is "should be success?"
+                        (true? (success? (a)))
+                        "should not be error?"
+                        (false? (error? (a)))
+                        "should not be pending?"
+                        (false? (pending? (a)))
+                        "should not be container?"
+                        (false? (container? (a))))))
+
+       (given [a is-thrown-assertion-wrong-type]
+              (spec "that throws the wrong type"
+                    (is "should not be success?"
+                        (false? (success? (a)))
+                        "should be error?"
+                        (true? (error? (a)))
+                        "should not be pending?"
+                        (false? (pending? (a)))
+                        "should not be container?"
+                        (false? (container? (a))))))
+
+       (given [a is-thrown-assertion-no-throw]
+              (spec "that throws nothing"
+                    (is "should not be success?"
+                        (false? (success? (a)))
+                        "should not be error?"
+                        (false? (error? (a)))
+                        "should not be pending?"
+                        (false? (pending? (a)))
+                        "should not be container?"
+                        (false? (container? (a))))))))
