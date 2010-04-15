@@ -3,10 +3,11 @@
          :only (read-file-ns-decl
                 find-clojure-sources-in-dir
                 find-namespaces-in-dir)]
-        [clojure.contrib.java :only (as-file)]
-        [com.stuartsierra.lazytest :only (run-spec TestThrown)]
+        [clojure.contrib.io :only (as-file)]
+        [com.stuartsierra.lazytest :only (run-spec)]
         [com.stuartsierra.lazytest.report :only (spec-report)])
-  (:import (java.io File)))
+  (:import (java.io File)
+           (com.stuartsierra.lazytest TestThrown)))
 
 (defn ns-mod-times
   "Given a directory (java.io.File) containing .clj source files,
@@ -84,5 +85,5 @@
               (when-let [results (run-spec names :reload)]
                 (reporter results))
               (catch Throwable t
-                (reporter (TestThrown names nil t)))))
+                (reporter (TestThrown. names nil t)))))
            options)))

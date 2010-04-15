@@ -17,32 +17,28 @@
 
 ;;; Results
 
-(deftype TestResultContainer [source children]
-  clojure.lang.IPersistentMap
+(defrecord TestResultContainer [source children]
   TestResult
     (success? [this] (every? success? children))
     (pending? [this] (if (seq children) false true))
     (error? [this] false)
     (container? [this] true))
 
-(deftype TestPassed [source states]
-  clojure.lang.IPersistentMap
+(defrecord TestPassed [source states]
   TestResult
     (success? [this] true)
     (pending? [this] false)
     (error? [this] false)
     (container? [this] false))
 
-(deftype TestFailed [source states]
-  clojure.lang.IPersistentMap
+(defrecord TestFailed [source states]
   TestResult
     (success? [this] false)
     (pending? [this] false)
     (error? [this] false)
     (container? [this] false))
 
-(deftype TestThrown [source states throwable]
-  clojure.lang.IPersistentMap
+(defrecord TestThrown [source states throwable]
   TestResult
     (success? [this] false)
     (pending? [this] false)
@@ -52,7 +48,7 @@
 
 ;;; Contexts
 
-(deftype Context [parents before after])
+(defrecord Context [parents before after])
 
 (defn context? [x]
   (isa? (type x) ::Context))
@@ -97,7 +93,7 @@
       (let [after-fn (when after
                        `(fn ~(vec (concat (first after) locals))
                           ~@after))]
-        `(def ~name (Context ~contexts ~before-fn ~after-fn '~m nil))))))
+        `(def ~name (Context. ~contexts ~before-fn ~after-fn '~m nil))))))
 
 (defn- has-after?
   "True if Context c or any of its parents has an :after function."
@@ -113,19 +109,19 @@
 
 ;;; Assertion types
 
-(deftype SimpleAssertion [pred]
+(defrecord SimpleAssertion [pred]
   clojure.lang.IFn
     (invoke [this] (invoke-test this {}))
   TestInvokable
     (invoke-test [this active]
       (try
         (if (pred)
-          (TestPassed this nil)
-          (TestFailed this nil))
+          (TestPassed. this nil)
+          (TestFailed. this nil))
         (catch Throwable t
-          (TestThrown this nil t)))))
+          (TestThrown. this nil t)))))
 
-(deftype ContextualAssertion [contexts pred]
+(defrecord ContextualAssertion [contexts pred]
   clojure.lang.IFn
     (invoke [this] (invoke-test this {}))
   TestInvokable
@@ -134,25 +130,25 @@
             states (map merged contexts)]
         (try
          (if (apply pred states)
-           (TestPassed this states)
-           (TestFailed this states))
-         (catch Throwable t (TestThrown this states t))
+           (TestPassed. this states)
+           (TestFailed. this states))
+         (catch Throwable t (TestThrown. this states t))
          (finally (close-local-contexts contexts merged active))))))
 
 
 ;;; Container types
 
-(deftype SimpleContainer [children]
+(defrecord SimpleContainer [children]
   clojure.lang.IFn
     (invoke [this] (invoke-test this {}))
   TestInvokable
     (invoke-test [this active]
       (try
-       (TestResultContainer this (map #(invoke-test % active) children))
+       (TestResultContainer. this (map #(invoke-test % active) children))
        (catch Throwable t
-         (TestThrown this nil t)))))
+         (TestThrown. this nil t)))))
 
-(deftype ContextualContainer [contexts children]
+(defrecord ContextualContainer [contexts children]
   clojure.lang.IFn
     (invoke [this] (invoke-test this {}))
   TestInvokable
@@ -162,8 +158,8 @@
          (let [results (map #(invoke-test % merged) children)]
            ;; Force non-lazy evaluation when contexts need closing:
            (when (some has-after? contexts) (dorun results))
-           (TestResultContainer this results))
-         (catch Throwable t (TestThrown this nil t))
+           (TestResultContainer. this results))
+         (catch Throwable t (TestThrown. this nil t))
          (finally (close-local-contexts contexts merged active))))))
 
 
@@ -192,13 +188,13 @@
                         :line (:line (meta form))
                         :locals givens}]
           (recur (conj r (if (seq givens)
-                           `(ContextualAssertion
+                           `(ContextualAssertion.
                              ~givens (fn ~givens ~form)
                              '~metadata nil)
-                           `(SimpleAssertion
+                           `(SimpleAssertion.
                              (fn [] ~form) '~metadata nil)))
                  nxt))
-        `(SimpleContainer ~r {:generator 'is
+        `(SimpleContainer. ~r {:generator 'is
                               :line ~(:line (meta &form))
                               :file *file*
                               :form '~&form}
@@ -248,9 +244,9 @@
     (assert (vector? argv))
     (assert (zero? (rem (count values) argc)))
     `(let [~sym (fn ~argv ~expr)]
-       (SimpleContainer ~(vec (map (fn [vs]
+       (SimpleContainer. ~(vec (map (fn [vs]
                                      (if (seq givens)
-                                       `(ContextualAssertion
+                                       `(ContextualAssertion.
                                          ~givens
                                          (fn ~givens (~sym ~@vs))
                                          {:form '(~'are ~argv ~expr ~@vs)
@@ -258,7 +254,7 @@
                                           :line ~(some #(:line (meta %)) vs)
                                           :locals '~givens}
                                          nil)
-                                       `(SimpleAssertion
+                                       `(SimpleAssertion.
                                          (fn [] (~sym ~@vs))
                                          {:form '(~'are ~argv ~expr ~@vs)
                                           :file *file*
@@ -325,8 +321,8 @@
     ;; Must wrap in a fn to avoid 'method too big' errors
     `((fn [] (let [~sym ~(if contexts
                      (do (assert (vector? contexts))
-                         `(ContextualContainer ~contexts ~children '~m nil))
-                     `(SimpleContainer ~children '~m nil))]
+                         `(ContextualContainer. ~contexts ~children '~m nil))
+                     `(SimpleContainer. ~children '~m nil))]
          ~(when (:name m) `(intern *ns* '~(:name m) ~sym))
          ~sym)))))
 
@@ -354,9 +350,9 @@
           locals (map first pairs)
           contexts (map second pairs)]
       `(let [~sym ~(if (seq contexts)
-                     `(ContextualAssertion ~contexts (fn ~locals ~@body :ok)
+                     `(ContextualAssertion. ~contexts (fn ~locals ~@body :ok)
                                            '~m nil)
-                     `(SimpleAssertion (fn [] ~@body :ok) '~m nil))]
+                     `(SimpleAssertion. (fn [] ~@body :ok) '~m nil))]
          ~(when (:name m) `(intern *ns* '~(:name m) ~sym))
          ~sym))))
 
@@ -415,7 +411,7 @@
             value
             (let [m (meta x)]
               (when-let [t (:test m)]
-                (SimpleAssertion t {:comment (str "Generated from :test metadata on "
+                (SimpleAssertion. t {:comment (str "Generated from :test metadata on "
                                                   x " by find-spec.")
                                     :generator `find-spec
                                     :name (:name m)
@@ -428,7 +424,7 @@
         ;; distinct so "main" and "spec" ns's don't load same specs
         (let [xs (distinct (filter identity (map find-spec x)))]
           (if (seq xs)
-            (SimpleContainer (vec xs)
+            (SimpleContainer. (vec xs)
                              {:generator `find-spec
                               :comment "Generated from collection by find-spec."}
                              nil)))
@@ -465,7 +461,7 @@
           (coll? x)
           (let [xs (distinct (filter identity (map #(apply load-spec % options) x)))]
             (if (seq xs)
-              (SimpleContainer (vec xs)
+              (SimpleContainer. (vec xs)
                                {:generator `load-spec
                                 :comment "Generated from collection by load-spec."}
                                nil)))
