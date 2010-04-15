@@ -39,17 +39,17 @@ The body of `spec` contains assertion expressions, created with the
 Each assertion is an isolated expression that returns logical true or
 false:
 
-    (spec simple-addition
-       (is (= 2 (+ 1 1))
-           (= 4 (+ 2 2))))
+(spec simple-addition
+   (is (= 2 (+ 1 1))
+       (= 4 (+ 2 2))))
 
 Within `is`, any assertion may be preceded by a doc string:
 
-    (spec confused-addition
-       (is "Two plus two is four"
-           (= 4 (+ 2 2))
-           "Two plus two is five?!"
-           (= 5 (+ 2 2))))
+(spec confused-addition
+   (is "Two plus two is four"
+       (= 4 (+ 2 2))
+       "Two plus two is five?!"
+       (= 5 (+ 2 2))))
 
 
 Nested Specs
@@ -58,16 +58,16 @@ Nested Specs
 `spec` expressions may be nested to any depth, and their doc strings
 will be concatenated in reports:
 
-    (spec minus "The minus function"
-      (spec "when called with one argument"
-        (spec "negates that argument"
-          (is (= -1 (- 1))
-              (= -2 (- 2)))))
-      (spec "when called with two arguments"
-        (spec "subtracts"
-          (is (= 0 (- 5 5))
-              "2 from 3 to get 1"
-              (= 1 (- 3 2))))))
+(spec minus "The minus function"
+  (spec "when called with one argument"
+    (spec "negates that argument"
+      (is (= -1 (- 1))
+          (= -2 (- 2)))))
+  (spec "when called with two arguments"
+    (spec "subtracts"
+      (is (= 0 (- 5 5))
+          "2 from 3 to get 1"
+          (= 1 (- 3 2))))))
 
 
 Named Specs
