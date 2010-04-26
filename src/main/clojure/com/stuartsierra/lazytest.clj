@@ -51,7 +51,7 @@
 (defrecord Context [parents before after])
 
 (defn context? [x]
-  (isa? (type x) ::Context))
+  (isa? (type x) Context))
 
 (defn- open-context
   "Opens context c, and all its parents, unless it is already active."
