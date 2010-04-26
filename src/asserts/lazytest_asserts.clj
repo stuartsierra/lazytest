@@ -145,3 +145,5 @@
 
 (describe *ns* "Dummy spec to thwart run-spec"
           (is (= 1 1)))
+
+(println "All assertions in lazytest-asserts passed.")
