@@ -286,7 +286,7 @@
          (even? (count bindings))]}
   (let [givens (vec (reverse (filter #(::context-state-local (meta %)) (keys &env))))]
     `(using ~(vec (interleave (firsts bindings)
-                              (map (fn [expr] `(Context. ~givens (fn ~givens expr) nil))
+                              (map (fn [expr] `(Context. ~givens (fn ~givens ~expr) nil))
                                    (seconds bindings))))
             ~@body)))
 
