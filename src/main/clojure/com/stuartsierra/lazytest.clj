@@ -1,6 +1,8 @@
 (ns #^{:spec 'com.stuartsierra.lazytest-spec}
   com.stuartsierra.lazytest
-  (:use [clojure.contrib.find-namespaces
+  (:use [clojure.contrib.seq
+         :only (flatten)]
+        [clojure.contrib.find-namespaces
          :only (find-namespaces-in-dir)]))
 
 ;;; PROTOCOLS
@@ -176,29 +178,32 @@
   which will be compiled into a function.  A string will be attached
   as :doc metadata on the following assertion."
   [& assertions]
-  (let [givens (vec (reverse (filter #(::context-state-local (meta %)) (keys &env))))]
-    (loop [r [], as assertions]
-      (if (seq as)
-        (let [[doc form nxt] (if (string? (first as))
-                               [(first as) (second as) (nnext as)]
-                               [nil (first as) (next as)])
-              metadata {:doc doc,
-                        :form form
-                        :file *file*
-                        :line (:line (meta form))
-                        :locals givens}]
-          (recur (conj r (if (seq givens)
-                           `(ContextualAssertion.
-                             ~givens (fn ~givens ~form)
-                             '~metadata nil)
-                           `(SimpleAssertion.
-                             (fn [] ~form) '~metadata nil)))
-                 nxt))
-        `(SimpleContainer. ~r {:generator 'is
-                              :line ~(:line (meta &form))
-                              :file *file*
-                              :form '~&form}
-                          nil)))))
+  (if (some #(and (symbol? %) (= #'com.stuartsierra.lazytest/is (resolve %)))
+            (flatten assertions))
+    '(throw (IllegalArgumentException. "'is' expressions may not be nested"))
+    (let [givens (vec (reverse (filter #(::context-state-local (meta %)) (keys &env))))]
+      (loop [r [], as assertions]
+        (if (seq as)
+          (let [[doc form nxt] (if (string? (first as))
+                                 [(first as) (second as) (nnext as)]
+                                 [nil (first as) (next as)])
+                metadata {:doc doc,
+                          :form form
+                          :file *file*
+                          :line (:line (meta form))
+                          :locals givens}]
+            (recur (conj r (if (seq givens)
+                             `(ContextualAssertion.
+                               ~givens (fn ~givens ~form)
+                               '~metadata nil)
+                             `(SimpleAssertion.
+                               (fn [] ~form) '~metadata nil)))
+                   nxt))
+          `(SimpleContainer. ~r {:generator 'is
+                                 :line ~(:line (meta &form))
+                                 :file *file*
+                                 :form '~&form}
+                             nil))))))
 
 (defmacro thrown?
   "Returns true if body throws an instance of class c."
