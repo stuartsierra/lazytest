@@ -189,26 +189,26 @@ test.
 
 The :after function is optional.
 
-Contexts are used in specs with the `given` macro:
+Contexts are used in specs with the `using` macro:
 
     (spec ...
-      (given [bindings...]
+      (using [bindings...]
         (is ...)))
 
-`given` has a binding vector consisting of name-value pairs, like
+`using` has a binding vector consisting of name-value pairs, like
 `let`, where each value is a context object.
 
-Assertions inside the `given` will run with the names locally bound to
+Assertions inside the `using` will run with the names locally bound to
 the state returned by the contexts' "before" functions.  Example:
 
     (defcontext calculate-pi []
       Math/PI)
 
     (spec pi-tests
-      (given [pi (calculate-pi)]
+      (using [pi (calculate-pi)]
         (is (< (* pi pi) 10))))
 
-`given` may also contain nested `spec`s or other `given`s.
+`using` may also contain nested `spec`s or other `using`s.
 
 
 Parent Contexts
@@ -216,7 +216,7 @@ Parent Contexts
 
 Contexts may be composed.  The vector argument after the docstring in
 `defcontext` defines "parent contexts" and is composed of name-context
-pairs as in `given`.  The full syntax is:
+pairs as in `using`.  The full syntax is:
 
     (defcontext name [a context-one
                       b context-two]
@@ -240,7 +240,7 @@ Example:
        (drop-tables db))
 
     (spec db-tests "With the database"
-       (given [t tables]
+       (using [t tables]
          (is "tables were created"
              (tables-exist? ["foo" "bar"] t))))
 
