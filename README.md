@@ -173,6 +173,29 @@ certain directory, call `run-spec` with the name of the directory:
 
 
 
+Givens
+======
+
+To share a computed value among a group of specs, use the `given`
+macro.
+
+`given` behaves like `let`: it takes a vector of name-value pairs.
+The names will be available in the body of all assertions inside the
+`given` body.
+
+    (spec pi-specs
+      (given [pi-squared (* Math/PI Math/PI)]
+        (spec "pi squared"
+          (is "is less than 10"
+              (< 10 pi-squared)
+              "is more than 9"
+              (> 9 pi-squared))))
+
+The `given` macro may contain nested `spec`, `is`, and other `given`
+expressions, but it must be *outside* of the `is` macro.
+
+
+
 Contexts
 ========
 
@@ -208,7 +231,8 @@ the state returned by the contexts' "before" functions.  Example:
       (using [pi (calculate-pi)]
         (is (< (* pi pi) 10))))
 
-`using` may also contain nested `spec`s or other `using`s.
+`using` may contain nested `spec`, `is`, or other `using` expressions,
+but it must be *outside* of the `is` macro.
 
 
 Parent Contexts
