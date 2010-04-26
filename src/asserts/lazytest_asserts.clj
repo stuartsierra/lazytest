@@ -109,5 +109,30 @@
     (assert (= @*log* [:open-c1 :open-c2 :close-c2 :close-c1]))))
 
 
+;;; Givens
+
+(spec g1
+  (given [x (+ 1 1)]
+    (is (= x 2))))
+(assert (success? (g1)))
+
+(spec g2
+  (given [x (+ 1 1)
+          y (+ 2 0)]
+    (is (= x y))))
+(assert (success? (g2)))
+
+(spec g3
+  (given [x (+ 1 1)]
+    (spec g4
+      (given [y (+ 2 0)]
+        (is (= x y))))))
+(assert (success? (g3)))
+(assert (success? (g4)))
+
+
+
+;;; Describe
+
 (describe *ns* "Dummy spec to thwart run-spec"
           (is (= 1 1)))
