@@ -176,7 +176,7 @@
   which will be compiled into a function.  A string will be attached
   as :doc metadata on the following assertion."
   [& assertions]
-  (let [givens (vec (reverse (filter #(::given (meta %)) (keys &env))))]
+  (let [givens (vec (reverse (filter #(::context-state-local (meta %)) (keys &env))))]
     (loop [r [], as assertions]
       (if (seq as)
         (let [[doc form nxt] (if (string? (first as))
@@ -238,7 +238,7 @@
           (= (+ 8 -1) 7))
 "
   [argv expr & values]
-  (let [givens (vec (reverse (filter #(::given (meta %)) (keys &env))))
+  (let [givens (vec (reverse (filter #(::context-state-local (meta %)) (keys &env))))
         argc (count argv)
         sym (gensym "f")]
     (assert (vector? argv))
@@ -267,16 +267,28 @@
                          :form '~&form}
                         nil))))
 
-(defmacro given 
+(defmacro using
   "Binds context states to locals.  bindings is a vector of
   name-value pairs, like let, where each value is a context created
   with defcontext."
    [bindings & body]
    {:pre [(vector? bindings)
           (even? (count bindings))]}
-  (let [symbols (map #(with-meta % {::given true}) (firsts bindings))]
+  (let [symbols (map #(with-meta % {::context-state-local true}) (firsts bindings))]
     `(let ~(vec (interleave symbols (seconds bindings)))
        ~@body)))
+
+(defmacro given 
+  "Like using but binding values are ordinary expressions, which will
+   be wrapped in Context objects."
+  [bindings & body]
+  {:pre [(vector? bindings)
+         (even? (count bindings))]}
+  (let [givens (vec (reverse (filter #(::context-state-local (meta %)) (keys &env))))]
+    `(using ~(vec (interleave (firsts bindings)
+                              (map (fn [expr] `(Context. ~givens (fn ~givens expr) nil))
+                                   (seconds bindings))))
+            ~@body)))
 
 (defn- attributes
   "Reads optional name symbol and doc string from args,

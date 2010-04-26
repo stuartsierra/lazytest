@@ -86,7 +86,7 @@
      ~@body))
 
 (spec repeat-contexts
-      (given [a c1, b c2]
+      (using [a c1, b c2]
              (is (= a 1)
                  (= b 2))))
 
@@ -99,7 +99,7 @@
                 :open-c1 :open-c2 :close-c2 :close-c1]))))
 
 (spec once-contexts :contexts [c1 c2]
-      (given [a c1, b c2]
+      (using [a c1, b c2]
              (is (= a 1)
                  (= b 2))))
 

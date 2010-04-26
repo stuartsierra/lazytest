@@ -1,24 +1,24 @@
 (ns com.stuartsierra.lazytest-spec
   (:use [com.stuartsierra.lazytest
          :only (describe spec spec?
-                         is given defcontext
+                         is using defcontext
                          context? ok? success?
                          pending? error? container?
                          thrown? thrown-with-msg?)]))
 
 (defcontext dummy-context-1 [] 1)
 
-(defcontext is-without-givens []
+(defcontext is-without-usings []
   (is (= 1 1) "hello" (= 1 2)))
 
-(defcontext is-with-givens []
-  (given [x dummy-context-1]
+(defcontext is-with-usings []
+  (using [x dummy-context-1]
          (is (= x 1) "hello" (= x 2))))
 
-(defcontext passing-assertion [it is-without-givens]
+(defcontext passing-assertion [it is-without-usings]
   (first (:children it)))
 
-(defcontext failing-assertion [it is-without-givens]
+(defcontext failing-assertion [it is-without-usings]
   (second (:children it)))
 
 (defcontext is-that-throws []
@@ -42,8 +42,8 @@
 (describe
  *ns*
  (spec is-spec "The 'is' macro"
-       (given [it is-without-givens]
-              (spec "without any givens"
+       (using [it is-without-usings]
+              (spec "without any usings"
                     (is "should create a spec"
                         (spec? it)
               
@@ -68,8 +68,8 @@
                               "as many as there are expressions"
                               (= 2 (count (:children it)))))))
 
-       (given [it is-with-givens]
-              (spec "with givens"
+       (using [it is-with-usings]
+              (spec "with usings"
                     (is "should create a spec"
                         (spec? it)
               
@@ -100,7 +100,7 @@
                                         (every? context? (:contexts (first (:children it)))))))))))
 
  (spec assertions-spec "Assertions, when invoked"
-       (given [a passing-assertion]
+       (using [a passing-assertion]
               (spec "should return an object"
                     (is (not (nil? (a)))
                         "that supports success?"
@@ -113,7 +113,7 @@
                         (ok? (container? (a))))))
 
        (spec "and passing"
-             (given [a passing-assertion]
+             (using [a passing-assertion]
                     (is "should be success?"
                         (true? (success? (a)))
                         "should not be error?"
@@ -124,7 +124,7 @@
                         (false? (container? (a))))))
 
        (spec "and failing"
-             (given [a failing-assertion]
+             (using [a failing-assertion]
                     (is "should not be success?"
                         (false? (success? (a)))
                         "should not be error?"
@@ -135,7 +135,7 @@
                         (false? (container? (a))))))
 
        (spec "and throwing an exception"
-             (given [a throwing-assertion]
+             (using [a throwing-assertion]
                     (is "should not be success?"
                         (false? (success? (a)))
                         "should be error?"
@@ -146,7 +146,7 @@
                         (false? (container? (a)))))))
 
  (spec empty-is-spec "An empty 'is' expression"
-       (given [it empty-is]
+       (using [it empty-is]
               (is "should not be success?"
                   (true? (success? (it)))
                   "should not be error?"
@@ -157,7 +157,7 @@
                   (false? (true? (it))))))
 
  (spec is-thrown-spec "An (is (thrown? ...)) assertion"
-       (given [a is-thrown-assertion]
+       (using [a is-thrown-assertion]
               (spec "that passes"
                     (is "should be success?"
                         (true? (success? (a)))
@@ -168,7 +168,7 @@
                         "should not be container?"
                         (false? (container? (a))))))
 
-       (given [a is-thrown-assertion-wrong-type]
+       (using [a is-thrown-assertion-wrong-type]
               (spec "that throws the wrong type"
                     (is "should not be success?"
                         (false? (success? (a)))
@@ -179,7 +179,7 @@
                         "should not be container?"
                         (false? (container? (a))))))
 
-       (given [a is-thrown-assertion-no-throw]
+       (using [a is-thrown-assertion-no-throw]
               (spec "that throws nothing"
                     (is "should not be success?"
                         (false? (success? (a)))
