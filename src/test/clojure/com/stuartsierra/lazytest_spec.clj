@@ -1,6 +1,6 @@
 (ns com.stuartsierra.lazytest-spec
   (:use [com.stuartsierra.lazytest
-         :only (describe spec spec?
+         :only (describe spec spec? given
                          is using defcontext
                          context? ok? success?
                          pending? error? container?
@@ -8,41 +8,10 @@
 
 (defcontext dummy-context-1 [] 1)
 
-(defcontext is-without-usings []
-  (is (= 1 1) "hello" (= 1 2)))
-
-(defcontext is-with-usings []
-  (using [x dummy-context-1]
-         (is (= x 1) "hello" (= x 2))))
-
-(defcontext passing-assertion [it is-without-usings]
-  (first (:children it)))
-
-(defcontext failing-assertion [it is-without-usings]
-  (second (:children it)))
-
-(defcontext is-that-throws []
-  (is (/ 1 0)))
-
-(defcontext throwing-assertion [it is-that-throws]
-  (first (:children it)))
-
-(defcontext is-thrown-assertion []
-  (first (:children (is (thrown? java.lang.ArithmeticException (/ 1 0))))))
-
-(defcontext is-thrown-assertion-wrong-type []
-  (first (:children (is (thrown? java.lang.IndexOutOfBoundsException (/ 1 0))))))
-
-(defcontext is-thrown-assertion-no-throw []
-  (first (:children (is (thrown? java.lang.Exception (= 1 1))))))
-
-(defcontext empty-is []
-  (is ))
-
 (describe
  *ns*
  (spec is-spec "The 'is' macro"
-       (using [it is-without-usings]
+       (given [it (is (= 1 1) "hello" (= 1 2))]
               (spec "without any usings"
                     (is "should create a spec"
                         (spec? it)
@@ -68,7 +37,8 @@
                               "as many as there are expressions"
                               (= 2 (count (:children it)))))))
 
-       (using [it is-with-usings]
+       (given [it (using [x dummy-context-1]
+                         (is (= x 1) "hello" (= x 2)))]
               (spec "with usings"
                     (is "should create a spec"
                         (spec? it)
@@ -92,15 +62,15 @@
                               (every? #(instance? clojure.lang.IFn %) (:children it))
 
                               "as many as there are expressions"
-                              (= 2 (count (:children it)))
+                              (= 2 (count (:children it))))
 
-                              (spec "with contexts"
-                                    (is (seq (:contexts (first (:children it))))
-                                        "that are Context objects"
-                                        (every? context? (:contexts (first (:children it)))))))))))
+                          (spec "with contexts"
+                                (is (seq (:contexts (first (:children it))))
+                                    "that are Context objects"
+                                    (every? context? (:contexts (first (:children it))))))))))
 
  (spec assertions-spec "Assertions, when invoked"
-       (using [a passing-assertion]
+       (given [a (first (:children (is (= 1 1))))]
               (spec "should return an object"
                     (is (not (nil? (a)))
                         "that supports success?"
@@ -110,10 +80,9 @@
                         "that supports error?"
                         (ok? (error? (a)))
                         "that supports container?"
-                        (ok? (container? (a))))))
+                        (ok? (container? (a)))))
 
-       (spec "and passing"
-             (using [a passing-assertion]
+              (spec "and passing"
                     (is "should be success?"
                         (true? (success? (a)))
                         "should not be error?"
@@ -124,7 +93,7 @@
                         (false? (container? (a))))))
 
        (spec "and failing"
-             (using [a failing-assertion]
+             (given [a (first (:children (is (= 1 0))))]
                     (is "should not be success?"
                         (false? (success? (a)))
                         "should not be error?"
@@ -135,7 +104,7 @@
                         (false? (container? (a))))))
 
        (spec "and throwing an exception"
-             (using [a throwing-assertion]
+             (given [a (first (:children (is (/ 1 0))))]
                     (is "should not be success?"
                         (false? (success? (a)))
                         "should be error?"
@@ -146,7 +115,7 @@
                         (false? (container? (a)))))))
 
  (spec empty-is-spec "An empty 'is' expression"
-       (using [it empty-is]
+       (given [it (is)]
               (is "should not be success?"
                   (true? (success? (it)))
                   "should not be error?"
@@ -154,10 +123,10 @@
                   "should be pending?"
                   (true? (pending? (it)))
                   "should be container?"
-                  (false? (true? (it))))))
+                  (true? (container? (it))))))
 
  (spec is-thrown-spec "An (is (thrown? ...)) assertion"
-       (using [a is-thrown-assertion]
+       (given [a (first (:children (is (thrown? java.lang.ArithmeticException (/ 1 0)))))]
               (spec "that passes"
                     (is "should be success?"
                         (true? (success? (a)))
@@ -168,7 +137,7 @@
                         "should not be container?"
                         (false? (container? (a))))))
 
-       (using [a is-thrown-assertion-wrong-type]
+       (given [a (first (:children (is (thrown? java.lang.IndexOutOfBoundsException (/ 1 0)))))]
               (spec "that throws the wrong type"
                     (is "should not be success?"
                         (false? (success? (a)))
@@ -179,7 +148,7 @@
                         "should not be container?"
                         (false? (container? (a))))))
 
-       (using [a is-thrown-assertion-no-throw]
+       (given [a (first (:children (is (thrown? java.lang.Exception (= 1 1)))))]
               (spec "that throws nothing"
                     (is "should not be success?"
                         (false? (success? (a)))
@@ -188,4 +157,8 @@
                         "should not be pending?"
                         (false? (pending? (a)))
                         "should not be container?"
-                        (false? (container? (a))))))))
+                        (false? (container? (a)))))))
+ 
+ (spec nested-is "Nested 'is' expressions"
+       (is "should throw an exception"
+           (thrown? Exception (eval (read-string "(is (= 1 1) (spec (is (= 1 2))))"))))))

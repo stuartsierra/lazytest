@@ -131,6 +131,15 @@
 (assert (success? (g4)))
 
 
+;;; Nested 'is' expressions
+(try
+ (spec nested-is "Nested 'is' expressions"
+       (is (= 1 1)
+           "should throw an exception"
+           (spec (is (= 1 2)))))
+ (throw Exception "Nested 'is' assertion failed.")
+ (catch Exception e true))
+
 
 ;;; Describe
 
