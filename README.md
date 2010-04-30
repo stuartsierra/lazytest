@@ -3,6 +3,9 @@ LazyTest : a new Clojure testing framework
 by Stuart Sierra, http://stuartsierra.com/
 
 
+This is alpha and subject to change
+===================================
+
 
 Why?
 ====
