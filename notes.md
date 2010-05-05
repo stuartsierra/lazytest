@@ -64,25 +64,25 @@ in RSpec.
 Examples
 ========
 
-   (describe + "The addition function"
-     "should compute the sum of two numbers"
-     (= 5 (+ 2 3))
+    (describe + "The addition function"
+      "should compute the sum of two numbers"
+      (= 5 (+ 2 3))
 
-     "should return 0 with no arguments"
-     (zero? (+))
+      "should return 0 with no arguments"
+      (zero? (+))
 
-     "should throw on non-numeric argument"
-     (thrown? Exception (+ 3 :a)))
+      "should throw on non-numeric argument"
+      (thrown? Exception (+ 3 :a)))
 
 
-   (describe get "The get function"
-     :given [m {:a 1 :b 2}]
+    (describe get "The get function"
+      :given [m {:a 1 :b 2}]
 
-     "should return the value for the key"
-     (= 1 (get m :a))
+      "should return the value for the key"
+      (= 1 (get m :a))
 
-     "should return nil if the key is not present"
-     (= nil (get m :c))
+      "should return nil if the key is not present"
+      (= nil (get m :c))
 
-     "should return a default value if the key is not present"
-     (= 3 (get m :c 3)))
+      "should return a default value if the key is not present"
+      (= 3 (get m :c 3)))
