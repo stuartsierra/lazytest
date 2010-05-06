@@ -1,28 +1,4 @@
-(ns com.stuartsierra.lazytest
-  (:use [com.stuartsierra.lazytest.contexts
-         :only (context?)]
-        [com.stuartsierra.lazytest.arguments
-         :only (or-nil)]))
-
-
-;;; Examples and ExampleGroups
-
-(defrecord ExampleGroup [contexts examples])
-
-(defn new-example-group
-  "Creates an ExampleGroup."
-  ([contexts examples] (new-example-group contexts examples nil))
-  ([contexts examples metadata]
-     {:pre [(or-nil vector? contexts)
-            (or-nil vector? examples)
-            (every? context? contexts)
-            (every? fn? examples)
-            (or-nil map? metadata)]
-      :post [(isa? (type %) ExampleGroup)]}
-     (ExampleGroup. contexts examples nil metadata)))
-
-
-;;; Public API
+(ns com.stuartsierra.lazytest)
 
 (defmacro thrown?
   "Returns true if body throws an instance of class c."
