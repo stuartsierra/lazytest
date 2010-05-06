@@ -3,6 +3,24 @@
          :only (get-arg get-options or-nil standard-metadata
                         firsts seconds)]))
 
+(let [counter (atom 0)]
+  (defn local-counter []
+    (swap! counter inc)))
+
+(defmacro with-context
+  "Establishes a local binding of sym to the state returned by context
+  c in all groups and examples found within body."
+  [sym c & body]
+  `(let [~(with-meta sym {::local true ::order (local-counter)}) ~c]
+     ~@body))
+
+(defn find-locals
+  "Returns a vector of locals bound by with-context in the
+  environment."
+  [env]
+  (vec (sort-by #(::order (meta %))
+                (filter #(::local (meta %)) (keys env)))))
+
 (defrecord Context [parents before after])
 
 (defn context?
@@ -24,11 +42,14 @@
       :post [(context? %)]}
      (Context. parents before after nil metadata)))
 
-(defmacro context [bindings & bodies]
+(defmacro context
+  "Creates a context object, using existing local contexts.
+  bindings is a vector from symbols to parent contexts"
+  [bindings & bodies]
   {:pre [(vector? bindings)
          (even? (count bindings))]}
-  (let [locals (firsts bindings)
-        contexts (seconds bindings)
+  (let [locals (vec (concat (find-locals &env) (firsts bindings)))
+        contexts (vec (concat (find-locals &env) (seconds bindings)))
         [before-body divider after-body] (partition-by #(= :after %) bodies)
         before-fn `(fn ~locals ~@before-body)
         after-fn (when after-body
@@ -38,13 +59,15 @@
     `(new-context ~contexts ~before-fn ~after-fn)))
 
 (defmacro defcontext
-  [name & decl]
-  (let [[docstring decl] (get-arg string? decl)
-        [options decl] (get-options decl)
-        bindings (:bindings options [])]
-    `(def ~name (with-meta (context ~bindings ~@decl)
+  "Defines a named context.  body begins with an optional doc string,
+  followed by key-value option pairs, followed by the before and after
+  functions as in 'context'."
+  [name & body]
+  (let [[docstring body] (get-arg string? body)
+        [options body] (get-options body)
+        bindings (:using options [])]
+    `(def ~name (with-meta (context ~bindings ~@body)
                   (standard-metadata &form docstring name)))))
-
 
 (defn open-context
   "Opens context c, and all its parents, unless it is already active."
@@ -87,4 +110,10 @@
     (assert (fn? (:before c2)))
     (assert (fn? (:after c2)))
     (assert (= {c1 1 c2 2} (open-context {} c2)))
-    (assert (= {} (close-context {c1 1 c2 2} c2)))))
+    (assert (= {} (close-context {c1 1 c2 2} c2)))
+
+    (let [c3 (with-context x c1
+               (context [y c2] 3
+                        :after z
+                        (assert (= z 3))))]
+      (assert (= {c1 1 c2 2 c3 3} (open-context {} c3))))))
