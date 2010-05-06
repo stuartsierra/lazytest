@@ -1,298 +1,88 @@
-LazyTest : a new Clojure testing framework
+Notes on Possible New Syntax
+============================
 
-by Stuart Sierra, http://stuartsierra.com/
+The main macro will be `describe` and everything will be controlled by
+that.  `describe` creates an object called an ExampleGroup, which
+links examples and contexts.
 
+Examples are ordinary functions, with arguments.
 
-This is alpha and subject to change
-===================================
+Contexts are before/after function pairs that supply arguments to the
+examples.
 
 
-Why?
-====
+Syntax of describe
+------------------
 
-Why another test framework?  The clojure.test library (formerly
-clojure.contrib.test-is) is pretty good.  But it isn't perfect.  It
-relies heavily on dynamic context, making it difficult to parallelize.
-It doesn't support lazy evaluation.  Finally, it provides insufficient
-separation of assertions from the contexts in which they are run.
+After parsing all optional arguments, any remaining expressions inside
+`describe` are compiled into examples, i.e. anonymous functions.
 
+Any example expression may be preceeded by a documentation string.
 
+To create an ExampleGroup and add it to the metadata of the Var or
+namespace named by `sym`:
 
-Specifications
-==============
+    (describe sym "optional doc string" ...)
 
-Specs ("specifications") are created with the `spec` macro:
+To create an ExampleGroup and add it to the metadata of the current
+namespace:
 
-    (use 'com.stuartsierra.lazytest)
+    (describe "optional doc string" ...)
 
-    (spec name? "docstring?" body...)
+To create an ExampleGroup in which the local variable `x` is bound to
+the state returned by the "before" function of `context1`, a context
+created with `defcontext`:
 
-`spec` takes an optional name (a symbol), which will be defined in the
-current namespace.  After the name comes an optional doc string.
+    (describe ... :using [x context1] ...)
 
+To create an ExampleGroup in which the local variable `x` is bound to
+the result of evaluating `expression`:
 
-Assertions
-----------
+    (describe ... :given [x expression] ...)
 
-The body of `spec` contains assertion expressions, created with the
-`is` macro:
 
-    (is assertions...)
-
-Each assertion is an isolated expression that returns logical true or
-false:
-
-(spec simple-addition
-   (is (= 2 (+ 1 1))
-       (= 4 (+ 2 2))))
-
-Within `is`, any assertion may be preceded by a doc string:
-
-(spec confused-addition
-   (is "Two plus two is four"
-       (= 4 (+ 2 2))
-       "Two plus two is five?!"
-       (= 5 (+ 2 2))))
-
-
-Nested Specs
-------------
-
-`spec` expressions may be nested to any depth, and their doc strings
-will be concatenated in reports:
-
-(spec minus "The minus function"
-  (spec "when called with one argument"
-    (spec "negates that argument"
-      (is (= -1 (- 1))
-          (= -2 (- 2)))))
-  (spec "when called with two arguments"
-    (spec "subtracts"
-      (is (= 0 (- 5 5))
-          "2 from 3 to get 1"
-          (= 1 (- 3 2))))))
-
-
-Named Specs
------------
-
-Any spec may have a symbol name, making it a callable function.  So,
-for example:
-
-    (spec top "This is the top-level spec"
-      (spec one "with one second-level spec"
-        (spec one-a "with a third-level spec"
-          ...))
-      (spec two "and another second-level spec" 
-          ...))
-
-This example creates FOUR functions: top, one, one-a, and two.  Any
-one of them can be called as a function, with no arguments, to run the
-specs it contains.  So call `(top)` to run all the specs, or `(one)` to
-run just those specs inside `(spec one ...)`.
-
-
-
-
-Running Specs, Reporting Results
-================================
-
-Running a spec returns a lazy sequence of test results.
-
-To get a nicely-formatted report of those results, use the
-`spec-report` function:
-
-    (use '[com.stuartsierra.lazytest.report :only (spec-report)])
-
-    (spec-report (confused-addition))
-
-The report uses ANSI color codes by default.  If your environment does
-not support ANSI terminal commands, turn colorizing off:
-
-    (use '[com.stuartsierra.lazytest.color :only (set-colorize)])
-
-    (set-colorize false)
-
-
-
-Finding Specs
--------------
-
-To attach a spec to a namespace, use the `describe` macro:
-
-    (describe target-ns ...)
-
-The body of `describe` is exactly the same as `spec`; it attaches the
-spec as `:spec` metadata on the target-ns.
-
-The best way to use `describe` is with the current namespace:
-
-    (describe *ns* "specs for this namespace")
-
-
-
-Organizing Specs
-----------------
-
-I recommend storing specs and "main" code in separate namespaces. You
-can link them together by putting `:spec` metadata on the "main"
-namespace, giving the symbol name of the "specs" namespace.  For
-example, if your specs look like this:
-
-    (ns com.example.foo-spec
-      (:use [com.stuartsierra.lazytest :only (spec describe is)]))
-
-    (describe *ns* "The Foo library"
-      (spec "should work" ...))
-
-then define your main namespace like this:
-
-    (ns #^{:spec 'com.example.foo-spec} 
-        com.example.foo)
-
-To find and run specs, use the `run-spec` function, which loads a
-namespace and runs the specs associated with it.  Following the above
-example, you could run the specs for the Foo library using either of
-the following:
-
-    (spec-report (run-spec 'com.example.foo))
-
-    (spec-report (run-spec 'com.example.foo-spec))
-
-The `run-spec` function accepts the same `:reload` and `:reload-all`
-options as `require` or `use`.
-
-To load specs without running them, use `load-spec` instead.  To find
-specs without loading them, use `find-spec`.
-
-To run all specs in all loaded namespaces, use:
-
-    (spec-report (run-spec (all-ns)))
-
-Alternatively, to load and run specs in all namespaces found under a
-certain directory, call `run-spec` with the name of the directory:
-
-    (spec-report (run-spec "src/test/clojure"))
-
-
-
-Givens
-======
-
-To share a computed value among a group of specs, use the `given`
-macro.
-
-`given` behaves like `let`: it takes a vector of name-value pairs.
-The names will be available in the body of all assertions inside the
-`given` body.
-
-    (spec pi-specs
-      (given [pi-squared (* Math/PI Math/PI)]
-        (spec "pi squared"
-          (is "is less than 10"
-              (< 10 pi-squared)
-              "is more than 9"
-              (> 9 pi-squared))))
-
-The `given` macro may contain nested `spec`, `is`, and other `given`
-expressions, but it must be *outside* of the `is` macro.
-
-
-
-Contexts
-========
-
-A Context is a pair of before/after functions that are run around a
-test.
-
-    (defcontext name "docstring?" []
-       ... body of "before" function ...
-       ... returns some state ...
-       :after [x]
-       ... body of "after" function ...
-       ... the state is in 'x' ...
-       ... return value is ignored ...)
-
-The :after function is optional.
-
-Contexts are used in specs with the `using` macro:
-
-    (spec ...
-      (using [bindings...]
-        (is ...)))
-
-`using` has a binding vector consisting of name-value pairs, like
-`let`, where each value is a context object.
-
-Assertions inside the `using` will run with the names locally bound to
-the state returned by the contexts' "before" functions.  Example:
-
-    (defcontext calculate-pi []
-      Math/PI)
-
-    (spec pi-tests
-      (using [pi (calculate-pi)]
-        (is (< (* pi pi) 10))))
-
-`using` may contain nested `spec`, `is`, or other `using` expressions,
-but it must be *outside* of the `is` macro.
-
-
-Parent Contexts
+Nested describe
 ---------------
 
-Contexts may be composed.  The vector argument after the docstring in
-`defcontext` defines "parent contexts" and is composed of name-context
-pairs as in `using`.  The full syntax is:
+To create an ExampleGroup nested inside another ExampleGroup:
 
-    (defcontext name [a context-one
-                      b context-two]
-       ... body of "before" function ...
-       ... a and b are the states of contexts one and two ...
-       :after [x]
-       ... body of "after" function ...
-       ... where x is the state ...
-       ... a and b are also available here ...)
+    (describe target "optional doc string"
+      ...
+      (describe "optional doc string" ... ))
 
-Example:
+The "inner" `describe` inherits the contexts and local variables of
+the "outer" `describe`.
 
-    (defcontext database "Open a database connection" []
-       (open-and-return-database-connection)
-       :after [conn]
-       (close-database-connection conn))
+Only the "outer" `describe` may have a target Var or namespace; the
+"inner" `describe` may only have a documentation string.
 
-    (defcontext tables "Create some tables" [db database]
-       (create-tables db)
-       :after [x]
-       (drop-tables db))
-
-    (spec db-tests "With the database"
-       (using [t tables]
-         (is "tables were created"
-             (tables-exist? ["foo" "bar"] t))))
+Documentation strings of nested ExampleGroups will be concatenated as
+in RSpec.
 
 
 
-Continuous Testing
-==================
+Examples
+========
 
-To load and run your specs continuously:
+    (describe + "The addition function"
+      "should compute the sum of two numbers"
+      (= 5 (+ 2 3))
 
-    (use 'com.stuartsierra.lazytest.watch)
+      "should return 0 with no arguments"
+      (zero? (+))
 
-    (def watcher (watch-spec "your/source/dir"))
+      "should throw on non-numeric argument"
+      (thrown? Exception (+ 3 :a)))
 
-This runs all specs and prints a report.  Every time a file changes,
-its namespace will be reloaded and specs will be run again.
 
-Make sure your "main" namespaces have :spec metadata so that the
-correct specs are run when they change.
+    (describe get "The get function"
+      :given [m {:a 1 :b 2}]
 
-To re-run all specs:
+      "should return the value for the key"
+      (= 1 (get m :a))
 
-    (send watcher reset)
+      "should return nil if the key is not present"
+      (= nil (get m :c))
 
-To stop watching and running specs:
-
-    (send watcher stop)
-
+      "should return a default value if the key is not present"
+      (= 3 (get m :c 3)))
