@@ -35,7 +35,7 @@
   "Returns a vector of locals bound by with-context in the
   environment."
   [env]
-  (vec (filter #(::local (meta %)) (keys env))))
+  (vec (reverse (filter #(::local (meta %)) (keys env)))))
 
 (defmacro example
   "Creates an example function, using current context locals for
@@ -44,7 +44,7 @@
   ([docstring expr]
      (let [locals (find-locals &env)]
        `(vary-meta (fn ~locals ~expr)
-                   merge ~(standard-metadata &form docstring)
+                   merge ~(standard-metadata expr docstring)
                    {:locals '~locals}))))
 
 (defmacro group-examples
@@ -75,7 +75,7 @@
          (even? (count bindings))]}
   (if (seq bindings)
     `(with-context ~(first bindings) ~(second bindings)
-       (group ~(nnext bindings) ~examples ~subgroups))
+       (group ~(vec (nnext bindings)) ~examples ~subgroups))
     `(new-group ~(find-locals &env)
                 (group-examples ~@examples)
                 ~subgroups
@@ -108,3 +108,56 @@
     (assert (integer? (:line m)))
     (assert (nil? (:name m)))
     (assert (= '[x] (:locals m)))))
+
+(let [c1 (com.stuartsierra.lazytest.contexts/context [] 1)
+      g (group [x c1] [(= 1 x) "foo" (= x 2)] [])]
+  (assert (group? g))
+  (assert (= [c1] (:contexts g)))
+  (let [exs (:examples g)]
+    (assert (vector? exs))
+    (assert (= 2 (count exs)))
+    (assert (every? fn? exs))
+    (let [[ex1 ex2] exs]
+      (assert (true? (ex1 1)))
+      (assert (false? (ex2 1)))
+      (let [m (meta ex1)]
+        (assert (nil? (:doc m)))
+        (assert (= *ns* (:ns m)))
+        (assert (string? (:file m)))
+        (assert (integer? (:line m)))
+        (assert (nil? (:name m)))
+        (assert (= '[x] (:locals m))))
+      (let [m (meta ex2)]
+        (assert (= "foo" (:doc m)))
+        (assert (= *ns* (:ns m)))
+        (assert (string? (:file m)))
+        (assert (integer? (:line m)))
+        (assert (nil? (:name m)))
+        (assert (= '[x] (:locals m)))))))
+
+(let [c1 (com.stuartsierra.lazytest.contexts/context [] 1)
+      c2 (com.stuartsierra.lazytest.contexts/context [] 2)
+      g (group [x c1 y c2] [(= 1 x) "foo" (= y 2)] [])]
+  (assert (group? g))
+  (assert (= [c1 c2] (:contexts g)))
+  (let [exs (:examples g)]
+    (assert (vector? exs))
+    (assert (= 2 (count exs)))
+    (assert (every? fn? exs))
+    (let [[ex1 ex2] exs]
+      (assert (true? (ex1 1 2)))
+      (assert (true? (ex2 1 2)))
+      (let [m (meta ex1)]
+        (assert (nil? (:doc m)))
+        (assert (= *ns* (:ns m)))
+        (assert (string? (:file m)))
+        (assert (integer? (:line m)))
+        (assert (nil? (:name m)))
+        (assert (= '[x y] (:locals m))))
+      (let [m (meta ex2)]
+        (assert (= "foo" (:doc m)))
+        (assert (= *ns* (:ns m)))
+        (assert (string? (:file m)))
+        (assert (integer? (:line m)))
+        (assert (nil? (:name m)))
+        (assert (= '[x y] (:locals m)))))))
