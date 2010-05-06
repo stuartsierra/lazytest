@@ -23,13 +23,13 @@
   ([form docstring]
      `{:ns *ns*
        :file *file*
-       :line (:line (meta ~form))
+       :line ~(:line (meta form))
        :form '~form
        :doc ~docstring})
   ([form docstring name]
      `{:ns *ns*
        :file *file*
-       :line (:line (meta ~form))
+       :line ~(:line (meta form))
        :form '~form
        :doc ~docstring
        :name '~name}))
