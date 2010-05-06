@@ -24,18 +24,23 @@
       :post [(group? %)]}
      (Group. contexts examples nil metadata)))
 
+(let [counter (atom 0)]
+  (defn local-counter []
+    (swap! counter inc)))
+
 (defmacro with-context
   "Establishes a local binding of sym to the state returned by context
   c in all groups and examples found within body."
   [sym c & body]
-  `(let [~(with-meta sym {::local true}) ~c]
+  `(let [~(with-meta sym {::local true ::order (local-counter)}) ~c]
      ~@body))
 
 (defn find-locals
   "Returns a vector of locals bound by with-context in the
   environment."
   [env]
-  (vec (reverse (filter #(::local (meta %)) (keys env)))))
+  (vec (sort-by #(::order (meta %))
+                (filter #(::local (meta %)) (keys env)))))
 
 (defmacro example
   "Creates an example function, using current context locals for
