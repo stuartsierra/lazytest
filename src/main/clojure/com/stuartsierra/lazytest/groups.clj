@@ -71,7 +71,7 @@
   bindings is a vector of symbol-context pairs, symbols will become
   locals in the examples.
 
-  examples is a vector of compiled examples functions.
+  examples is a vector of compiled example functions.
 
   subgroups is a vector of child example groups."
   [bindings examples subgroups]
