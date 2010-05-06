@@ -1,4 +1,4 @@
-(ns com.stuartsierra.lazytest.examples
+(ns com.stuartsierra.lazytest.groups
   (:use [com.stuartsierra.lazytest.arguments
          :only (or-nil standard-metadata)]
         [com.stuartsierra.lazytest.contexts
