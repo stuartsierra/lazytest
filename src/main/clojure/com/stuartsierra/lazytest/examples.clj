@@ -38,22 +38,39 @@
   (vec (filter #(::local (meta %)) (keys env))))
 
 (defmacro example
+  "Creates an example function, using current context locals for
+  arguments, with expr as its body."
   ([expr] `(example nil ~expr))
   ([docstring expr]
-     `(vary-meta (fn ~(find-locals &env) ~expr)
-                 merge ~(standard-metadata &form docstring))))
+     (let [locals (find-locals &env)]
+       `(vary-meta (fn ~locals ~expr)
+                   merge ~(standard-metadata &form docstring)
+                   {:locals '~locals}))))
 
-(defmacro group-examples [& examples]
-  (loop [result [], exs examples]
-    (if (seq exs)
-      (if (string? (first exs))
-        (recur (conj result `(example ~(first exs) ~(second exs)))
-               (nnext exs))
-        (recur (conj result `(example ~(first exs)))
-               (next exs)))
+(defmacro group-examples
+  "Creates a vector of example functions from body.  A string in body
+  will be attached as a doc string on the following example."
+  [& body]
+  (loop [result [], forms body]
+    (if (seq forms)
+      (if (string? (first forms))
+        (recur (conj result `(example ~(first forms) ~(second forms)))
+               (nnext forms))
+        (recur (conj result `(example ~(first forms)))
+               (next forms)))
       result)))
 
-(defmacro group [bindings examples subgroups]
+(defmacro group
+  "Creates an example group.  
+
+  bindings is a vector of symbol-context pairs, symbols will become
+  locals in the examples.
+
+  examples is a vector of expressions to be compiled into example
+  functions.
+
+  subgroups is a vector of child example groups."
+  [bindings examples subgroups]
   {:pre [(or-nil vector? bindings)
          (even? (count bindings))]}
   (if (seq bindings)
@@ -76,7 +93,8 @@
     (assert (= *ns* (:ns m)))
     (assert (string? (:file m)))
     (assert (integer? (:line m)))
-    (assert (nil? (:name m)))))
+    (assert (nil? (:name m)))
+    (assert (= [] (:locals m)))))
 
 (let [c1 (com.stuartsierra.lazytest.contexts/context [] 1)
       e (with-context x c1
@@ -88,4 +106,5 @@
     (assert (= *ns* (:ns m)))
     (assert (string? (:file m)))
     (assert (integer? (:line m)))
-    (assert (nil? (:name m)))))
+    (assert (nil? (:name m)))
+    (assert (= '[x] (:locals m)))))
