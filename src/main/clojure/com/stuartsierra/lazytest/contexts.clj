@@ -45,7 +45,46 @@
     `(def ~name (with-meta (context ~bindings ~@decl)
                   (standard-metadata &form docstring name)))))
 
-(let [c (context [] 1)]
+
+(defn open-context
+  "Opens context c, and all its parents, unless it is already active."
+  [active c]
+  (let [active (reduce open-context active (:parents c))
+        states (map active (:parents c))]
+    (if-let [f (:before c)]
+      (assoc active c (or (active c) (apply f states)))
+      active)))
+
+(defn close-context
+  "Closes context c, and all its parents, and removes it from active."
+  [active c]
+  (let [states (map active (:parents c))]
+    (when-let [f (:after c)]
+      (apply f (active c) states))
+    (let [active (reduce close-context active (:parents c))]
+      (dissoc active c))))
+
+
+
+;;; Assertions
+
+(let [c (context [] (+ 1 1))]
   (assert (fn? (:before c)))
-  (assert (= 1 ((:before c))))
+  (assert (= 2 ((:before c))))
   (assert (nil? (:after c))))
+
+(let [c1 (context [] (+ 1 0)
+                 :after x
+                 (assert (= x 1)))]
+  (assert (fn? (:before c1)))
+  (assert (fn? (:after c1)))
+  (assert (= {c1 1} (open-context {} c1)))
+  (assert (= {} (close-context {c1 1} c1)))
+
+  (let [c2 (context [x c1] (+ x 1)
+                    :after y
+                    (assert (= y 2)))]
+    (assert (fn? (:before c2)))
+    (assert (fn? (:after c2)))
+    (assert (= {c1 1 c2 2} (open-context {} c2)))
+    (assert (= {} (close-context {c1 1 c2 2} c2)))))
