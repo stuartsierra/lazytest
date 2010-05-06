@@ -66,8 +66,7 @@
   bindings is a vector of symbol-context pairs, symbols will become
   locals in the examples.
 
-  examples is a vector of expressions to be compiled into example
-  functions.
+  examples is a vector of compiled examples functions.
 
   subgroups is a vector of child example groups."
   [bindings examples subgroups]
@@ -77,7 +76,7 @@
     `(with-context ~(first bindings) ~(second bindings)
        (group ~(vec (nnext bindings)) ~examples ~subgroups))
     `(new-group ~(find-locals &env)
-                (group-examples ~@examples)
+                ~examples
                 ~subgroups
                 ~(standard-metadata &form nil))))
 
@@ -110,7 +109,7 @@
     (assert (= '[x] (:locals m)))))
 
 (let [c1 (com.stuartsierra.lazytest.contexts/context [] 1)
-      g (group [x c1] [(= 1 x) "foo" (= x 2)] [])]
+      g (group [x c1] (group-examples (= 1 x) "foo" (= x 2)) [])]
   (assert (group? g))
   (assert (= [c1] (:contexts g)))
   (let [exs (:examples g)]
@@ -137,7 +136,7 @@
 
 (let [c1 (com.stuartsierra.lazytest.contexts/context [] 1)
       c2 (com.stuartsierra.lazytest.contexts/context [] 2)
-      g (group [x c1 y c2] [(= 1 x) "foo" (= y 2)] [])]
+      g (group [x c1 y c2] (group-examples (= 1 x) "foo" (= y 2)) [])]
   (assert (group? g))
   (assert (= [c1 c2] (:contexts g)))
   (let [exs (:examples g)]
