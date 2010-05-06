@@ -44,6 +44,11 @@
   [coll]
   (vec (map second (partition 2 coll))))
 
+(defn or-nil
+  "True if value is nil or (pred value) is true."
+  [pred value]
+  (or (nil? value) (pred value)))
+
 
 ;;; ASSERTIONS
 
