@@ -1,8 +1,9 @@
 (ns com.stuartsierra.lazytest.groups
   (:use [com.stuartsierra.lazytest.arguments
-         :only (or-nil standard-metadata)]
+         :only (get-arg get-options or-nil standard-metadata
+                        firsts seconds)]
         [com.stuartsierra.lazytest.contexts
-         :only (context? with-context find-locals)]))
+         :only (context context? with-context find-locals)]))
 
 (defrecord Group [contexts examples])
 
@@ -67,6 +68,48 @@
                 ~subgroups
                 ~(standard-metadata &form nil))))
 
+(defn subgroup-form?
+  "True if form is a list starting with a subgroup-creating Var."
+  [form]
+  (and (seq? form)
+       (::subgroup (meta (resolve (first form))))))
+
+(defn declare-subgroup-form!
+  "Declare that Var v creates a subgroup."
+  [v]
+  (alter-meta! v assoc ::subgroup true))
+
+(defn split-examples-and-subgroups
+  "Separates examples and subgroups in args.  Returns a vector
+  [example-forms subgroup-forms]"
+  [args]
+  [(remove subgroup-form? args)
+   (vec (filter subgroup-form? args))])
+
+(defmacro description
+  "Returns an example group.  body begins with an optional doc string,
+  followed by key-value options, followed by example expressions
+  and/or nested groups.
+
+  Option :using is followed by a vector of symbol-context pairs.  All
+  examples in the group will run with the symbol bound to the state
+  returned by that context.
+
+  Option :given is followed by a vector of symbol-expression pairs.
+  All examples in the group will run with the symbol bound to the
+  state returned by that expression."
+  [& body]
+  {::subgroup true}
+  (let [[docstring body] (get-arg string? body)
+        [opts body] (get-options body)
+        givens (interleave (firsts (:given opts))
+                           (map (fn [e] `(context [] ~e))
+                                (seconds (:given opts))))
+        bindings (vec (concat (:using opts) givens))
+        [examples subgroups] (split-examples-and-subgroups body)]
+    `(with-meta (group ~bindings (group-examples ~@examples) ~subgroups)
+       ~(standard-metadata &form docstring))))
+
 
 ;;; Assertions
 
@@ -95,6 +138,7 @@
     (assert (nil? (:name m)))
     (assert (= '[x] (:locals m)))))
 
+;; group
 (let [c1 (com.stuartsierra.lazytest.contexts/context [] 1)
       g (group [x c1] (group-examples (= 1 x) "foo" (= x 2)) [])]
   (assert (group? g))
@@ -126,6 +170,68 @@
       g (group [x c1 y c2] (group-examples (= 1 x) "foo" (= y 2)) [])]
   (assert (group? g))
   (assert (= [c1 c2] (:contexts g)))
+  (let [exs (:examples g)]
+    (assert (vector? exs))
+    (assert (= 2 (count exs)))
+    (assert (every? fn? exs))
+    (let [[ex1 ex2] exs]
+      (assert (true? (ex1 1 2)))
+      (assert (true? (ex2 1 2)))
+      (let [m (meta ex1)]
+        (assert (nil? (:doc m)))
+        (assert (= *ns* (:ns m)))
+        (assert (string? (:file m)))
+        (assert (integer? (:line m)))
+        (assert (nil? (:name m)))
+        (assert (= '[x y] (:locals m))))
+      (let [m (meta ex2)]
+        (assert (= "foo" (:doc m)))
+        (assert (= *ns* (:ns m)))
+        (assert (string? (:file m)))
+        (assert (integer? (:line m)))
+        (assert (nil? (:name m)))
+        (assert (= '[x y] (:locals m)))))))
+
+;; description
+(let [d (description (= 1 1))]
+  (assert (group? d))
+  (assert (empty? (:contexts d)))
+  (let [exs (:examples d)]
+    (assert (vector? exs))
+    (assert (= 1 (count exs)))
+    (let [ex1 (first exs)]
+      (assert (true? (ex1))))))
+
+(let [c1 (com.stuartsierra.lazytest.contexts/context [] 1)
+      c2 (com.stuartsierra.lazytest.contexts/context [] 2)
+      g (description :using [x c1 y c2] (= 1 x) "foo" (= y 2))]
+  (assert (group? g))
+  (assert (= [c1 c2] (:contexts g)))
+  (let [exs (:examples g)]
+    (assert (vector? exs))
+    (assert (= 2 (count exs)))
+    (assert (every? fn? exs))
+    (let [[ex1 ex2] exs]
+      (assert (true? (ex1 1 2)))
+      (assert (true? (ex2 1 2)))
+      (let [m (meta ex1)]
+        (assert (nil? (:doc m)))
+        (assert (= *ns* (:ns m)))
+        (assert (string? (:file m)))
+        (assert (integer? (:line m)))
+        (assert (nil? (:name m)))
+        (assert (= '[x y] (:locals m))))
+      (let [m (meta ex2)]
+        (assert (= "foo" (:doc m)))
+        (assert (= *ns* (:ns m)))
+        (assert (string? (:file m)))
+        (assert (integer? (:line m)))
+        (assert (nil? (:name m)))
+        (assert (= '[x y] (:locals m)))))))
+
+(let [g (description :given [x 1 y 2] (= 1 x) "foo" (= y 2))]
+  (assert (group? g))
+  (assert (= 2 (count (:contexts g))))
   (let [exs (:examples g)]
     (assert (vector? exs))
     (assert (= 2 (count exs)))
