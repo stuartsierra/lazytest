@@ -2,26 +2,9 @@
   (:use [com.stuartsierra.lazytest.arguments
          :only (get-arg standard-metadata)]
         [com.stuartsierra.lazytest.groups
-         :only (description declare-subgroup-form!)]
-        [com.stuartsierra.lazytest.contexts
-         :only (context)]
+         :only (description group-examples)]
         [com.stuartsierra.lazytest.attach
          :only (add-group!)]))
-
-(declare describe)
-
-(defn- replace-nested-describe
-  "If form begins with 'describe', replace it with 'description'.
-  Throws an exception if first argument to the 'describe' form is a
-  symbol."
-  [form]
-  (if (and (seq? form)
-           (= #'describe (resolve (first form))))
-    (if (symbol? (second form))
-      (throw (IllegalArgumentException.
-              "Nested descriptions cannot be attached to Vars."))
-      `(description ~@(rest form)))
-    form))
 
 (defmacro describe
   "Creates an example group and attaches it to a target.  If first
@@ -31,12 +14,26 @@
   [& body]
   (let [[target body] (get-arg symbol? body)
         [docstring body] (get-arg string? body)
-        body (map replace-nested-describe body)
         target-ref (if target `(var ~target) `*ns*)]
-    `(add-group! ~target-ref
-                 (with-meta (description ~@body)
-                   (assoc ~(standard-metadata &form docstring)
-                     :target ~target-ref)))))
+    (if (some #(::in-describe (meta %)) (keys &env))
+      (if target
+        (throw (IllegalArgumentException.
+                "Nested 'describe' cannot have symbol target."))
+          `(with-meta (description ~@body)
+             ~(standard-metadata &form docstring))))
+    `(let [~(with-meta (gensym) {::in-describe true})]
+       (add-group! ~target-ref
+                   (with-meta (description ~@body)
+                     (assoc ~(standard-metadata &form docstring)
+                       :target ~target-ref))))))
+
+(defmacro it
+  "Creates a group of examples.  For use within 'describe', uses the
+  contexts and givens.  Body is a series of expressions, each of which
+  will be compiled to a single example.  A string in body will be
+  attached as a doc string on the following expression."
+  [& body]
+  `(group-examples ~@body))
 
 (defmacro thrown?
   "Returns true if body throws an instance of class c."
