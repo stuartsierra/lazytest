@@ -25,6 +25,20 @@
       :post [(group? %)]}
      (Group. contexts examples subgroups nil metadata)))
 
+(defn separate-examples-subgroups
+  "Separates examples from subgroups in collection, after flattening.
+  Returns a vector like [examples subgroups]."
+  [coll]
+  (let [parts (flatten coll)]
+    [(vec (remove group? parts)) (vec (filter group? parts))]))
+
+(defn group-from-children
+  "Like new-group but automatically separates examples from subgroups
+  in children."
+  [contexts children metadata]
+  (let [[examples subgroups] (separate-examples-subgroups children)]
+    (new-group contexts examples subgroups metadata)))
+
 (defmacro example
   "Creates an example function, using current context locals for
   arguments, with expr as its body."
@@ -54,37 +68,16 @@
   bindings is a vector of symbol-context pairs, symbols will become
   locals in the examples.
 
-  examples is a vector of compiled example functions.
-
-  subgroups is a vector of child example groups."
-  [bindings examples subgroups]
+  children is a vector of example functions and/or sub-groups."
+  [bindings children]
   {:pre [(or-nil vector? bindings)
          (even? (count bindings))]}
   (if (seq bindings)
     `(with-context ~(first bindings) ~(second bindings)
-       (group ~(vec (nnext bindings)) ~examples ~subgroups))
-    `(new-group ~(find-locals &env)
-                ~examples
-                ~subgroups
-                ~(standard-metadata &form nil))))
-
-(defn subgroup-form?
-  "True if form is a list starting with a subgroup-creating Var."
-  [form]
-  (and (seq? form)
-       (::subgroup (meta (resolve (first form))))))
-
-(defn declare-subgroup-form!
-  "Declare that Var v creates a subgroup."
-  [v]
-  (alter-meta! v assoc ::subgroup true))
-
-(defn split-examples-and-subgroups
-  "Separates examples and subgroups in args.  Returns a vector
-  [example-forms subgroup-forms]"
-  [args]
-  [(remove subgroup-form? args)
-   (vec (filter subgroup-form? args))])
+       (group ~(vec (nnext bindings)) ~children))
+    `(group-from-children ~(find-locals &env)
+                          ~children
+                          ~(standard-metadata &form nil))))
 
 (defmacro description
   "Returns an example group.  body begins with an optional doc string,
@@ -105,9 +98,8 @@
         givens (interleave (firsts (:given opts))
                            (map (fn [e] `(context [] ~e))
                                 (seconds (:given opts))))
-        bindings (vec (concat (:using opts) givens))
-        [examples subgroups] (split-examples-and-subgroups body)]
-    `(with-meta (group ~bindings (group-examples ~@examples) ~subgroups)
+        bindings (vec (concat (:using opts) givens))]
+    `(with-meta (group ~bindings (vector ~@body))
        ~(standard-metadata &form docstring))))
 
 ;;; Assertions
@@ -139,7 +131,7 @@
 
 ;; group
 (let [c1 (com.stuartsierra.lazytest.contexts/context [] 1)
-      g (group [x c1] (group-examples (= 1 x) "foo" (= x 2)) [])]
+      g (group [x c1] (group-examples (= 1 x) "foo" (= x 2)))]
   (assert (group? g))
   (assert (= [c1] (:contexts g)))
   (let [exs (:examples g)]
@@ -166,7 +158,7 @@
 
 (let [c1 (com.stuartsierra.lazytest.contexts/context [] 1)
       c2 (com.stuartsierra.lazytest.contexts/context [] 2)
-      g (group [x c1 y c2] (group-examples (= 1 x) "foo" (= y 2)) [])]
+      g (group [x c1 y c2] (group-examples (= 1 x) "foo" (= y 2)))]
   (assert (group? g))
   (assert (= [c1 c2] (:contexts g)))
   (let [exs (:examples g)]
@@ -192,7 +184,7 @@
         (assert (= '[x y] (:locals m)))))))
 
 ;; description
-(let [d (description (= 1 1))]
+(let [d (description (group-examples (= 1 1)))]
   (assert (group? d))
   (assert (empty? (:contexts d)))
   (let [exs (:examples d)]
@@ -203,7 +195,7 @@
 
 (let [c1 (com.stuartsierra.lazytest.contexts/context [] 1)
       c2 (com.stuartsierra.lazytest.contexts/context [] 2)
-      g (description :using [x c1 y c2] (= 1 x) "foo" (= y 2))]
+      g (description :using [x c1 y c2] (group-examples (= 1 x) "foo" (= y 2)))]
   (assert (group? g))
   (assert (= [c1 c2] (:contexts g)))
   (let [exs (:examples g)]
@@ -228,7 +220,7 @@
         (assert (nil? (:name m)))
         (assert (= '[x y] (:locals m)))))))
 
-(let [g (description :given [x 1 y 2] (= 1 x) "foo" (= y 2))]
+(let [g (description :given [x 1 y 2] (group-examples (= 1 x) "foo" (= y 2)))]
   (assert (group? g))
   (assert (= 2 (count (:contexts g))))
   (let [exs (:examples g)]
@@ -254,9 +246,11 @@
         (assert (= '[x y] (:locals m)))))))
 
 (let [g (description :given [x 1 y 2]
-                     (= 1 x)
-                     "foo" (= y 2)
-                     (description (= y 2)))]
+                     (group-examples (= 1 x)
+                                     "foo"
+                                     (= y 2))
+                     (description
+                      (group-examples (= y 2))))]
   (assert (group? g))
   (assert (= 2 (count (:contexts g))))
   (let [exs (:examples g)]
