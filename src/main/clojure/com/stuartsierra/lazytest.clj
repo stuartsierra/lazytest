@@ -4,7 +4,7 @@
         [com.stuartsierra.lazytest.groups
          :only (description group-examples)]
         [com.stuartsierra.lazytest.attach
-         :only (add-group!)]))
+         :only (set-descriptor-name)]))
 
 (defmacro describe
   "Creates an example group and attaches it to a target.  If first
@@ -14,18 +14,17 @@
   [& body]
   (let [[target body] (get-arg symbol? body)
         [docstring body] (get-arg string? body)
-        target-ref (if target `(var ~target) `*ns*)]
-    (if (some #(::in-describe (meta %)) (keys &env))
-      (if target
-        (throw (IllegalArgumentException.
-                "Nested 'describe' cannot have symbol target."))
-          `(with-meta (description ~@body)
-             ~(standard-metadata &form docstring))))
-    `(let [~(with-meta (gensym) {::in-describe true})]
-       (add-group! ~target-ref
-                   (with-meta (description ~@body)
-                     (assoc ~(standard-metadata &form docstring)
-                       :target ~target-ref))))))
+        description `(with-meta (description ~@body)
+                       (assoc ~(standard-metadata &form docstring)
+                         :target ~target))
+        sym (gensym "describe-auto-")
+        qsym (symbol (name (ns-name *ns*)) (name sym))]
+    `(let [~(with-meta (gensym) {::in-describe true}) nil]
+       ~(when target
+          `(set-descriptor-name (var ~target) '~qsym))
+       ~(if (some #(::in-describe (meta %)) (keys &env))
+          description
+          `(intern *ns* '~sym ~description)))))
 
 (defmacro it
   "Creates a group of examples.  For use within 'describe', uses the
