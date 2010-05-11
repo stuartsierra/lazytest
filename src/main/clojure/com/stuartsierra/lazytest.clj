@@ -17,7 +17,7 @@
         description `(with-meta (description ~@body)
                        (assoc ~(standard-metadata &form docstring)
                          :target ~target))
-        sym (gensym "describe-auto-")
+        sym (with-meta (gensym "describe-auto-") {::description true})
         qsym (symbol (name (ns-name *ns*)) (name sym))]
     `(let [~(with-meta (gensym) {::in-describe true}) nil]
        ~(when target
