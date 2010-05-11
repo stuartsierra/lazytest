@@ -1,57 +1,25 @@
-(ns com.stuartsierra.lazytest.attach
-  (:use [com.stuartsierra.lazytest.groups
-         :only (group?)]))
+(ns com.stuartsierra.lazytest.attach)
 
-(defn groups
-  "Get the set of example groups from obj's metadata."
-  [obj]
-  (::groups (meta obj)))
-
-(defn set-groups!
-  "Set iref's set of example groups to grps, which must be a set."
-  [iref grps]
-  {:pre [(set? grps)
-         (every? group? grps)]}
-  (alter-meta! iref assoc ::groups grps))
-
-(defn add-group!
-  "Add grp to the set of example groups on iref."
-  [iref grp]
-  {:pre [(group? grp)]}
-  (alter-meta! iref assoc ::groups
-               (conj (::groups (meta iref) #{}) grp)))
-
-(defn remove-group!
-  "Remove grp from the set of example groups on iref."
-  [iref grp]
-  {:pre [(group? grp)]}
-  (alter-meta! iref update-in [::groups] disj grp))
-
-(defn clear-groups!
-  "Remove all example groups from iref."
+(defn descriptor-name
+  "Returns the symbol name of the descriptor assigned to iref, a
+  namespace or Var."
   [iref]
-  (alter-meta! iref dissoc ::groups))
+  (::descriptor (meta iref)))
 
+(defn set-descriptor-name
+  "Sets the descriptor of iref (a namespace or Var) to sym."
+  [iref sym]
+  {:pre [(symbol? sym)
+         (or (var? iref)
+             (instance? clojure.lang.Namespace iref))]}
+  (alter-meta! iref assoc ::descriptor sym))
 
-
-;;; Assertions
-
-(let [g1 (com.stuartsierra.lazytest.groups/group
-          [] (com.stuartsierra.lazytest.groups/group-examples (= 1 1))
-          [])
-      g2 (com.stuartsierra.lazytest.groups/group
-          [] (com.stuartsierra.lazytest.groups/group-examples (= 2 2))
-          [])]
-  (assert (nil? (groups *ns*)))
-
-  (set-groups! *ns* #{g1 g2})
-  (assert (= #{g1 g2} (groups *ns*)))
-
-  (remove-group! *ns* g1)
-  (assert (= #{g2} (groups *ns*)))
-
-  (add-group! *ns* g1)
-  (assert (= #{g1 g2} (groups *ns*)))
-
-  (clear-groups! *ns*)
-  (assert (nil? (groups *ns*))))
+(defn descriptor
+  "Returns the descriptor, either a Var or a namespace, of iref."
+  [iref]
+  (let [sym (descriptor-name iref)]
+    (if (namespace sym)
+      ;; qualified symbol means it's a Var
+      (resolve sym)
+      ;; else, it's a namespace
+      (the-ns sym))))
