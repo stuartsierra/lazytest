@@ -5,7 +5,7 @@
   "Creates or returns the Var storing Groups in namespace n."
   [n]
   (or (ns-resolve n '*lazytest-groups*)
-      (intern n '*lazytest-groups* #{})))
+      (intern n (with-meta '*lazytest-groups* {:private true}) #{})))
 
 (defn groups
   "Returns the Groups for namespace n"

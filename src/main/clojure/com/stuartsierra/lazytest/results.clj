@@ -1,4 +1,5 @@
-(ns com.stuartsierra.lazytest.results)
+(ns com.stuartsierra.lazytest.results
+  (:use [com.stuartsierra.lazytest.plan :only (example?)]))
 
 (defprotocol TestResult
   (success? [r] "True if this result and all its children passed.")
@@ -33,3 +34,16 @@
     (pending? [this] false)
     (error? [this] true)
     (container? [this] false))
+
+(defn pass [source states]
+  {:pre [(example? source)]}
+  (TestPassed. source states))
+
+(defn fail [source states]
+  {:pre [(example? source)]}
+  (TestFailed. source states))
+
+(defn thrown [source states throwable]
+  {:pre [(example? source)
+	 (instance? Throwable throwable)]}
+  (TestThrown. source states throwable))
