@@ -1,7 +1,7 @@
 (ns com.stuartsierra.lazytest.plan
   (:use [clojure.set :only (union)]
 	[com.stuartsierra.lazytest.arguments :only (or-nil)]
-	[com.stuartsierra.lazytest.attach :only (groups)]
+	[com.stuartsierra.lazytest.attach :only (all-groups)]
 	[com.stuartsierra.lazytest.groups :only (group?)]
 	[com.stuartsierra.lazytest.contexts :only (context?)]))
 
@@ -34,11 +34,6 @@
 		    (:examples g))
 	       (mapcat #(flatten-group % combined-contexts combined-tags)
 		       (:subgroups g))))))
-
-(defn all-groups
-  "Returns a sequence of all Groups in all namespaces."
-  []
-  (mapcat (comp seq groups) (all-ns)))
 
 (defn has-tag?
   "True if object x has tag t in its metadata :tags."

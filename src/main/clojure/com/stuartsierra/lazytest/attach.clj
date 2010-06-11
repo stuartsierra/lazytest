@@ -12,6 +12,11 @@
   [n]
   (var-get (groups-var n)))
 
+(defn all-groups
+  "Returns a sequence of all Groups in all namespaces."
+  []
+  (mapcat (comp seq groups) (all-ns)))
+
 (defn add-group
   "Adds Group g to namespace n."
   [n g]
