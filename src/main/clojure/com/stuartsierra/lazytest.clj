@@ -1,7 +1,9 @@
 (ns com.stuartsierra.lazytest
   (:use [com.stuartsierra.lazytest.arguments :only (get-arg get-options seconds
-						    standard-metadata or-nil)]
+						    standard-metadata or-nil
+						    firsts)]
         [com.stuartsierra.lazytest.groups :only (new-group group?)]
+        [com.stuartsierra.lazytest.contexts :only (new-context context?)]
         [com.stuartsierra.lazytest.attach :only (add-group all-groups)]
         [com.stuartsierra.lazytest.plan :only (flat-plan)]
 	[com.stuartsierra.lazytest.run :only (run)]))
@@ -33,6 +35,33 @@
   (vec (sort-by #(::order (meta %))
                 (filter #(::local (meta %)) (keys env)))))
 
+(defmacro context
+  "Creates a context object, using existing local contexts.
+  bindings is a vector from symbols to parent contexts"
+  [bindings & bodies]
+  {:pre [(vector? bindings)
+         (even? (count bindings))]}
+  (let [locals (vec (concat (find-locals &env) (firsts bindings)))
+        contexts (vec (concat (find-locals &env) (seconds bindings)))
+        [before-body divider after-body] (partition-by #(= :after %) bodies)
+        before-fn `(fn ~locals ~@before-body)
+        after-fn (when after-body
+                   (let [[state & after-body] after-body]
+                     (assert (symbol? state))
+                     `(fn ~(apply vector state locals) ~@after-body)))]
+    `(new-context ~contexts ~before-fn ~after-fn)))
+
+(defmacro defcontext
+  "Defines a named context.  body begins with an optional doc string,
+  followed by key-value option pairs, followed by the before and after
+  functions as in 'context'."
+  [name & body]
+  (let [[docstring body] (get-arg string? body)
+        [options body] (get-options body)
+        bindings (:given options [])]
+    `(def ~name (with-meta (context ~bindings ~@body)
+                  '~(standard-metadata &form docstring name)))))
+
 (defmacro describe [& args]
   (let [[sym args] (get-arg symbol? args)
 	[doc args] (get-arg string? args)
@@ -59,6 +88,10 @@
 
 (defn run-tests [& args]
   (run (apply flat-plan (all-groups) args)))
+
+(defn clear-tests "Delete all tests in the current namespace"
+  []
+  (intern *ns* (with-meta '*lazytest-groups* {:private true}) #{}))
 
 (defmacro thrown?
   "Returns true if body throws an instance of class c."
