@@ -1,25 +1,22 @@
-(ns com.stuartsierra.lazytest.attach)
+(ns com.stuartsierra.lazytest.attach
+  (:use [com.stuartsierra.lazytest.groups :only (group?)]))
 
-(defn descriptor-name
-  "Returns the symbol name of the descriptor assigned to iref, a
-  namespace or Var."
-  [iref]
-  (::descriptor (meta iref)))
+(defn groups-var
+  "Creates or returns the Var storing Groups in namespace n."
+  [n]
+  (or (ns-resolve n '*lazytest-groups*)
+      (intern n '*lazytest-groups* #{})))
 
-(defn set-descriptor-name
-  "Sets the descriptor of iref (a namespace or Var) to sym."
-  [iref sym]
-  {:pre [(symbol? sym)
-         (or (var? iref)
-             (instance? clojure.lang.Namespace iref))]}
-  (alter-meta! iref assoc ::descriptor sym))
+(defn groups
+  "Returns the Groups for namespace n"
+  [n]
+  (var-get (groups-var n)))
 
-(defn descriptor
-  "Returns the descriptor, either a Var or a namespace, of iref."
-  [iref]
-  (let [sym (descriptor-name iref)]
-    (if (namespace sym)
-      ;; qualified symbol means it's a Var
-      (resolve sym)
-      ;; else, it's a namespace
-      (the-ns sym))))
+(defn add-group
+  "Adds Group g to namespace n."
+  [n g]
+  {:pre [(group? g)
+	 (the-ns n)]}
+  {:post [(some #{g} (seq (groups n)))]}
+  (alter-var-root (groups-var (the-ns n)) conj g))
+
