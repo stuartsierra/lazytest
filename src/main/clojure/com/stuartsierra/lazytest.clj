@@ -15,8 +15,10 @@
 (defmacro with-context
   "Establishes a local binding of sym to the state returned by context
   c in all groups and examples found within body."
-  [sym c & body]
-  `(let [~(with-meta sym {::local true ::order (local-counter)}) ~c]
+  [form c & body]
+  `(let [~(with-meta (gensym) {::local true
+			       ::order (local-counter)
+			       ::arg form}) ~c]
      ~@body))
 
 (defmacro wrap-context
@@ -34,6 +36,12 @@
   [env]
   (vec (sort-by #(::order (meta %))
                 (filter #(::local (meta %)) (keys env)))))
+
+(defn- find-local-args
+  "Returns a vector of the function argument forms of locals bound by
+  with-context in the environment."
+  [env]
+  (vec (map #(::arg (meta %)) (find-locals env))))
 
 (defmacro context
   "Creates a context object, using existing local contexts.
@@ -83,7 +91,7 @@
   (let [[doc args] (get-arg string? args)
 	[opts body] (get-options args)
 	metadata (merge (standard-metadata &form doc) opts)]
-    `(with-meta (fn ~(find-locals &env) ~@body)
+    `(with-meta (fn ~(find-local-args &env) ~@body)
        '~metadata)))
 
 (defn run-tests [& args]
