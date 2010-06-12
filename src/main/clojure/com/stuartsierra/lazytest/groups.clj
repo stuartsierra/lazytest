@@ -1,6 +1,6 @@
 (ns com.stuartsierra.lazytest.groups
   (:use [com.stuartsierra.lazytest.arguments
-	 :only (or-nil)]
+	 :only (nil-or)]
 	[com.stuartsierra.lazytest.contexts
          :only (context?)]))
 
@@ -14,12 +14,12 @@
 (defn new-group
   "Creates a Group."
   ([contexts examples subgroups metadata]
-     {:pre [(or-nil vector? contexts)
-            (or-nil vector? examples)
-            (or-nil vector? subgroups)
+     {:pre [(nil-or vector? contexts)
+            (nil-or vector? examples)
+            (nil-or vector? subgroups)
             (every? context? contexts)
             (every? fn? examples)
             (every? group? subgroups)
-            (or-nil map? metadata)]
+            (nil-or map? metadata)]
       :post [(group? %)]}
      (Group. contexts examples subgroups nil metadata)))

@@ -1,6 +1,6 @@
 (ns com.stuartsierra.lazytest.plan
   (:use [clojure.set :only (union)]
-	[com.stuartsierra.lazytest.arguments :only (or-nil)]
+	[com.stuartsierra.lazytest.arguments :only (nil-or)]
 	[com.stuartsierra.lazytest.attach :only (all-groups)]
 	[com.stuartsierra.lazytest.groups :only (group?)]
 	[com.stuartsierra.lazytest.contexts :only (context?)]))
@@ -12,7 +12,7 @@
 
 (defn- new-runnable-example
   [f group contexts parent-tags]
-  {:pre [(or-nil set? (:tags (meta f)))]}
+  {:pre [(nil-or set? (:tags (meta f)))]}
   (RunnableExample. f contexts
 		    (assoc (meta f)
 		      :group group
@@ -38,7 +38,7 @@
 (defn has-tag?
   "True if object x has tag t in its metadata :tags."
   [x t]
-  {:pre [(or-nil set? (:tags (meta x)))
+  {:pre [(nil-or set? (:tags (meta x)))
 	 (keyword? t)]}
   (contains? (:tags (meta x)) t))
 

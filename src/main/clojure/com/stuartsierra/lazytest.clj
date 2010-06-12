@@ -1,6 +1,6 @@
 (ns com.stuartsierra.lazytest
   (:use [com.stuartsierra.lazytest.arguments :only (get-arg get-options seconds
-						    standard-metadata or-nil
+						    standard-metadata nil-or
 						    firsts)]
         [com.stuartsierra.lazytest.groups :only (new-group group?)]
         [com.stuartsierra.lazytest.contexts :only (new-context context?)]
@@ -23,7 +23,7 @@
 
 (defmacro wrap-context
   [bindings body]
-  {:pre [(or-nil vector? bindings)
+  {:pre [(nil-or vector? bindings)
          (even? (count bindings))]}
   (if (seq bindings)
     `(with-context ~(first bindings) ~(second bindings)

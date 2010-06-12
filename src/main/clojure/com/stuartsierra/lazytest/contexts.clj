@@ -1,6 +1,6 @@
 (ns com.stuartsierra.lazytest.contexts
   (:use [com.stuartsierra.lazytest.arguments
-         :only (or-nil)]))
+         :only (nil-or)]))
 
 (defrecord Context [parents before after])
 
@@ -15,11 +15,11 @@
   ([parents before after]
      (new-context parents before after nil))
   ([parents before after metadata]
-     {:pre [(or-nil vector? parents)
+     {:pre [(nil-or vector? parents)
             (every? context? parents)
-            (or-nil fn? before)
-            (or-nil fn? after)
-            (or-nil map? metadata)]
+            (nil-or fn? before)
+            (nil-or fn? after)
+            (nil-or map? metadata)]
       :post [(context? %)]}
      (Context. parents before after nil metadata)))
 
