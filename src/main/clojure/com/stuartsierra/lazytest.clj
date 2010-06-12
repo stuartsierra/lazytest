@@ -70,13 +70,39 @@
     `(def ~name (with-meta (context ~bindings ~@body)
                   '~(standard-metadata &form docstring name)))))
 
-(defmacro describe [& args]
+(defmacro describe
+  "Creates a description, a group of runnable examples, in the current
+  namespace.  Arguments, in order, are:
+
+    1. symbol: (optional) name of the Var that this group describes
+    2. docstring: (optional) a documentation string for this group
+    3. options: (optional) keyword-value pairs, see below
+    4. body: any number of examples, see the 'it' macro
+
+  Options are keyword-value pairs. Any options not specified here
+  become metadata on the group.
+
+    :given [name context, ...]
+
+       The :given option is followed by a vector of name-value pairs
+       that will become locals in each of the examples.  The value in
+       each pair is a context created with defcontext, the name will
+       be bound to the state returned by that context's 'before'
+       function.  Argument destructuring is supported as with 'let'.
+
+    :tags [keywords ...]
+
+       The :tags option is followed by a vector of keywords, which
+       will become tags on the group."
+  [& args]
   (let [[sym args] (get-arg symbol? args)
 	[doc args] (get-arg string? args)
 	[opts body] (get-options args)
 	contexts (seconds (:given opts))
+	tags (set (:tags opts))
 	metadata (merge (standard-metadata &form doc sym)
-			(dissoc opts :given))]
+			{:tags tags}
+			(dissoc opts :given :tags))]
     `(wrap-context ~(:given opts)
       (let [~(with-meta (gensym) {::in-describe true}) nil
 	    body# (vector ~@body)
@@ -87,10 +113,28 @@
 	  new-group#
 	  (add-group *ns* new-group#))))))
 
-(defmacro it [& args]
+(defmacro it
+  "Creates a test example within the body of the 'describe' macro.
+  Arguments are a documentation string (optional), followed
+  options (see below), followed by the code implementing the example.
+  The example code must return logical true to indicate success, false
+  or nil to indicate failure. A thrown exception also indicates
+  failure.
+
+  Options are keyword-value pairs. Any options not specified here
+  become metadata on the example.
+
+    :tags [keywords ...]
+
+       The :tags option is followed by a vector of keywords, which
+       will become tags on the example."
+  [& args]
   (let [[doc args] (get-arg string? args)
 	[opts body] (get-options args)
-	metadata (merge (standard-metadata &form doc) opts)]
+	tags (set (:tags opts))
+	metadata (merge (standard-metadata &form doc sym)
+			{:tags tags}
+			(dissoc opts :tags))]
     `(with-meta (fn ~(find-local-args &env) ~@body)
        '~metadata)))
 
