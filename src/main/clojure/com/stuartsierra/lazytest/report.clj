@@ -6,8 +6,8 @@
   (:import (java.io File)))
 
 (defn details
-  "Given a TestResult, returns the map of :name, :ns, :file, :line,
-  :generator, and :form."
+  "Given a TestResult, returns the map of :ns, :file, :line,
+  and :form."
   [r]
   (meta (:source r)))
 
@@ -24,9 +24,6 @@
     (when-let [n (:name m)] (println "Name:" n))
     (when-let [nn (:ns m)] (println "NS:  " (ns-name nn)))
     (when-let [d (:doc m)] (println "Doc: " d))
-    (when (and (:form m) (not (:name m)))
-      (print "Form: ")
-      (prn (:form m)))
     (when-let [f (:file m)] (println "File:" f))
     (when-let [l (:line m)] (println "Line:" l))
     (when (seq (:locals m))
@@ -63,7 +60,7 @@
 
 (defn print-summary [r]
   (let [{:keys [assertions pass fail error pending]} (summary r)]
-    (println (colorize (str "Ran " assertions " assertions.")
+    (println (colorize (str "Ran " assertions " examples.")
                        (if (zero? assertions) :fg-yellow :reset)))
     (print (colorize (str fail " failures")
                      (if (zero? fail) :fg-green :fg-red)))
@@ -76,36 +73,28 @@
     (newline)
     (flush)))
 
-(defn- spec-report* [r parents]
-  (if (and (container? r) (not (pending? r)))
-    (doseq [c (:children r)]
-      (spec-report* c (conj parents r)))
-    (if (and (success? r) (not (pending? r)))
-      (do (print (colorize "." :fg-green)) (flush))
-      (do (newline)
-          (print-details
-           (assoc r :source
-                  (vary-meta (:source r) assoc :doc
-                             (apply str (interpose " "
-                                                   (filter identity
-                                                           (map #(:doc (details %))
-                                                                (conj parents r))))))))))))
+(defn- dot-report [r]
+  (if (and (success? r) (not (pending? r)))
+    (do (print (colorize "." :fg-green))
+	(flush))
+    (do (newline)
+	(print-details r))))
 
-(defn spec-report
-  "Simple report of spec results.  Prints a dot for each passed
-  assertion; prints details for each failure or pending spec.
-  Concatenates :doc strings for nested specs.  Uses ANSI color if
-  com.stuartsierra.lazytest.color/colorize? is true."
+(defn report
+  "Simple report of test results.  Prints a dot for each passed
+  example; prints details for each failure or pending spec.  Uses ANSI
+  color if com.stuartsierra.lazytest.color/colorize? is true."
   [results]
   (newline)
   (doseq [r results]
-    (spec-report* r []))
-  (newline))
+    (dot-report r))
+  (newline)
+  (print-summary results))
 
 (defn report-and-exit
-  "Calls function f (defaults to spec-report) on test result r and
+  "Calls function f (defaults to report) on test result r and
   exits.  Exit status is 0 if all specs passed, -1 if some failed."
-  ([r] (report-and-exit spec-report r))
-  ([f r]
+  ([r] (report-and-exit r report))
+  ([r f]
      (f r)
      (System/exit (if (success? r) 0 -1))))
