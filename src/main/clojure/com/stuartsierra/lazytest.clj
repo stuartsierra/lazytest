@@ -99,9 +99,10 @@
 	v (when sym (resolve sym))
 	[doc args] (get-arg string? args)
 	[opts body] (get-options args)
+	docstring (str v (when v " ") doc)
 	contexts (seconds (:given opts))
 	tags (set (:tags opts))
-	metadata (merge (standard-metadata &form doc sym)
+	metadata (merge (standard-metadata &form docstring sym)
 			{:tags tags, :var v}
 			(dissoc opts :given :tags))]
     `(wrap-context ~(:given opts)
