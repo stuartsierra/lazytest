@@ -21,18 +21,18 @@
   "Returns a metadata map with keys :ns, :file, 
   :line, :form, :doc, and :name."
   ([form docstring]
-     `{:ns ~*ns*
-       :file ~*file*
-       :line ~(:line (meta form))
-       :form '~form
-       :doc ~docstring})
+     {:ns *ns*
+      :file *file*
+      :line (:line (meta form))
+      :form form
+      :doc docstring})
   ([form docstring name]
-     `{:ns ~*ns*
-       :file ~*file*
-       :line ~(:line (meta form))
-       :form '~form
-       :doc ~docstring
-       :name '~name}))
+     {:ns *ns*
+      :file *file*
+      :line (:line (meta form))
+      :form form
+      :doc docstring
+      :name name}))
 
 (defn firsts
   "Returns a vector of the first element of each pair."
@@ -61,18 +61,19 @@
 (assert (= [nil '(a b :c)] (get-options '(a b :c))))
 
 ;; standard-metadata
-(defmacro test-macro [name docstring & body]
-  `(defn ~name ~(standard-metadata &form docstring name) [] ~@body))
+(comment
+  (defmacro test-macro [name docstring & body]
+    `(defn ~name ~(standard-metadata &form docstring name) [] ~@body))
 
-(test-macro test-var "hello" (+ 1 2))
+  (test-macro test-var "hello" (+ 1 2))
 
-(let [m (meta (var test-var))]
-  (assert (= *ns* (:ns m)))
-  (assert (= 'test-var (:name m)))
-  (assert (= "hello" (:doc m)))
-  (assert (= '(test-macro test-var "hello" (+ 1 2)) (:form m)))
-  (assert (string? (:file m)))
-  (assert (integer? (:line m))))
+  (let [m (meta (var test-var))]
+    (assert (= *ns* (:ns m)))
+    (assert (= 'test-var (:name m)))
+    (assert (= "hello" (:doc m)))
+    (assert (= '(test-macro test-var "hello" (+ 1 2)) (:form m)))
+    (assert (string? (:file m)))
+    (assert (integer? (:line m)))))
 
 ;; firsts
 (assert (= '[a b c] (firsts '[a 1 b 2 c 3])))
