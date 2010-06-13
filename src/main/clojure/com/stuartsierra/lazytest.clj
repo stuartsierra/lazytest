@@ -96,12 +96,13 @@
        will become tags on the group."
   [& args]
   (let [[sym args] (get-arg symbol? args)
+	v (when sym (resolve sym))
 	[doc args] (get-arg string? args)
 	[opts body] (get-options args)
 	contexts (seconds (:given opts))
 	tags (set (:tags opts))
 	metadata (merge (standard-metadata &form doc sym)
-			{:tags tags}
+			{:tags tags, :var v}
 			(dissoc opts :given :tags))]
     `(wrap-context ~(:given opts)
       (let [~(with-meta (gensym) {::in-describe true}) nil
@@ -132,7 +133,7 @@
   (let [[doc args] (get-arg string? args)
 	[opts body] (get-options args)
 	tags (set (:tags opts))
-	metadata (merge (standard-metadata &form doc sym)
+	metadata (merge (standard-metadata &form doc)
 			{:tags tags}
 			(dissoc opts :tags))]
     `(with-meta (fn ~(find-local-args &env) ~@body)
