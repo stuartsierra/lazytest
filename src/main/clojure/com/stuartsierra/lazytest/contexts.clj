@@ -21,7 +21,7 @@
             (nil-or fn? after)
             (nil-or map? metadata)]
       :post [(context? %)]}
-     (Context. parents before after nil metadata)))
+     (Context. parents before after metadata nil)))
 
 (defn open-context
   "Opens context c, and all its parents, unless it is already active."

@@ -22,4 +22,4 @@
             (every? group? subgroups)
             (nil-or map? metadata)]
       :post [(group? %)]}
-     (Group. contexts examples subgroups nil metadata)))
+     (Group. contexts examples subgroups metadata nil)))
