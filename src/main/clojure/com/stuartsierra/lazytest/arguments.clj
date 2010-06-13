@@ -21,14 +21,14 @@
   "Returns a metadata map with keys :ns, :file, 
   :line, :form, :doc, and :name."
   ([form docstring]
-     `{:ns *ns*
-       :file *file*
+     `{:ns ~*ns*
+       :file ~*file*
        :line ~(:line (meta form))
        :form '~form
        :doc ~docstring})
   ([form docstring name]
-     `{:ns *ns*
-       :file *file*
+     `{:ns ~*ns*
+       :file ~*file*
        :line ~(:line (meta form))
        :form '~form
        :doc ~docstring
