@@ -11,28 +11,34 @@
   (instance? RunnableExample x))
 
 (defn- new-runnable-example
-  [f group contexts parent-tags]
+  [f group contexts parent-tags parent-doc]
   {:pre [(nil-or set? (:tags (meta f)))]}
-  (RunnableExample. f contexts
-		    (assoc (meta f)
-		      :group group
-		      :tags (union parent-tags (:tags (meta f))))
-		    nil))
+  (let [m (meta f)]
+    (RunnableExample. f contexts
+		      (assoc m
+			:group group
+			:doc (str parent-doc (when parent-doc " ") (:doc m))
+			:tags (union parent-tags (:tags m)))
+		      nil)))
 
 (defn flatten-group
   "Given a Group g, returns a flat sequence of RunnableExamples from
-  that group and all its subgroups. Tags are inherited."
-  ([g] (flatten-group g [] #{}))
-  ([g parent-contexts parent-tags]
+  that group and all its subgroups. Tags are inherited, doc strings
+  are concatenated."
+  ([g] (flatten-group g [] #{} nil))
+  ([g parent-contexts parent-tags parent-doc]
      {:pre [(group? g)
 	    (every? context? parent-contexts)]
       :post [(seq? %)
 	     (every? (fn [x] (instance? RunnableExample x)) %)]}
      (let [combined-contexts (vec (concat parent-contexts (:contexts g)))
-	   combined-tags (union parent-tags (:tags (meta g)))]
-       (concat (map #(new-runnable-example % g combined-contexts combined-tags)
+	   combined-tags (union parent-tags (:tags (meta g)))
+	   combined-doc (str parent-doc (when parent-doc " ") (:doc (meta g)))]
+       (concat (map #(new-runnable-example % g combined-contexts combined-tags
+					   combined-doc)
 		    (:examples g))
-	       (mapcat #(flatten-group % combined-contexts combined-tags)
+	       (mapcat #(flatten-group % combined-contexts combined-tags
+				       combined-doc)
 		       (:subgroups g))))))
 
 (defn has-tag?
