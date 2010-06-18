@@ -16,7 +16,6 @@
   (let [m (meta f)]
     (RunnableExample. f contexts
 		      (assoc m
-			:group group
 			:doc (str parent-doc (when parent-doc " ") (:doc m))
 			:tags (union parent-tags (:tags m)))
 		      nil)))
