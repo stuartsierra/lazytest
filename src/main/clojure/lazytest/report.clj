@@ -1,7 +1,7 @@
-(ns com.stuartsierra.lazytest.report
-  (:use [com.stuartsierra.lazytest.results
+(ns lazytest.report
+  (:use [lazytest.results
 	 :only (success? container? error? pending?)]
-        [com.stuartsierra.lazytest.color :only (colorize)]
+        [lazytest.color :only (colorize)]
         [clojure.stacktrace :only (print-cause-trace)])
   (:import (java.io File)))
 
@@ -84,7 +84,7 @@
 (defn report
   "Simple report of test results.  Prints a dot for each passed
   example; prints details for each failure or pending spec.  Uses ANSI
-  color if com.stuartsierra.lazytest.color/colorize? is true."
+  color if lazytest.color/colorize? is true."
   [results]
   (newline)
   (doseq [r results]

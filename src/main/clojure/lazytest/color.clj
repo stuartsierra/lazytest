@@ -1,20 +1,20 @@
-(ns com.stuartsierra.lazytest.color)
+(ns lazytest.color)
 
 ;; Mostly stolen from Stuart Halloway's circumspec
 
 (defn colorize?
   "Colorize output, true if system property
-  com.stuartsierra.lazytest.colorize is true (default)"
+  lazytest.colorize is true (default)"
   [] (contains? #{"yes" "true"}
                 (System/getProperty
-                 "com.stuartsierra.lazytest.colorize"
+                 "lazytest.colorize"
                  "true")))
 
 (defn set-colorize
   "Set the colorize? property to true or false."
   [bool]
   (assert (instance? Boolean bool))
-  (System/setProperty "com.stuartsierra.lazytest.colorize"
+  (System/setProperty "lazytest.colorize"
                       (str bool)))
 
 (def #^{:doc "ANSI color code table"}

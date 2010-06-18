@@ -1,9 +1,9 @@
-(ns com.stuartsierra.lazytest.plan
+(ns lazytest.plan
   (:use [clojure.set :only (union)]
-	[com.stuartsierra.lazytest.arguments :only (nil-or)]
-	[com.stuartsierra.lazytest.attach :only (all-groups)]
-	[com.stuartsierra.lazytest.groups :only (group?)]
-	[com.stuartsierra.lazytest.contexts :only (context?)]))
+	[lazytest.arguments :only (nil-or)]
+	[lazytest.attach :only (all-groups)]
+	[lazytest.groups :only (group?)]
+	[lazytest.contexts :only (context?)]))
 
 (defrecord RunnableExample [f contexts])
 
@@ -68,8 +68,8 @@
 
 ;;; self-tests
 (comment 
-  (use 'com.stuartsierra.lazytest.groups
-       'com.stuartsierra.lazytest.contexts)
+  (use 'lazytest.groups
+       'lazytest.contexts)
 
   (let [g (new-group nil nil nil nil)]
     (assert (= '() (flatten-group g))))

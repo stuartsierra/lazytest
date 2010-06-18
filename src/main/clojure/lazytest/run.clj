@@ -1,7 +1,7 @@
-(ns com.stuartsierra.lazytest.run
-  (:use [com.stuartsierra.lazytest.plan :only (example?)]
-	[com.stuartsierra.lazytest.contexts :only (open-context close-context)]
-	[com.stuartsierra.lazytest.results :only (pass fail thrown)]))
+(ns lazytest.run
+  (:use [lazytest.plan :only (example?)]
+	[lazytest.contexts :only (open-context close-context)]
+	[lazytest.results :only (pass fail thrown)]))
 
 (defn run-example
   "Run a single RunnableExample and return its result."

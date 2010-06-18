@@ -1,5 +1,5 @@
-(ns com.stuartsierra.lazytest.contexts
-  (:use [com.stuartsierra.lazytest.arguments
+(ns lazytest.contexts
+  (:use [lazytest.arguments
          :only (nil-or)]))
 
 (defrecord Context [parents before after])

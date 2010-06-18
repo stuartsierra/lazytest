@@ -1,4 +1,4 @@
-(ns com.stuartsierra.lazytest.arguments)
+(ns lazytest.arguments)
 
 (defn get-arg
   "Pops first argument from args if (pred arg) is true.

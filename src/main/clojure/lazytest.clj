@@ -1,12 +1,12 @@
-(ns com.stuartsierra.lazytest
-  (:use [com.stuartsierra.lazytest.arguments :only (get-arg get-options seconds
+(ns lazytest
+  (:use [lazytest.arguments :only (get-arg get-options seconds
 						    standard-metadata nil-or
 						    firsts)]
-        [com.stuartsierra.lazytest.groups :only (new-group group?)]
-        [com.stuartsierra.lazytest.contexts :only (new-context context?)]
-        [com.stuartsierra.lazytest.attach :only (add-group all-groups)]
-        [com.stuartsierra.lazytest.plan :only (flat-plan)]
-	[com.stuartsierra.lazytest.run :only (run)]))
+        [lazytest.groups :only (new-group group?)]
+        [lazytest.contexts :only (new-context context?)]
+        [lazytest.attach :only (add-group all-groups)]
+        [lazytest.plan :only (flat-plan)]
+	[lazytest.run :only (run)]))
 
 (let [counter (atom 0)]
   (defn- local-counter []

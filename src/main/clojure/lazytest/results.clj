@@ -1,5 +1,5 @@
-(ns com.stuartsierra.lazytest.results
-  (:use [com.stuartsierra.lazytest.plan :only (example?)]))
+(ns lazytest.results
+  (:use [lazytest.plan :only (example?)]))
 
 (defprotocol TestResult
   (success? [r] "True if this result and all its children passed.")

@@ -1,9 +1,9 @@
-(ns com.stuartsierra.lazytest.watch
+(ns lazytest.watch
   (:gen-class)
-  (:use [com.stuartsierra.lazytest.attach :only (all-groups)]
-	[com.stuartsierra.lazytest.plan :only (flat-plan)]
-	[com.stuartsierra.lazytest.run :only (run)]
-	[com.stuartsierra.lazytest.report :only (report)]
+  (:use [lazytest.attach :only (all-groups)]
+	[lazytest.plan :only (flat-plan)]
+	[lazytest.run :only (run)]
+	[lazytest.report :only (report)]
 	[clojure.contrib.find-namespaces
 	 :only (find-clojure-sources-in-dir
 		read-file-ns-decl)]

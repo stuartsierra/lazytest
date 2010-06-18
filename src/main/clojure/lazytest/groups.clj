@@ -1,7 +1,7 @@
-(ns com.stuartsierra.lazytest.groups
-  (:use [com.stuartsierra.lazytest.arguments
+(ns lazytest.groups
+  (:use [lazytest.arguments
 	 :only (nil-or)]
-	[com.stuartsierra.lazytest.contexts
+	[lazytest.contexts
          :only (context?)]))
 
 (defrecord Group [contexts examples subgroups])

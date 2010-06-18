@@ -1,5 +1,5 @@
-(ns com.stuartsierra.lazytest.attach
-  (:use [com.stuartsierra.lazytest.groups :only (group?)]))
+(ns lazytest.attach
+  (:use [lazytest.groups :only (group?)]))
 
 (defn groups-var
   "Creates or returns the Var storing Groups in namespace n."
