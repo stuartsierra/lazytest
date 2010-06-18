@@ -102,18 +102,18 @@ Put the following in `pom.xml`
           <enabled>false</enabled>
         </releases>
         <snapshots>
-	  <enabled>true</enabled>
-	</snapshots>
+          <enabled>true</enabled>
+        </snapshots>
       </repository>
       <repository>
-	<id>clojure-releases</id>
-	<url>http://build.clojure.org/snapshots</url>
-	<releases>
-	  <enabled>true</enabled>
-	</releases>
-	<snapshots>
-	  <enabled>false</enabled>
-	</snapshots>
+        <id>clojure-releases</id>
+        <url>http://build.clojure.org/snapshots</url>
+        <releases>
+          <enabled>true</enabled>
+        </releases>
+        <snapshots>
+          <enabled>false</enabled>
+        </snapshots>
       </repository>
     </repositories>
     <build>
