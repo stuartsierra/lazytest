@@ -1,91 +1,125 @@
-Notes on Possible New Syntax
-============================
-
-Examples are ordinary functions, with arguments.
-
-Contexts are before/after function pairs that supply arguments to the
-examples.
-
-The main macro will be `describe` and everything will be controlled by
-that.  `describe` creates an object called an Group, which links
-examples and contexts.
-
-
-
-Syntax of describe
-------------------
-
-To create an Group:
-
-    (describe symbol "doc string" ...)
-
-Both symbol and doc string are optional.  The symbol, if present, must
-name a Var mapping int he current namespace. 
-
-To create an Group in which the local variable `x` is bound to
-the state returned by the "before" function of `context1`, a context
-created with `defcontext`:
-
-    (describe ... :using [x context1] ...)
-
-To create an Group in which the local variable `x` is bound to
-the result of evaluating `expression`:
-
-    (describe ... :given [x expression] ...)
-
-Assertion expressions are placed inside the `it` macro.
-
-    (describe ... (it ... examples ...))
-
-Each expression inside `it` will be compiled into an example function.
-Any expression inside `it` may optionally be preceded by a string,
-which will become its documentation string.
-
-
-Nested describe
----------------
-
-To create an Group nested inside another Group:
-
-    (describe target "optional doc string"
-      ...
-      (describe "optional doc string" ... ))
-
-The "inner" `describe` inherits the contexts and local variables of
-the "outer" `describe`.
-
-Only the "outer" `describe` may have a target Var or namespace; the
-"inner" `describe` may only have a documentation string.
-
-Documentation strings of nested Groups will be concatenated as
-in RSpec.
-
-
-
-Examples
+Lazytest
 ========
 
-    (describe + "The addition function"
-      (it
-        "should compute the sum of two numbers"
-        (= 5 (+ 2 3))
+A Behavior-Driven Development framework for Clojure
 
-        "should return 0 with no arguments"
-        (zero? (+))
-
-        "should throw on non-numeric argument"
-        (thrown? Exception (+ 3 :a))))
+by Stuart Sierra, http://stuartsierra.com/
 
 
-    (describe get "The get function"
-      :given [m {:a 1 :b 2}]
+Example Usage
+=============
 
-      (it
-        "should return the value for the key"
-        (= 1 (get m :a))
+    (ns com.example.my-tests
+      (:use lazytest.describe))
 
-        "should return nil if the key is not present"
-        (= nil (get m :c))
+    (describe + "with integers"
+      (it "adds small numbers"
+	(= 7 (+ 3 4)))
+      (it "adds large numbers"
+	(= 53924864 (+ 41885013 12039851)))
+      (it "adds negative numbers"
+	(= -10 (+ -4 -6))))
 
-        "should return a default value if the key is not present"
-        (= 3 (get m :c 3))))
+
+
+Getting Started with Leiningen
+==============================
+
+In project.clj:
+
+    (defproject your-project-name "1.0.0-SNAPSHOT"
+      :description "Your project description"
+      :dependencies [[org.clojure/clojure "1.2.0-master-SNAPSHOT"]
+		     [org.clojure/clojure-contrib "1.2.0-SNAPSHOT"]
+		     [com.stuartsierra/lazytest "1.0.0-SNAPSHOT"]])
+
+Put your test sources in test/
+
+Then run:
+
+    lein clean
+    lein deps
+    lein repl
+
+And type:
+
+    (use 'lazytest.watch)
+    (start ["src" "test"])
+
+And watch your tests run automatically whenever you save a file.
+
+Type CTRL+C to stop.
+
+
+
+Getting Started with Maven
+==========================
+
+In pom.xml:
+
+    <dependencies>
+      <dependency>
+	<groupId>org.clojure</groupId>
+	<artifactId>clojure</artifactId>
+	<version>1.2.0-master-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+	<groupId>org.clojure</groupId>
+	<artifactId>clojure-contrib</artifactId>
+	<version>1.2.0-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+	<groupId>com.stuartsierra</groupId>
+	<artifactId>lazytest</artifactId>
+	<version>1.0.0-SNAPSHOT</version>
+      </dependency>
+    </dependencies>
+    <repositories>
+      <repository>
+	<id>clojars</id>
+	<url>http://clojars.org/repo</url>
+      </repository>
+    </repositories>
+    <build>
+      <plugins>
+	<plugin>
+	  <groupId>com.theoryinpractise</groupId>
+	  <artifactId>clojure-maven-plugin</artifactId>
+	  <version>1.3.3</version>
+	</plugin>
+      </plugins>
+    </build>
+
+Put your test sources in src/test/clojure/ 
+
+Then run:
+
+    mvn clojure:repl
+
+And type:
+
+    (use 'lazytest.watch)
+    (start ["src"])
+
+And watch your tests run automatically whenever you save a file.
+
+Type CTRL+C to stop.
+
+
+
+Making Emacs Indent Tests Properly
+==================================
+
+Add the following to .emacs
+
+(eval-after-load 'clojure-mode
+  '(define-clojure-indent (describe 'defun) (it 'defun)))
+
+
+
+Known Defects
+=============
+
+* Changing an applicaton source file does not automatically recompile
+  the associated test source file.
+
