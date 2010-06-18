@@ -25,7 +25,7 @@ Example Usage
 Getting Started with Leiningen
 ==============================
 
-In `project.clj`
+Put the following in `project.clj`
 
     (defproject your-project-name "1.0.0-SNAPSHOT"
       :description "Your project description"
@@ -51,7 +51,7 @@ Type CTRL+C to stop.
 Getting Started with Maven
 ==========================
 
-In `pom.xml`
+Put the following in `pom.xml`
 
     <dependencies>
       <dependency>
@@ -72,36 +72,36 @@ In `pom.xml`
     </dependencies>
     <repositories>
       <repository>
-	<id>stuartsierra-snapshots</id>
-	<url>http://stuartsierra.com/m2snapshots</url>
-	<releases>
-	  <enabled>false</enabled>
-	</releases>
-	<snapshots>
-	  <enabled>true</enabled>
-	</snapshots>
+        <id>stuartsierra-snapshots</id>
+        <url>http://stuartsierra.com/m2snapshots</url>
+        <releases>
+          <enabled>false</enabled>
+        </releases>
+        <snapshots>
+          <enabled>true</enabled>
+        </snapshots>
       </repository>
       <repository>
-	<id>stuartsierra-releases</id>
-	<url>http://clojure.org/maven2</url>
-	<releases>
-	  <enabled>true</enabled>
-	</releases>
-	<snapshots>
-	  <enabled>false</enabled>
-	</snapshots>
+        <id>stuartsierra-releases</id>
+        <url>http://clojure.org/maven2</url>
+        <releases>
+          <enabled>true</enabled>
+        </releases>
+        <snapshots>
+          <enabled>false</enabled>
+        </snapshots>
       </repository>
       <repository>
         <id>clojars</id>
         <url>http://clojars.org/repo</url>
       </repository>
       <repository>
-	<id>clojure-snapshots</id>
-	<url>http://build.clojure.org/snapshots</url>
-	<releases>
-	  <enabled>false</enabled>
-	</releases>
-	<snapshots>
+        <id>clojure-snapshots</id>
+        <url>http://build.clojure.org/snapshots</url>
+        <releases>
+          <enabled>false</enabled>
+        </releases>
+        <snapshots>
 	  <enabled>true</enabled>
 	</snapshots>
       </repository>
@@ -146,7 +146,7 @@ Type CTRL+C to stop.
 Making Emacs Indent Tests Properly
 ==================================
 
-In `.emacs`
+Put the following in `.emacs`
 
     (eval-after-load 'clojure-mode
       '(define-clojure-indent (describe 'defun) (it 'defun)))
