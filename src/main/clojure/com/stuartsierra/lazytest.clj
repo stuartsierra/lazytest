@@ -135,7 +135,8 @@
 	[opts body] (get-options args)
 	tags (set (:tags opts))
 	metadata (merge (standard-metadata &form doc)
-			{:tags tags}
+			{:tags tags
+			 :expr (last body)}
 			(dissoc opts :tags))]
     `(with-meta (fn ~(find-local-args &env) ~@body)
        '~metadata)))
