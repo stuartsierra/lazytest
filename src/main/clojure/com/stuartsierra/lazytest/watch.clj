@@ -1,4 +1,5 @@
 (ns com.stuartsierra.lazytest.watch
+  (:gen-class)
   (:use [com.stuartsierra.lazytest.attach :only (all-groups)]
 	[com.stuartsierra.lazytest.plan :only (flat-plan)]
 	[com.stuartsierra.lazytest.run :only (run)]
@@ -6,8 +7,11 @@
 	[clojure.contrib.find-namespaces
 	 :only (find-clojure-sources-in-dir
 		read-file-ns-decl)]
-	[clojure.java.io :only (file)])
-  (:import (java.util.concurrent ScheduledThreadPoolExecutor TimeUnit)))
+	[clojure.java.io :only (file)]
+	[clojure.string :only (split join)])
+  (:import (java.util.concurrent ScheduledThreadPoolExecutor TimeUnit)
+	   (java.util.regex Pattern)
+	   (java.io File)))
 
 (defn find-sources
   [dirs]
@@ -29,9 +33,10 @@
     (let [names (newer-namespaces dirs @timestamp-atom)]
       (when (seq names)
 	(reset! timestamp-atom (System/currentTimeMillis))
-	(println "Reloading" names)
+	(println)
+	(println "Reloading" (join ", " names))
 	(doseq [n names] (remove-ns n))
-	(doseq [n names] (require n))
+	(doseq [n names] (require n :reload))
 	(println "Running examples at" (java.util.Date.))
 	(reporter (run (flat-plan (all-groups))))))
     (catch Exception e
@@ -44,3 +49,10 @@
 	runner #(reload-and-run dirs last-run-timestamp reporter)]
     (doto (ScheduledThreadPoolExecutor. 1)
       (.scheduleWithFixedDelay runner 0 delay TimeUnit/MILLISECONDS))))
+
+(defn -main [& args]
+  (println "Classpath contains the following:")
+  (doseq [c (split (System/getProperty "java.class.path")
+		   (Pattern/compile File/pathSeparator))]
+    (println c))
+  (start args))
