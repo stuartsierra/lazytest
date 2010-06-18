@@ -69,14 +69,6 @@
         <groupId>com.theoryinpractise</groupId>
         <artifactId>clojure-maven-plugin</artifactId>
         <version>1.3.3</version>
-        <configuration>
-          <testScript>src/scripts/runtests.clj</testScript>
-          <testSourceDirectories>
-            <testSourceDirectory>src/examples</testSourceDirectory>
-            <testSourceDirectory>src/asserts</testSourceDirectory>
-            <testSourceDirectory>src/test/clojure</testSourceDirectory>
-          </testSourceDirectories>
-        </configuration>
         <executions>
           <execution>
             <id>compile-clojure</id>
