@@ -47,7 +47,7 @@
 	 (keyword? t)]}
   (contains? (:tags (meta x)) t))
 
-(defn flat-plan
+(defn filter-examples
   "Returns a flat sequence of RunnableExamples for all examples in Groups gs.
   Examples are filtered by the following options:
 
@@ -56,14 +56,29 @@
      :exclude [tags]
         Every example must NOT have any of the tags.
   "
-  [gs & options]
-  {:pre [(coll? gs)]}
+  [examples & options]
+  {:pre [(coll? examples)
+	 (every? example? examples)]}
   (let [{:keys [tags exclude]} options]
-    (let [examples (mapcat flatten-group gs)]
-      (filter (fn [ex]
-		(and (not-any? #(has-tag? ex %) exclude)
-		     (every? #(has-tag? ex %) tags)))
-	      examples))))
+    (filter (fn [ex]
+	      (and (not-any? #(has-tag? ex %) exclude)
+		   (every? #(has-tag? ex %) tags)))
+	    examples)))
+
+(defn flat-plan [groups]
+  (mapcat flatten-group groups))
+
+(defn default-filter [examples]
+  (let [examples (filter-examples examples :exclude [:skip])
+	focused (filter-examples examples :tags [:focus])]
+    (if (seq focused) focused examples)))
+
+(defn default-plan
+  "Returns the default test plan.  Examples/groups wth tag :skip are
+  omitted.  If any groups/examples have the tag :focus then only those
+  groups/examples will run."
+  []
+  (default-filter (flat-plan (all-groups))))
 
 
 ;;; self-tests
