@@ -40,7 +40,7 @@ Then run:
 
     lein clean
     lein deps
-    java -cp src:test:classes:lib/* lazytest.watch src test
+    java -cp "src:test:classes:lib/*" lazytest.watch src test
 
 And watch your tests run automatically whenever you save a file.
 
@@ -159,3 +159,6 @@ Known Defects
 * Changing an applicaton source file does not automatically recompile
   the associated test source file.
 
+* Empty tests are not reported as "pending"
+
+* Failed assertions do not print expected/actual values
