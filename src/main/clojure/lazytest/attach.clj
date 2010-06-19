@@ -1,27 +1,23 @@
-(ns lazytest.attach
-  (:use [lazytest.groups :only (group?)]))
-
-(defn groups-var
-  "Creates or returns the Var storing Groups in namespace n."
-  [n]
-  (or (ns-resolve n '*lazytest-groups*)
-      (intern n (with-meta '*lazytest-groups* {:private true}) #{})))
+(ns lazytest.attach)
 
 (defn groups
   "Returns the Groups for namespace n"
   [n]
-  (var-get (groups-var n)))
+  (map var-get (filter #(::group (meta %)) (vals (ns-interns n)))))
 
 (defn all-groups
   "Returns a sequence of all Groups in all namespaces."
   []
-  (mapcat (comp seq groups) (all-ns)))
+  (mapcat groups (all-ns)))
 
 (defn add-group
   "Adds Group g to namespace n."
   [n g]
-  {:pre [(group? g)
-	 (the-ns n)]}
-  {:post [(some #{g} (seq (groups n)))]}
-  (alter-var-root (groups-var (the-ns n)) conj g))
+  (intern n (with-meta (gensym "lazytest-group-") {::group true}) g))
 
+(defn clear-groups
+  "Removes all test groups from namespace n."
+  [n]
+  (doseq [[sym v] (ns-interns n)]
+    (when (::group (meta v))
+      (ns-unmap n sym))))
