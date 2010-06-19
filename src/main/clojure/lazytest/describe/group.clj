@@ -28,10 +28,10 @@
     (str parent-doc (when parent-doc " ") (:doc (meta child)))))
 
 (defn prepare-example [parent f]
-  (RunnableExample. f (:contexts parent) (assoc (:meta f) :doc (concat-doc parent f)) nil))
+  (RunnableExample. f (:contexts parent) (assoc (meta f) :doc (concat-doc parent f)) nil))
 
 (defn prepare-subgroup [parent g]
-  (vary-meta (assoc g (vec (concat (:contexts parent) (:contexts g))))
+  (vary-meta (assoc g :contexts (vec (concat (:contexts parent) (:contexts g))))
 	     assoc :doc (concat-doc parent g)))
 
 (defrecord Group [contexts examples subgroups]
