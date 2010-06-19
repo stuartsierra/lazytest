@@ -3,8 +3,7 @@
   the TestResult protocol.  The record types defined here should be
   created with the constructor functions pass, fail, throw, skip, and
   pending."
-  (:use [lazytest.arguments :only (nil-or)]
-	[lazytest.plan :only (example?)]))
+  (:use [lazytest.arguments :only (nil-or)]))
 
 (defprotocol TestResult
   (success? [r] "True if this result and all its children passed.")
@@ -61,29 +60,35 @@
     (skipped? [this] false)
     (container? [this] false))
 
+(defrecord TestResultContainer [source children]
+  TestResult
+  (success? [this] (every? success? children))
+  (pending? [this] false)
+  (error? [this] false)
+  (skipped? [this] false)
+  (container? [this] true))
+
+(defn container [source children]
+  (TestResultContainer. source children))
+
 (defn pass [source states]
-  {:pre [(example? source)]}
   (TestPassed. source states))
 
 (defn fail [source states]
-  {:pre [(example? source)]}
   (TestFailed. source states))
 
 (defn thrown [source states throwable]
-  {:pre [(example? source)
-	 (instance? Throwable throwable)]}
+  {:pre [(instance? Throwable throwable)]}
   (TestThrown. source states throwable))
 
 (defn skip
   ([source] (skip source nil))
   ([source reason]
-     {:pre [(example? source)
-	    (nil-or string? reason)]}
+     {:pre [(nil-or string? reason)]}
      (TestSkipped. source reason)))
 
 (defn pending
   ([source] (pending source nil))
   ([source reason]
-     {:pre [(example? source)
-	    (nil-or string? reason)]}
+     {:pre [(nil-or string? reason)]}
      (TestPending. source reason)))

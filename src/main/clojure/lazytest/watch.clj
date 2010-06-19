@@ -1,8 +1,7 @@
 (ns lazytest.watch
   (:gen-class)
   (:use [lazytest.attach :only (all-groups)]
-	[lazytest.plan :only (default-plan)]
-	[lazytest.run :only (run)]
+	[lazytest.run :only (run-tests)]
 	[lazytest.report :only (report)]
 	[clojure.contrib.find-namespaces
 	 :only (find-clojure-sources-in-dir
@@ -38,7 +37,7 @@
 	(doseq [n names] (remove-ns n))
 	(doseq [n names] (require n :reload))
 	(println "Running examples at" (java.util.Date.))
-	(reporter (run (default-plan)))))
+	(reporter (map run-tests (all-groups)))))
     (catch Exception e
       (println "ERROR:" e))))
 

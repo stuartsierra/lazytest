@@ -4,9 +4,7 @@
 				   firsts)]
         [lazytest.groups :only (new-group group?)]
         [lazytest.contexts :only (new-context context?)]
-        [lazytest.attach :only (add-group all-groups)]
-        [lazytest.plan :only (flat-plan)]
-	[lazytest.run :only (run)]))
+        [lazytest.attach :only (add-group)]))
 
 (let [counter (atom 0)]
   (defn- local-counter []
@@ -141,13 +139,6 @@
 			(dissoc opts :tags))]
     `(with-meta (fn ~(find-local-args &env) ~@body)
        '~metadata)))
-
-(defn run-tests [& args]
-  (run (apply flat-plan (all-groups) args)))
-
-(defn clear-tests "Delete all tests in the current namespace"
-  []
-  (intern *ns* (with-meta '*lazytest-groups* {:private true}) #{}))
 
 (defmacro thrown?
   "Returns true if body throws an instance of class c."
