@@ -38,10 +38,16 @@
   RunnableTest
   (run-tests
    [this]
-   (container this
-	      (map run-tests
-		   (concat (map #(prepare-example this %) examples)
-			   (map #(prepare-subgroup this %) subgroups))))))
+   (let [m (meta this)]
+     (cond (:pending m)
+             (pending this (when (string? (:pending m)) (:pending m)))
+	   (:skip m)
+             (skip this (when (string? (:skip m)) (:skip m)))
+	   :else
+	     (container this
+			(map run-tests
+			     (concat (map #(prepare-example this %) examples)
+				     (map #(prepare-subgroup this %) subgroups))))))))
 
 (defn group?
   "True if x is an example group."

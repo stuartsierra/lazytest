@@ -101,7 +101,9 @@
 	contexts (seconds (:given opts))
 	tags (set (:tags opts))
 	metadata (merge (standard-metadata &form docstring sym)
-			{:tags tags, :var v}
+			{:tags tags,
+			 :var v,
+			 :pending (empty? body)}
 			(dissoc opts :given :tags))]
     `(wrap-context ~(:given opts)
       (let [~(with-meta (gensym) {::in-describe true}) nil
