@@ -1,4 +1,4 @@
-(ns lazytest.groups
+(ns lazytest.describe.group
   (:use [lazytest.arguments :only (nil-or)]
 	[lazytest.run :only (RunnableTest run-tests)]
 	[lazytest.results :only (pass fail thrown skip pending container)]

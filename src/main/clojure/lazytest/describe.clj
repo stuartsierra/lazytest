@@ -2,7 +2,7 @@
   (:use [lazytest.arguments :only (get-arg get-options seconds
 				   standard-metadata nil-or
 				   firsts)]
-        [lazytest.groups :only (new-group group?)]
+        [lazytest.describe.group :only (new-group group?)]
         [lazytest.contexts :only (new-context context?)]
         [lazytest.attach :only (add-group)]))
 
