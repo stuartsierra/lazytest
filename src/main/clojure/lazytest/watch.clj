@@ -33,6 +33,7 @@
       (when (seq names)
 	(reset! timestamp-atom (System/currentTimeMillis))
 	(println)
+	(println "======================================================================")
 	(println "Reloading" (join ", " names))
 	(doseq [n names] (remove-ns n))
 	(doseq [n names] (require n :reload))
