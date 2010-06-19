@@ -1,6 +1,6 @@
 (ns lazytest.report
   (:use [lazytest.results
-	 :only (success? container? error? pending?)]
+	 :only (success? container? error? pending? skipped?)]
         [lazytest.color :only (colorize)]
         [clojure.stacktrace :only (print-cause-trace)])
   (:import (java.io File)))
@@ -81,16 +81,25 @@
     (do (newline)
 	(print-details r))))
 
+(defn flatten-results [results-seq]
+  (mapcat (fn [r] (if (and (container? r)
+			   (not (pending? r))
+			   (not (skipped? r)))
+		    (flatten-results (:children r))
+		    (list r)))
+	  results-seq))
+
 (defn report
   "Simple report of test results.  Prints a dot for each passed
   example; prints details for each failure or pending spec.  Uses ANSI
   color if lazytest.color/colorize? is true."
-  [results]
-  (newline)
-  (doseq [r results]
-    (dot-report r))
-  (newline)
-  (print-summary results))
+  [result-groups-seq]
+  (let [results (flatten-results result-groups-seq)]
+    (newline)
+    (doseq [r results]
+      (dot-report r))
+    (newline)
+    (print-summary results)))
 
 (defn report-and-exit
   "Calls function f (defaults to report) on test result r and
