@@ -49,10 +49,7 @@
 			     (concat (map #(prepare-example this %) examples)
 				     (map #(prepare-subgroup this %) subgroups))))))))
 
-(defn group?
-  "True if x is an example group."
-  [x]
-  (isa? (type x) Group))
+(declare group?)
 
 (defn new-group
   "Creates a Group."
@@ -66,3 +63,56 @@
             (nil-or map? metadata)]
       :post [(group? %)]}
      (Group. contexts examples subgroups metadata nil)))
+
+(defrecord MappingExample [f contexts values]
+  RunnableTest
+  (run-tests
+   [this]
+   (let [active (reduce open-context {} contexts)
+	 states (concat (map active contexts) values)
+	 m (meta f)
+	 result (cond (:pending m)
+			(pending this (when (string? (:pending m)) (:pending m)))
+		      (:skip m)
+			(skip this (when (string? (:skip m)) (:skip m)))
+		      :else
+		        (try (if (apply f states)
+			       (pass this states)
+			       (fail this states))
+			     (catch Throwable t (thrown this states t))))]
+     (reduce close-context active contexts)
+     result)))
+
+(defn prepare-mapping-example [parent test-fn values]
+  (MappingExample. test-fn
+		   (:contexts parent)
+		   values
+		   (assoc (meta test-fn) :doc (concat-doc parent test-fn))
+		   nil))
+
+(defrecord MappingGroup [contexts test-fn values-fn]
+  RunnableTest
+  (run-tests
+   [this]
+   (let [m (meta this)]
+     (cond (:pending m)
+	     (pending this (when (string? (:pending m)) (:pending m)))
+	   (:skip m)
+	     (skip this (when (string? (:skip m)) (:skip m)))
+	   :else
+	     (container this
+			(map #(run-tests (prepare-mapping-example this test-fn %))
+			     (values-fn)))))))
+
+(defn mapping-group [contexts test-fn values-fn metadata]
+  {:pre [(vector? contexts)
+	 (fn? test-fn)
+	 (fn? values-fn)]}
+  (MappingGroup. contexts test-fn values-fn metadata nil))
+
+(defn group?
+  "True if x is an example group."
+  [x]
+  (or (isa? (type x) Group)
+      (isa? (type x) MappingGroup)))
+

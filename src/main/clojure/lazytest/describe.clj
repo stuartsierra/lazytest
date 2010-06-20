@@ -2,7 +2,7 @@
   (:use [lazytest.arguments :only (get-arg get-options seconds
 				   standard-metadata nil-or
 				   firsts)]
-        [lazytest.describe.group :only (new-group group?)]
+        [lazytest.describe.group :only (new-group group? mapping-group)]
         [lazytest.contexts :only (new-context context?)]
         [lazytest.attach :only (add-group)]))
 
@@ -141,6 +141,21 @@
 			(dissoc opts :tags))]
     `(with-meta (fn ~(find-local-args &env) ~@body)
        '~metadata)))
+
+(defmacro for-each [& args]
+  (let [[doc args] (get-arg string? args)
+	[opts args] (get-options args)
+	[argv test-expr & args] args
+	metadata (merge (standard-metadata &form doc)
+			{:expr test-expr
+			 :pending (or (empty? args))}
+			opts)]
+    (assert (vector? argv))
+    (assert (every? vector? args))
+    `(mapping-group []
+		    (fn ~(vec (concat (find-local-args &env) argv)) ~test-expr)
+		    (fn [] (list ~@args))
+		    '~metadata)))
 
 (defmacro thrown?
   "Returns true if body throws an instance of class c."
