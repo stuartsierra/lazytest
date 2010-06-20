@@ -142,15 +142,23 @@
     `(with-meta (fn ~(find-local-args &env) ~@body)
        '~metadata)))
 
-(defmacro for-each [& args]
+(defmacro for-each
+  "Arguments are:
+
+    1. doc string (optional)
+    2. keyword/value options (optional)
+    3. argument vector, as for a function
+    4. a test expression, the \"body\" of the function
+    5. any number of vectors of test values"
+  [& args]
   (let [[doc args] (get-arg string? args)
 	[opts args] (get-options args)
 	[argv test-expr & args] args
 	metadata (merge (standard-metadata &form doc)
 			{:expr test-expr
-			 :pending (or (empty? args))}
+			 :pending (or (empty? args) (empty? test-expr))}
 			opts)]
-    (assert (vector? argv))
+    (assert (nil-or vector? argv))
     (assert (every? vector? args))
     `(mapping-group []
 		    (fn ~(vec (concat (find-local-args &env) argv)) ~test-expr)

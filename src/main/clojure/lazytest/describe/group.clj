@@ -2,7 +2,8 @@
   (:use [lazytest.arguments :only (nil-or)]
 	[lazytest.run :only (RunnableTest run-tests)]
 	[lazytest.results :only (pass fail thrown skip pending container)]
-	[lazytest.contexts :only (context? open-context close-context)]))
+	[lazytest.contexts :only (context? open-context close-context)]
+	[clojure.string :only (join)]))
 
 (defrecord RunnableExample [f contexts]
   RunnableTest
@@ -10,7 +11,7 @@
    [this]
    (let [active (reduce open-context {} contexts)
 	 states (map active contexts)
-	 m (meta f)
+	 m (meta this)
 	 result (cond (:pending m)
 			(pending this (when (string? (:pending m)) (:pending m)))
 		      (:skip m)
@@ -23,9 +24,8 @@
      (reduce close-context active contexts)
      result)))
 
-(defn concat-doc [parent child]
-  (let [parent-doc (:doc (meta parent))]
-    (str parent-doc (when parent-doc " ") (:doc (meta child)))))
+(defn concat-doc [& ms]
+  (join " " (remove nil? (map #(:doc (meta %)) ms))))
 
 (defn prepare-example [parent f]
   (RunnableExample. f (:contexts parent) (assoc (meta f) :doc (concat-doc parent f)) nil))
@@ -70,7 +70,7 @@
    [this]
    (let [active (reduce open-context {} contexts)
 	 states (concat (map active contexts) values)
-	 m (meta f)
+	 m (meta this)
 	 result (cond (:pending m)
 			(pending this (when (string? (:pending m)) (:pending m)))
 		      (:skip m)
@@ -87,7 +87,10 @@
   (MappingExample. test-fn
 		   (:contexts parent)
 		   values
-		   (assoc (meta test-fn) :doc (concat-doc parent test-fn))
+		   (merge (meta parent)
+			  (meta test-fn)
+			  (meta values)
+			  {:doc (concat-doc parent test-fn values)})
 		   nil))
 
 (defrecord MappingGroup [contexts test-fn values-fn]
