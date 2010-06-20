@@ -20,6 +20,13 @@ Example Usage
       (it "adds negative numbers"
         (= -10 (+ -4 -6))))
 
+    (describe "The for-each macro"
+      (for-each "tests the same expression with many values"
+        [x y z] (= z (+ x y))
+	[1 1 2]
+	[2 2 4]
+	[3 4 7]))
+
 
 
 Getting Started with Leiningen
@@ -159,6 +166,6 @@ Known Defects
 * Changing an applicaton source file does not automatically recompile
   the associated test source file.
 
-* Empty tests are not reported as "pending"
-
 * Failed assertions do not print expected/actual values
+
+* Failed for-each tests do not print the failing values
