@@ -69,7 +69,7 @@
         <groupId>com.theoryinpractise</groupId>
         <artifactId>clojure-maven-plugin</artifactId>
         <version>1.3.3</version>
-        <executions>
+        <!-- <executions>
           <execution>
             <id>compile-clojure</id>
             <phase>compile</phase>
@@ -84,7 +84,7 @@
               <goal>test</goal>
             </goals>
           </execution>
-        </executions>
+        </executions> -->
       </plugin>
     </plugins>
     <extensions>
