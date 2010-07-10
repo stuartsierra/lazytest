@@ -17,8 +17,8 @@
   (or (seq (filter focused? s)) s))
 
 (defn- get-possibly-unbound-var [v]
-  (try (var-get v)
-       (catch Exception e nil)))
+  (when (bound? v)
+    (var-get v)))
 
 (extend-protocol Testable
   clojure.lang.Namespace
