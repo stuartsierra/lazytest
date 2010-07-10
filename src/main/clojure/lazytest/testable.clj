@@ -16,10 +16,6 @@
   [s]
   (or (seq (filter focused? s)) s))
 
-(defn- get-possibly-unbound-var [v]
-  (when (bound? v)
-    (var-get v)))
-
 (extend-protocol Testable
   clojure.lang.Namespace
   (get-tests [this-ns]
@@ -30,10 +26,11 @@
 
   clojure.lang.Var
   (get-tests [this-var]
-    (let [value (get-possibly-unbound-var this-var)]
-      (when (extends? Testable (type value))
-	(filter-focused
-	 (get-tests value)))))
+    (when (bound? this-var)
+      (let [value (var-get this-var)]
+	(when (extends? Testable (type value))
+	  (filter-focused
+	   (get-tests value))))))
 
   java.util.Collection
   (get-tests [coll]
