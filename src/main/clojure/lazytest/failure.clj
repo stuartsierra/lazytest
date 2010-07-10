@@ -34,14 +34,20 @@
   (NotInstanceOf. expected-class (class object)))
 
 
-(defrecord NotThrown [expected-class] Failure)
+(defrecord NotThrown [class] Failure)
 
 (defn not-thrown
   "Returns a Failure indicating that the given Throwable class was
   supposed to be thrown but was not."
-  [expected-class]
-  {:pre [(class? expected-class)]}
-  (NotThrown. expected-class))
+  [class]
+  {:pre [(class? class)]}
+  (NotThrown. class))
+
+
+(defrecord ThrownWithWrongMessage [expected-re actual-message] Failure)
+
+(defn thrown-with-wrong-message [expected-re actual-message]
+  (ThrownWithWrongMessage. expected-re actual-message))
 
 
 (defrecord NotLogicalTrue [value] Failure)
