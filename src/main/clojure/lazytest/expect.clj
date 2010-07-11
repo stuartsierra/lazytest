@@ -31,7 +31,7 @@
   (or value
       (throw (ExpectationFailed. (not-logical-true value)))))
 
-(defn expect-predicate [pred args]
+(defn expect-predicate [pred & args]
   (or (apply pred args)
       (throw (ExpectationFailed. (predicate-failed pred args)))))
 
@@ -50,7 +50,7 @@
       (cond expt
 	      (list* expt args)
 	    (and f (fn? f) (not (:macro (meta v))))
-	      (expect-predicate f args)
+	      `(expect-predicate ~f ~@args)
 	    :else
 	      expr))
     expr))
