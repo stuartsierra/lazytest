@@ -1,41 +1,46 @@
-(ns lazytest.group)
+(ns lazytest.group
+  (:use [lazytest.testable :only (Testable get-tests)]
+	[lazytest.runnable-test :only (RunnableTest run-tests
+				      skip-or-pending
+				      try-expectations)]
+	[lazytest.fixture :only (Fixture setup teardown)]
+	[lazytest.test-result :only (result-group)]))
 
-(defn RunnableExample [fixtures f]
+(defrecord RunnableExample [fixtures f]
+  Testable
+  (get-tests [this] (list this))
   RunnableTest
   (run-tests [this]
-	     (or (skip-or-pending this)
-		 (try-expectations this
-				   (apply f (map setup fixtures))
-				   (dorun (map teardown fixtures))))))
+	     (list
+	      (or (skip-or-pending this)
+		  (try-expectations
+		   this
+		   (apply f (map setup fixtures))
+		   (dorun (map teardown fixtures)))))))
 
-(defrecord Example [locals fixtures expr]
-  Testable
-  (get-tests [this]
-	     (RunnableExample. fixtures (eval `(fn ~locals ~expr)))))
-
-(defrecord SimpleFixture [value]
+(defrecord ConstantFixture [value]
   Fixture
   (setup [this] value)
   (teardown [this] nil))
 
-(defrecord Group [children]
+(defn inherit [parent child]
+  (assoc child :fixtures (vec (concat (:fixtures parent) (:fixtures child)))))
+
+(defrecord Group [fixtures children]
   Testable
-  (get-tests [this] (list this))
+  (get-tests [this]
+	     (mapcat (fn [child] (get-tests (inherit this child)))
+		     children))
   RunnableTest
   (run-tests [this] (result-group this (mapcat run-tests children))))
 
-(defrecord BindingFixtureGroup [locals fixtures children]
+(defrecord MappingGroup [fixtures sequence children]
   Testable
   (get-tests [this]
-	     (mapcat (fn [child]
+	     (mapcat (fn [value]
 		       (get-tests
-			(assoc child
-			  :locals (vec (concat (:locals this) (:locals child)))
-			  :fixtures (vec (concat (:locals this) (:locals child))))))
-		     children)))
-
-(defrecord MappingGroup [local sequence expr]
-  (get-tests [this]
-	     (map (fn [value] (Example. [local] [(SimpleFixture. x)] expr))
-		  sequence)))
+			(Group.
+			 (conj fixtures (SimpleFixture. value))
+			 children)))
+		     sequence)))
 

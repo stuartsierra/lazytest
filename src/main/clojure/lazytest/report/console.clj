@@ -1,5 +1,6 @@
 (ns lazytest.report.console
   (:use [lazytest.test-result :only (success?)]
+	[clojure.pprint :only (pprint)]
 	[clojure.stacktrace :only (print-cause-trace)]))
 
 (defprotocol ReportPrinter
