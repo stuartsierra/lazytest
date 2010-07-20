@@ -22,7 +22,7 @@
 (intern 'three 'b (reify Testable (get-tests [this] (list :b))))
 (create-ns 'four)
 (intern 'four 'c (reify Testable (get-tests [this] (list :c))))
-(assert (= #{:b :c} (set (get-tests (all-ns)))))
+(assert (= #{:b :c} (set (get-tests (list (the-ns 'three) (the-ns 'four))))))
 (remove-ns 'three)
 (remove-ns 'four)
 

@@ -40,7 +40,7 @@
 	     (mapcat (fn [value]
 		       (get-tests
 			(Group.
-			 (conj fixtures (SimpleFixture. value))
+			 (conj fixtures (ConstantFixture. value))
 			 children)))
 		     sequence)))
 
