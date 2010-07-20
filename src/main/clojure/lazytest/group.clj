@@ -3,7 +3,7 @@
 	[lazytest.runnable-test :only (RunnableTest run-tests
 				      skip-or-pending
 				      try-expectations)]
-	[lazytest.fixture :only (Fixture setup teardown)]
+	[lazytest.fixture :only (setup teardown constant-fixture)]
 	[lazytest.test-result :only (result-group)]))
 
 (defrecord RunnableExample [fixtures f]
@@ -17,11 +17,6 @@
 		   this
 		   (apply f (map setup fixtures))
 		   (dorun (map teardown fixtures)))))))
-
-(defrecord ConstantFixture [value]
-  Fixture
-  (setup [this] value)
-  (teardown [this] nil))
 
 (defn inherit [parent child]
   (assoc child :fixtures (vec (concat (:fixtures parent) (:fixtures child)))))
@@ -40,7 +35,7 @@
 	     (mapcat (fn [value]
 		       (get-tests
 			(Group.
-			 (conj fixtures (ConstantFixture. value))
+			 (conj fixtures (constant-fixture value))
 			 children)))
 		     sequence)))
 
