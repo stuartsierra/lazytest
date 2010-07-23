@@ -82,7 +82,8 @@
 	[doc decl] (get-arg string? decl)
 	[opts body] (get-arg map? decl)
 	children (vec body)
-	metadata (merge (meta &form) {:doc doc} opts)]
+	docstring (strcat (when sym (resolve sym)) doc)
+	metadata (merge (meta &form) {:doc docstring} opts)]
     `(test-group ~children ~metadata)))
 
 (defmacro given [& decl]
