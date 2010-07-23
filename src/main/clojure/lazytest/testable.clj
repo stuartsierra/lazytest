@@ -26,8 +26,10 @@
 
   clojure.lang.Var
   (get-tests [this-var]
-    (when (bound? this-var)
-      (let [value (var-get this-var)]
-	(when (extends? Testable (type value))
-	  (filter-focused
-	   (get-tests value)))))))
+    (if-let [f (:get-tests (meta this-var))]
+      (do (assert (fn? f)) (f))
+      (when (bound? this-var)
+	(let [value (var-get this-var)]
+	  (when (extends? Testable (type value))
+	    (filter-focused
+	     (get-tests value))))))))
