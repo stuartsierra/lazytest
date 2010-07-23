@@ -3,10 +3,10 @@
 	[lazytest.runnable-test :only (RunnableTest
 				       run-tests
 				       skip-or-pending
-				       try-expectations
 				       runnable-test?)]
 	[lazytest.fixture :only (setup teardown fixture?)]
-	[lazytest.test-result :only (result-group)]))
+	[lazytest.test-result :only (pass fail thrown result-group)])
+  (:import (lazytest ExpectationFailed)))
 
 (defrecord TestCase [fixtures f]
   Testable
@@ -16,10 +16,13 @@
 	     (lazy-seq
 	      (list
 	       (or (skip-or-pending this)
-		   (try-expectations
-		    this
-		    (apply f (map setup fixtures))
-		    (dorun (map teardown fixtures))))))))
+		   (try (let [states (map setup fixtures)
+			      this-with-state (vary-meta this assoc :states states)]
+			  (try (apply f fixtures)
+			       (pass this-with-state)
+			       (catch ExpectationFailed e (fail this-with-state (.reason e)))
+			       (catch Throwable e (thrown this-with-state e))))
+			(catch Throwable e (thrown this e))))))))
 
 (defn test-case
   ([fixtures f] (test-case fixtures f nil))

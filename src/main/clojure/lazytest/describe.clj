@@ -1,11 +1,11 @@
 (ns lazytest.describe
   (:use [lazytest.testable :only (Testable get-tests)]
 	[lazytest.runnable-test :only (RunnableTest run-tests
-				       skip-or-pending try-expectations)]
+				       skip-or-pending)]
 	[lazytest.group :only (test-case test-group)]
 	[lazytest.test-result :only (result-group)]
 	[lazytest.expect :only (expect)]
-	[lazytest.fixture :only (setup teardown)]))
+	[lazytest.fixture :only (setup teardown constant-fixture)]))
 
 ;;; Utilities
 
@@ -46,6 +46,46 @@
   [& args]
   (apply str (interpose \space (remove nil? args))))
 
+;;; Local Variable Scope
+
+(let [counter (atom 0)]
+  (defn- local-counter []
+    (swap! counter inc)))
+
+(defmacro bind-local
+  "Establishes a local binding of sym to the state returned by local-scope
+  c in all groups and examples found within body."
+  [form c & body]
+  `(let [~(with-meta (gensym) {::local true
+			       ::order (local-counter)
+			       ::arg form}) ~c]
+     ~@body))
+
+(defmacro wrap-local-scope
+  "Recursively creates local bindings for each pair in bindings vector."
+  [bindings body]
+  {:pre [(or (vector? bindings) (nil? bindings))
+         (even? (count bindings))]}
+  (if (seq bindings)
+    `(bind-local ~(first bindings) ~(second bindings)
+       (wrap-local-scope ~(vec (nnext bindings)) ~body))
+    body))
+
+(defn- find-locals
+  "Returns a vector of locals bound by bind-local in the
+  environment."
+  [env]
+  (vec (sort-by #(::order (meta %))
+                (filter #(::local (meta %)) (keys env)))))
+
+(defn- find-local-binding-forms
+  "Returns a vector of the function argument forms of locals bound by
+  bind-local in the environment."
+  [env]
+  (vec (map #(::arg (meta %)) (find-locals env))))
+
+;;; Public
+
 (defmacro describe [& decl]
   (let [[sym decl] (get-arg symbol? decl)
 	[doc decl] (get-arg string? decl)
@@ -57,22 +97,33 @@
 (defmacro given [& decl]
   (let [[doc decl] (get-arg string? decl)
 	[opts decl] (get-options decl)
-	[bindings body] (get-options vector? decl)
+	[bindings body] (get-arg vector? decl)
 	children (vec body)
 	metadata (merge (meta &form) {:doc doc} opts)]
-    `(test-group ~children ~metadata)))
+    (assert (vector? bindings))
+    (assert (even? (count bindings)))
+    (let [binding-forms (firsts bindings)
+	  fixtures (map (fn [x] `(constant-fixture ~x)) (seconds bindings))
+	  local-bindings (vec (interleave binding-forms fixtures))]      
+      `(wrap-local-scope ~local-bindings (test-group ~children ~metadata)))))
 
 (defmacro using [& decl]
   (let [[doc decl] (get-arg string? decl)
 	[opts decl] (get-options decl)
-	[bindings body] (get-options vector? decl)
+	[bindings body] (get-arg vector? decl)
 	children (vec body)
 	metadata (merge (meta &form) {:doc doc} opts)]
-    `(test-group ~children ~metadata)))
+    (assert (vector? bindings))
+    (assert (even? (count bindings)))
+    (let [binding-forms (firsts bindings)
+	  fixtures (seconds bindings)
+	  local-bindings (vec (interleave binding-forms fixtures))]      
+      `(wrap-local-scope ~local-bindings (test-group ~children ~metadata)))))
 
 (defmacro it [& decl]
   (let [[sym decl] (get-arg symbol? decl)
 	[doc decl] (get-arg string? decl)
 	[opts body] (get-options decl)
 	metadata (merge (meta &form) {:doc doc} opts)]
-    `(test-case [] (fn [] ~@body) ~metadata)))
+    `(test-case ~(find-locals &env)
+		(fn ~(find-local-binding-forms &env) ~@body) ~metadata)))

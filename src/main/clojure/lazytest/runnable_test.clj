@@ -19,14 +19,3 @@
     (if-let [reason (:pending (meta t))]
       (pending t reason)
       nil)))
-
-(defmacro try-expectations
-  "Executes body, catching all exceptions.  Returns a TestResult
-  indicating pass, failure, or thrown."
-  [t & body]
-  `(try ~@body
-	(pass ~t)
-	(catch ExpectationFailed e#
-	  (fail ~t (.reason e#)))
-	(catch Throwable e#
-	  (thrown ~t e#))))
