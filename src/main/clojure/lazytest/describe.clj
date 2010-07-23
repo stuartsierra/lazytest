@@ -5,7 +5,7 @@
 	[lazytest.group :only (test-case test-group)]
 	[lazytest.test-result :only (result-group)]
 	[lazytest.expect :only (expect)]
-	[lazytest.fixture :only (setup teardown constant-fixture)]))
+	[lazytest.fixture :only (setup teardown function-fixture)]))
 
 ;;; Utilities
 

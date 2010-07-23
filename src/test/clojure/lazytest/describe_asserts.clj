@@ -10,7 +10,7 @@
     (expect (= 4 (+ 2 2)))))
 
 (in-ns 'lazytest.describe-asserts)
-(let [result (first (map run-tests (get-tests (the-ns 'one))))]
+(let [result (first (mapcat run-tests (get-tests (the-ns 'one))))]
   (assert (success? result)))
 (remove-ns 'one)
 
@@ -22,6 +22,19 @@
     (expect (= 999 (+ 2 2)))))
 
 (in-ns 'lazytest.describe-asserts)
-(let [result (first (map run-tests (get-tests (the-ns 'two))))]
+(let [result (first (mapcat run-tests (get-tests (the-ns 'two))))]
   (assert (not (success? result))))
 (remove-ns 'two)
+
+
+(remove-ns 'three)
+(ns three (:use lazytest.describe lazytest.expect))
+(describe "Addition"
+  (given [seven 7]
+	 (it "adds"
+	   (expect (= seven (+ 3 4))))))
+
+(in-ns 'lazytest.describe-asserts)
+(let [result (first (mapcat run-tests (get-tests (the-ns 'three))))]
+  (assert (success? result)))
+(remove-ns 'three)

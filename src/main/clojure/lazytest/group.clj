@@ -18,7 +18,7 @@
 	       (or (skip-or-pending this)
 		   (try (let [states (map setup fixtures)
 			      this-with-state (vary-meta this assoc :states states)]
-			  (try (apply f fixtures)
+			  (try (apply f states)
 			       (pass this-with-state)
 			       (catch ExpectationFailed e (fail this-with-state (.reason e)))
 			       (catch Throwable e (thrown this-with-state e))))
@@ -35,8 +35,10 @@
   (get-tests [this] (list this))
   RunnableTest
   (run-tests [this]
-	     (or (skip-or-pending this)
-		 (result-group this (lazy-seq (mapcat run-tests children))))))
+	     (lazy-seq
+	      (list
+	       (or (skip-or-pending this)
+		   (result-group this (lazy-seq (mapcat run-tests children))))))))
 
 (defn test-group
   ([children] (test-group children nil))
