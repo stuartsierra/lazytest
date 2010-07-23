@@ -7,6 +7,9 @@
     "Runs tests and returns a seq of TestResult objects. Handles
     the :skip and :pending metadata flags."))
 
+(defn runnable-test? [x]
+  (extends? RunnableTest x))
+
 (defn skip-or-pending
   "If RunnableTest t has :skip or :pending metadata, returns the
   appropriate TestResult; else returns nil."

@@ -6,6 +6,9 @@
   (setup [this] "Sets up and returns the state provided by this fixture.")
   (teardown [this] "Cleans up state created by this fixture."))
 
+(defn fixture? [x]
+  (extends? Fixture (type x)))
+
 (deftype ConstantFixture [value]
   Fixture
   (setup [this] value)
