@@ -1,0 +1,12 @@
+(ns lazytest.runtests)
+
+(doseq [sym '[lazytest.testable-asserts
+	      lazytest.runnable-test-asserts
+	      lazytest.expect-asserts
+	      lazytest.fixture-asserts
+	      lazytest.stub-asserts
+	      lazytest.describe-asserts]]
+  (println "Running assertions in" sym)
+  (require sym))
+
+(println "All assertions passed.")

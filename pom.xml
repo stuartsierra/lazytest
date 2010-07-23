@@ -69,14 +69,10 @@
         <groupId>com.theoryinpractise</groupId>
         <artifactId>clojure-maven-plugin</artifactId>
         <version>1.3.3</version>
-        <!-- <executions>
-          <execution>
-            <id>compile-clojure</id>
-            <phase>compile</phase>
-            <goals>
-              <goal>compile</goal>
-            </goals>
-          </execution>
+	<configuration>
+	  <testScript>src/test/clojure/lazytest/runtests.clj</testScript>
+	</configuration>
+	<executions>
           <execution>
             <id>test-clojure</id>
             <phase>test</phase>
@@ -84,7 +80,7 @@
               <goal>test</goal>
             </goals>
           </execution>
-        </executions> -->
+        </executions>
       </plugin>
     </plugins>
     <extensions>
