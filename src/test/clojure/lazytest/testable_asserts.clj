@@ -4,7 +4,6 @@
 ;;; get-tests
 
 ;; returns empty for namespaces with no tests
-(assert (empty? (get-tests [])))
 (assert (empty? (get-tests (create-ns 'one))))
 (assert (empty? (get-tests (intern 'one 'a))))
 (assert (empty? (get-tests (the-ns 'one))))
@@ -17,12 +16,12 @@
 (assert (= (list :a) (get-tests (the-ns 'two))))
 (remove-ns 'two)
 
-;; recurses on the sequence of (all-ns)
+;; maps over the sequence of (all-ns)
 (create-ns 'three)
 (intern 'three 'b (reify Testable (get-tests [this] (list :b))))
 (create-ns 'four)
 (intern 'four 'c (reify Testable (get-tests [this] (list :c))))
-(assert (= #{:b :c} (set (get-tests (list (the-ns 'three) (the-ns 'four))))))
+(assert (= #{:b :c} (set (mapcat get-tests (list (the-ns 'three) (the-ns 'four))))))
 (remove-ns 'three)
 (remove-ns 'four)
 

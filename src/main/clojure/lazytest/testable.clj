@@ -30,9 +30,4 @@
       (let [value (var-get this-var)]
 	(when (extends? Testable (type value))
 	  (filter-focused
-	   (get-tests value))))))
-
-  java.util.Collection
-  (get-tests [coll]
-    (filter-focused
-      (mapcat get-tests coll))))
+	   (get-tests value)))))))
