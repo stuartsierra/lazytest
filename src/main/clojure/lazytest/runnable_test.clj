@@ -8,7 +8,7 @@
     the :skip and :pending metadata flags."))
 
 (defn runnable-test? [x]
-  (extends? RunnableTest x))
+  (extends? RunnableTest (type x)))
 
 (defn skip-or-pending
   "If RunnableTest t has :skip or :pending metadata, returns the

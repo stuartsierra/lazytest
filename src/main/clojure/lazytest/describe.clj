@@ -2,6 +2,7 @@
   (:use [lazytest.testable :only (Testable get-tests)]
 	[lazytest.runnable-test :only (RunnableTest run-tests
 				       skip-or-pending try-expectations)]
+	[lazytest.group :only (test-case test-group)]
 	[lazytest.test-result :only (result-group)]
 	[lazytest.expect :only (expect)]
 	[lazytest.fixture :only (setup teardown)]))
@@ -40,43 +41,38 @@
      :locals (vec (concat (:locals parent) (:locals t)))
      :fixtures (vec (concat (:fixtures parent) (:fixtures t))))))
 
-;;; Core
-
-(defrecord RunnableExample [fixtures f]
-  RunnableTest
-  (run-tests [this]
-	     (list (try-expectations this
-		    (apply f (map setup fixtures))
-		    (dorun (map teardown fixtures))))))
-
-(defrecord DescribeGroup [children]
-  Testable
-  (get-tests [this] (list this))
-  RunnableTest
-  (run-tests [this]
-	     (or (skip-or-pending this)
-		 (result-group this (mapcat run-tests children)))))
+(defn- strcat
+  "Concatenate strings, with spaces in between, skipping nil."
+  [& args]
+  (apply str (interpose \space (remove nil? args))))
 
 (defmacro describe [& decl]
   (let [[sym decl] (get-arg symbol? decl)
 	[doc decl] (get-arg string? decl)
 	[opts body] (get-options decl)
 	children (vec body)
-	metadata (merge (meta &form) opts)]
-    `(DescribeGroup. ~body '~metadata nil)))
+	metadata (merge (meta &form) {:doc doc} opts)]
+    `(test-group ~children ~metadata)))
 
-(defrecord ThenGroup [assertions]
-  Testable
-  (get-tests [this] (list this))
-  RunnableTest
-  (run-tests [this]
-	     (or (skip-or-pending this)
-		 (try-expectations this (dorun (map #(%) assertions)))))) 
-
-(defmacro then [& decl]
+(defmacro given [& decl]
   (let [[doc decl] (get-arg string? decl)
+	[opts decl] (get-options decl)
+	[bindings body] (get-options vector? decl)
+	children (vec body)
+	metadata (merge (meta &form) {:doc doc} opts)]
+    `(test-group ~children ~metadata)))
+
+(defmacro using [& decl]
+  (let [[doc decl] (get-arg string? decl)
+	[opts decl] (get-options decl)
+	[bindings body] (get-options vector? decl)
+	children (vec body)
+	metadata (merge (meta &form) {:doc doc} opts)]
+    `(test-group ~children ~metadata)))
+
+(defmacro it [& decl]
+  (let [[sym decl] (get-arg symbol? decl)
+	[doc decl] (get-arg string? decl)
 	[opts body] (get-options decl)
-	metadata (merge (meta &form) opts)
-	assertions (map (fn [assertion] `(fn [] (expect ~assertion)))
-			body)]
-    `(ThenGroup. ~assertions '~metadata nil)))
+	metadata (merge (meta &form) {:doc doc} opts)]
+    `(test-case [] (fn [] ~@body) ~metadata)))

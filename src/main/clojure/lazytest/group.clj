@@ -38,5 +38,5 @@
 (defn test-group
   ([children] (test-group children nil))
   ([children metadata]
-     {:pre [(every? (runnable-test? children))]}
+     {:pre [(every? runnable-test? children)]}
      (TestGroup. children metadata nil)))
