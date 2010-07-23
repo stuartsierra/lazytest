@@ -17,15 +17,6 @@
     [(first args) (next args)]
     [nil args]))
 
-(defn- get-options
-  "Extracts keyword-value pairs from head of args, until next arg is
-  not a keyword.  Returns a vector [options-map remaining-args]"
-  [args]
-  (loop [options nil args args]
-    (if (and (seq args) (keyword? (first args)))
-      (recur (assoc options (first args) (second args)) (nnext args))
-      [options args])))
-
 (defn- firsts [coll]
   (take-nth 2 coll))
 
@@ -89,14 +80,14 @@
 (defmacro describe [& decl]
   (let [[sym decl] (get-arg symbol? decl)
 	[doc decl] (get-arg string? decl)
-	[opts body] (get-options decl)
+	[opts body] (get-arg map? decl)
 	children (vec body)
 	metadata (merge (meta &form) {:doc doc} opts)]
     `(test-group ~children ~metadata)))
 
 (defmacro given [& decl]
   (let [[doc decl] (get-arg string? decl)
-	[opts decl] (get-options decl)
+	[opts decl] (get-arg map? decl)
 	[bindings body] (get-arg vector? decl)
 	children (vec body)
 	metadata (merge (meta &form) {:doc doc} opts)]
@@ -109,7 +100,7 @@
 
 (defmacro using [& decl]
   (let [[doc decl] (get-arg string? decl)
-	[opts decl] (get-options decl)
+	[opts decl] (get-arg map? decl)
 	[bindings body] (get-arg vector? decl)
 	children (vec body)
 	metadata (merge (meta &form) {:doc doc} opts)]
@@ -123,7 +114,7 @@
 (defmacro it [& decl]
   (let [[sym decl] (get-arg symbol? decl)
 	[doc decl] (get-arg string? decl)
-	[opts body] (get-options decl)
+	[opts body] (get-arg map? decl)
 	metadata (merge (meta &form) {:doc doc} opts)]
     `(test-case ~(find-locals &env)
 		(fn ~(find-local-binding-forms &env) ~@body) ~metadata)))
