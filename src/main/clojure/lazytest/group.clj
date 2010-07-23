@@ -21,9 +21,11 @@
 		    (apply f (map setup fixtures))
 		    (dorun (map teardown fixtures))))))))
 
-(defn test-case [fixtures f]
-  {:pre [(every? fixture? fixtures) (fn? f)]}
-  (TestCase. fixtures f))
+(defn test-case
+  ([fixtures f] (test-case fixtures f nil))
+  ([fixtures f metadata]
+     {:pre [(every? fixture? fixtures) (fn? f)]}
+     (TestCase. fixtures f metadata nil)))
 
 (defrecord TestGroup [children]
   Testable
@@ -33,6 +35,8 @@
 	     (or (skip-or-pending this)
 		 (result-group this (lazy-seq (mapcat run-tests children))))))
 
-(defn test-group [children]
-  {:pre [(every? (runnable-test? children))]}
-  (TestGroup. children))
+(defn test-group
+  ([children] (test-group children nil))
+  ([children metadata]
+     {:pre [(every? (runnable-test? children))]}
+     (TestGroup. children metadata nil)))
