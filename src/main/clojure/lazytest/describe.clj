@@ -75,6 +75,14 @@
   [env]
   (vec (map #(::arg (meta %)) (find-locals env))))
 
+;;; Top-level definitions
+
+(defmacro def-unless-nested [form]
+  (if (some #(::nested (meta %)) (keys &env))
+    form
+    `(let [~(with-meta (gensym) {::nested true}) nil]
+       (def ~(gensym) ~form))))
+
 ;;; Public
 
 (defmacro describe [& decl]
@@ -84,7 +92,7 @@
 	children (vec body)
 	docstring (strcat (when sym (resolve sym)) doc)
 	metadata (merge (meta &form) {:doc docstring} opts)]
-    `(test-group ~children ~metadata)))
+    `(def-unless-nested (test-group ~children ~metadata))))
 
 (defmacro given [& decl]
   (let [[doc decl] (get-arg string? decl)
@@ -95,9 +103,11 @@
     (assert (vector? bindings))
     (assert (even? (count bindings)))
     (let [binding-forms (firsts bindings)
-	  fixtures (map (fn [x] `(constant-fixture ~x)) (seconds bindings))
+	  fixtures (map (fn [x] `(function-fixture (fn ~(find-locals &env) ~x)))
+			(seconds bindings))
 	  local-bindings (vec (interleave binding-forms fixtures))]      
-      `(wrap-local-scope ~local-bindings (test-group ~children ~metadata)))))
+      `(def-unless-nested
+	 (wrap-local-scope ~local-bindings (test-group ~children ~metadata))))))
 
 (defmacro using [& decl]
   (let [[doc decl] (get-arg string? decl)
@@ -110,12 +120,14 @@
     (let [binding-forms (firsts bindings)
 	  fixtures (seconds bindings)
 	  local-bindings (vec (interleave binding-forms fixtures))]      
-      `(wrap-local-scope ~local-bindings (test-group ~children ~metadata)))))
+      `(def-unless-nested
+	 (wrap-local-scope ~local-bindings (test-group ~children ~metadata))))))
 
 (defmacro it [& decl]
   (let [[sym decl] (get-arg symbol? decl)
 	[doc decl] (get-arg string? decl)
 	[opts body] (get-arg map? decl)
 	metadata (merge (meta &form) {:doc doc} opts)]
-    `(test-case ~(find-locals &env)
-		(fn ~(find-local-binding-forms &env) ~@body) ~metadata)))
+    `(def-unless-nested
+       (test-case ~(find-locals &env)
+		  (fn ~(find-local-binding-forms &env) ~@body) ~metadata))))
