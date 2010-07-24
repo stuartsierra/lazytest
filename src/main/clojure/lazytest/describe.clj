@@ -37,6 +37,9 @@
   [& args]
   (apply str (interpose \space (remove nil? args))))
 
+(defn- merged-metadata [form docstring extra-attr-map]
+  (merge {:doc docstring, :file *file*, :ns *ns*} (meta form) extra-attr-map))
+
 ;;; Local Variable Scope
 
 (let [counter (atom 0)]
@@ -91,7 +94,7 @@
 	[attr-map body] (get-arg map? decl)
 	children (vec body)
 	docstring (strcat (when sym (resolve sym)) doc)
-	metadata (merge (meta &form) {:doc docstring} attr-map)]
+	metadata (merged-metadata &form docstring attr-map)]
     `(def-unless-nested (test-group ~children ~metadata))))
 
 (defmacro given [& decl]
@@ -99,7 +102,7 @@
 	[attr-map decl] (get-arg map? decl)
 	[bindings body] (get-arg vector? decl)
 	children (vec body)
-	metadata (merge (meta &form) {:doc doc} attr-map)]
+	metadata (merged-metadata &form doc attr-map)]
     (assert (vector? bindings))
     (assert (even? (count bindings)))
     (let [binding-forms (firsts bindings)
@@ -114,7 +117,7 @@
 	[attr-map decl] (get-arg map? decl)
 	[bindings body] (get-arg vector? decl)
 	children (vec body)
-	metadata (merge (meta &form) {:doc doc} attr-map)]
+	metadata (merged-metadata &form doc attr-map)]
     (assert (vector? bindings))
     (assert (even? (count bindings)))
     (let [binding-forms (firsts bindings)
@@ -127,7 +130,7 @@
   (let [[sym decl] (get-arg symbol? decl)
 	[doc decl] (get-arg string? decl)
 	[attr-map body] (get-arg map? decl)
-	metadata (merge (meta &form) {:doc doc} attr-map)]
+	metadata (merged-metadata &form doc attr-map)]
     `(def-unless-nested
        (test-case ~(find-locals &env)
 		  (fn ~(find-local-binding-forms &env) ~@body) ~metadata))))
