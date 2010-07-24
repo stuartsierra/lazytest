@@ -19,10 +19,11 @@
 (extend-protocol Testable
   clojure.lang.Namespace
   (get-tests [this-ns]
-    (if-let [f (:get-tests (meta this-ns))]
-      (do (assert (fn? f)) (f))
-      (filter-focused
-       (mapcat get-tests (vals (ns-interns this-ns))))))
+    (when-not (= (the-ns 'clojure.core) this-ns)
+      (if-let [f (:get-tests (meta this-ns))]
+	(do (assert (fn? f)) (f))
+	(filter-focused
+	 (mapcat get-tests (vals (ns-interns this-ns)))))))
 
   clojure.lang.Var
   (get-tests [this-var]
