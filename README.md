@@ -1,3 +1,6 @@
+LAZYTEST IS ALPHA AND SUBJECT TO CHANGE
+=======================================
+
 Lazytest: behavior-driven development/testing framework for Clojure
 
 by Stuart Sierra, http://stuartsierra.com/
