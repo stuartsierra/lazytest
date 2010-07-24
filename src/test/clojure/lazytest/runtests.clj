@@ -5,8 +5,9 @@
 	      lazytest.expect-asserts
 	      lazytest.fixture-asserts
 	      lazytest.stub-asserts
-	      lazytest.describe-asserts]]
-  (println "Running assertions in" sym)
+	      lazytest.describe-asserts
+	      lazytest.readme-examples]]
+  (println "Running assertions in " sym)
   (require sym))
 
 (println "All assertions passed.")
