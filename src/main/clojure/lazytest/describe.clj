@@ -3,7 +3,7 @@
 	[lazytest.runnable-test :only (RunnableTest run-tests
 				       skip-or-pending)]
 	[lazytest.group :only (test-case test-group)]
-	[lazytest.test-result :only (result-group)]
+	[lazytest.result :only (result-group)]
 	[lazytest.expect :only (expect)]
 	[lazytest.fixture :only (setup teardown function-fixture)]))
 

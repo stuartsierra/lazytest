@@ -1,4 +1,4 @@
-(ns lazytest.test-result)
+(ns lazytest.result)
 
 (defprotocol TestResult
   "The result of run-tests on a RunnableTest.  Every object

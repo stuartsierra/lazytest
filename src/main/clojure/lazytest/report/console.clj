@@ -1,5 +1,5 @@
 (ns lazytest.report.console
-  (:use [lazytest.test-result :only (success?)]
+  (:use [lazytest.result :only (success?)]
 	[clojure.pprint :only (pprint)]
 	[clojure.stacktrace :only (print-cause-trace)]))
 
@@ -8,12 +8,12 @@
 
 (extend-protocol ReportPrinter
   ;; Base TestResult types
-  lazytest.test-result.Pass
+  lazytest.result.Pass
   (p [this]
      (print ".")
      (flush))
 
-  lazytest.test-result.Fail
+  lazytest.result.Fail
   (p [this]
      (println "\nFAIL")
      (print "Metadata: ")
@@ -21,20 +21,20 @@
      (print "Reason: ")
      (p (:reason this)))
 
-  lazytest.test-result.Thrown
+  lazytest.result.Thrown
   (p [this]
      (println "\nERROR")
      (print "Metadata: ")
      (pprint (meta this))
      (print-cause-trace (:throwable this)))
 
-  lazytest.test-result.Pending
+  lazytest.result.Pending
   (p [this]
      (println "\nPENDING")
      (print "Metadata: ")
      (print "Reason:" (:reason this)))
 
-  lazytest.test-result.Skip
+  lazytest.result.Skip
   (p [this]
      (println "\nSKIPPED")
      (print "Metadata: ")

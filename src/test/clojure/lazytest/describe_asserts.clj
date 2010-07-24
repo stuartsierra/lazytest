@@ -1,7 +1,7 @@
 (ns lazytest.describe-asserts
   (:use	[lazytest.testable :only (get-tests)]
 	[lazytest.runnable-test :only (run-tests)]
-	[lazytest.test-result :only (success?)]))
+	[lazytest.result :only (success?)]))
 
 (remove-ns 'one)
 (ns one (:use lazytest.describe lazytest.expect))

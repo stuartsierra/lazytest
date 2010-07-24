@@ -5,7 +5,7 @@
 				       skip-or-pending
 				       runnable-test?)]
 	[lazytest.fixture :only (setup teardown fixture?)]
-	[lazytest.test-result :only (pass fail thrown result-group)])
+	[lazytest.result :only (pass fail thrown result-group)])
   (:import (lazytest ExpectationFailed)))
 
 (defrecord TestCase [fixtures f]
