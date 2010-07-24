@@ -69,21 +69,23 @@
   #'lazytest.expect/ok? `expect-nothing-thrown})
 
 (defmacro expect
-  "If the expression returns logical true, returns the same thing.  If
+  "For each expression, does nothing if it returns logical true.  If
   the expression returns logical false, throws
   lazytest.ExpectationFailed with an attached object describing the
-  reason for failure."
-  [expr]
-  (if (seq? expr)
-    (let [sym (first expr)
-	  args (rest expr)
-	  v (resolve sym)
-	  f (when (bound? v) (var-get v))
-	  expt (expectation v)]
-      (cond expt
-	    (list* expt args)
-	    (and f (fn? f) (not (:macro (meta v))))
-	    `(expect-predicate ~f ~@args)
-	    :else
-	    expr))
-    expr))
+  reason for failure."  [& exprs]
+  (list* `and
+	 (map (fn [expr]
+		(if (seq? expr)
+		  (let [sym (first expr)
+			args (rest expr)
+			v (resolve sym)
+			f (when (bound? v) (var-get v))
+			expt (expectation v)]
+		    (cond expt
+			  (list* expt args)
+			  (and f (fn? f) (not (:macro (meta v))))
+			  `(expect-predicate ~f ~@args)
+			  :else
+			  expr))
+		  expr))
+	      exprs)))
