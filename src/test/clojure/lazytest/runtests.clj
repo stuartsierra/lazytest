@@ -7,7 +7,7 @@
 	      lazytest.stub-asserts
 	      lazytest.describe-asserts
 	      lazytest.readme-examples]]
-  (println "Running assertions in " sym)
+  (println "Running assertions in" sym)
   (require sym))
 
 (println "All assertions passed.")
