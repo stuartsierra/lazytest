@@ -14,6 +14,14 @@
   (or (instance? class object)
       (throw (ExpectationFailed. (not-instance-of class object)))))
 
+(defn  expect-logical-true [value]
+  (or value
+      (throw (ExpectationFailed. (not-logical-true value)))))
+
+(defn expect-predicate [pred & args]
+  (or (apply pred args)
+      (throw (ExpectationFailed. (predicate-failed pred args)))))
+
 (defmacro expect-thrown [class & body]
   `(try ~@body
 	(throw (ExpectationFailed. (not-thrown ~class)))
@@ -27,20 +35,45 @@
 	    true
 	    (throw (ExpectationFailed. (thrown-with-wrong-message ~re (.getMessage e#))))))))
 
-(defn  expect-logical-true [value]
-  (or value
-      (throw (ExpectationFailed. (not-logical-true value)))))
+(defmacro expect-nothing-thrown [& body]
+  `(do ~@body true))
 
-(defn expect-predicate [pred & args]
-  (or (apply pred args)
-      (throw (ExpectationFailed. (predicate-failed pred args)))))
+(defmacro thrown?
+  "Returns true if body throws an instance of class c."
+  [c & body]
+  `(try ~@body false
+        (catch ~c e# true)))
 
-(def expectation
-     {#'clojure.core/= `expect=
-      #'clojure.core/not= `expect-not=
-      #'clojure.core/instance? `expect-instance})
+(defmacro thrown-with-msg?
+  "Returns true if body throws an instance of class c whose message
+  matches re (with re-find)."
+  [c re & body]
+  `(try ~@body false
+        (catch ~c e# (re-find ~re (.getMessage e#)))))
 
-(defmacro expect [expr]
+(defmacro ok?
+  "Returns true if body does not throw anything."
+  [& body]
+  `(do ~@body true))
+
+(def
+ ^{:doc "Map from predicate Vars to qualified symbols for expectation
+ forms.  Used by the expect macro to convert logical tests into
+ expectation expressions."}
+ expectation
+ {#'clojure.core/= `expect=
+  #'clojure.core/not= `expect-not=
+  #'clojure.core/instance? `expect-instance
+  #'lazytest.expect/thrown? `expect-thrown
+  #'lazytest.expect/thrown-with-msg? `expect-thrown-with-msg
+  #'lazytest.expect/ok? `expect-nothing-thrown})
+
+(defmacro expect
+  "If the expression returns logical true, returns the same thing.  If
+  the expression returns logical false, throws
+  lazytest.ExpectationFailed with an attached object describing the
+  reason for failure."
+  [expr]
   (if (seq? expr)
     (let [sym (first expr)
 	  args (rest expr)
@@ -48,9 +81,9 @@
 	  f (when (bound? v) (var-get v))
 	  expt (expectation v)]
       (cond expt
-	      (list* expt args)
+	    (list* expt args)
 	    (and f (fn? f) (not (:macro (meta v))))
-	      `(expect-predicate ~f ~@args)
+	    `(expect-predicate ~f ~@args)
 	    :else
-	      expr))
+	    expr))
     expr))
