@@ -17,7 +17,7 @@
   (p [this]
      (println "\nFAIL")
      (print "Metadata: ")
-     (pprint (meta this))
+     (pprint (meta (:source this)))
      (print "Reason: ")
      (p (:reason this)))
 
@@ -25,7 +25,7 @@
   (p [this]
      (println "\nERROR")
      (print "Metadata: ")
-     (pprint (meta this))
+     (pprint (meta (:source this)))
      (print-cause-trace (:throwable this)))
 
   lazytest.result.Pending
