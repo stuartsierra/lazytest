@@ -1,8 +1,8 @@
 (ns lazytest.watch
   (:gen-class)
-  (:use [lazytest.attach :only (all-groups)]
-	[lazytest.run :only (run-tests)]
-	[lazytest.report :only (report)]
+  (:use	[lazytest.runnable-test :only (run-tests)]
+	[lazytest.testable :only (get-tests)]
+	[lazytest.report.console :only (report)]
 	[clojure.contrib.find-namespaces
 	 :only (find-clojure-sources-in-dir
 		read-file-ns-decl)]
@@ -38,9 +38,11 @@
 	(doseq [n names] (remove-ns n))
 	(doseq [n names] (require n :reload))
 	(println "Running examples at" (java.util.Date.))
-	(reporter (map run-tests (all-groups)))))
-    (catch Exception e
-      (println "ERROR:" e))))
+	(reporter (mapcat run-tests (mapcat get-tests (all-ns))))
+	(println "\nDone.")))
+    (catch Throwable t
+      (println "ERROR:" t)
+      (.printStackTrace t))))
 
 (defn start [dirs & options]
   (let [dirs (map file dirs)
@@ -51,8 +53,4 @@
       (.scheduleWithFixedDelay runner 0 delay TimeUnit/MILLISECONDS))))
 
 (defn -main [& args]
-  (println "Classpath contains the following:")
-  (doseq [c (split (System/getProperty "java.class.path")
-		   (Pattern/compile File/pathSeparator))]
-    (println c))
   (start args))

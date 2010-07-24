@@ -80,6 +80,13 @@
               <goal>test</goal>
             </goals>
           </execution>
+          <execution>
+            <id>compile-clojure</id>
+            <phase>compile</phase>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+          </execution>
         </executions>
       </plugin>
     </plugins>
