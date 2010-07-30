@@ -40,7 +40,7 @@ should be true.
       (it "computes the sum of 1 and 2"
         (= 3 (+ 1 2)))
       (it "computes the sume of 3 and 4"
-	(= 7 (+ 3 4))))
+        (= 7 (+ 3 4))))
 
 Each `it` example may only contain *one* test expression.
 
