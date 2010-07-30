@@ -14,22 +14,6 @@ the terms of this license.  You must not remove this notice, or any
 other, from this software.
 
 
-Expectations
-============
-
-Use the `expect` macro to make statements about things that should be
-true.  For example:
-
-    (use '[lazytest.expect :only (expect thrown?)])
-
-    (expect (= 3 (+ 1 2)))
-    (expect (thrown? ArithmeticException (/ 5 0)))
-
-If the expression inside the `expect` macro returns logical true, the
-expectation passes.  If it returns false or nil, the expectation
-throws an exception.
-
-
 Test Examples and Groups
 ========================
 
@@ -49,15 +33,31 @@ the doc string:
 
 Within a `describe` group, use the `it` macro to create a single test
 example.  Start your example with a documentation string describing
-what should happen, followed by code implementing your expectations.
+what should happen, followed by an expression to test what you think
+should be true.
 
     (describe + "with integers"
-      (it "computes the sum"
-        (expect (= 3 (+ 1 2))
-	        (= 7 (+ 3 4)))))
+      (it "computes the sum of 1 and 2"
+        (= 3 (+ 1 2)))
+      (it "computes the sume of 3 and 4"
+	(= 7 (+ 3 4))))
 
-    ;; The resulting doc string for this example is
-    ;; "#'clojure.core/+ with integers computers the sum"
+Each `it` example may only contain *one* test expression.
+
+
+Arbitrary Code in an Example
+============================
+
+You can create an example that executes arbitrary code with the
+`do-it` macro.  Wrap each assertion expression in the `expect` macro.
+
+    (use '[lazytest.describe :only (describe it)]
+         '[lazytest.expect :only (expect)])
+
+    (describe "Arithmetic"
+      (do-it "after printing"
+        (println "Hello, World!")
+        (expect (= 4 (+ 2 2)))))
 
 
 Givens
@@ -67,24 +67,15 @@ Use the `given` macro to share a computed value among several
 examples.  `given` takes a vector of symbol/value pairs.  The syntax
 is similar to `let`, including destructuring support.
 
-The `given` macro can be used in place of `describe`, and takes an
-optional documentation string.
+    (use '[lazytest.describe :only (describe given it)])
 
-    (use '[lazytest.describe :only (given it)])
+    (describe
+      (given "The square root of 2" [s (Math/sqrt 2)]
+        (it "is less than 2"
+          (< s 2))
+        (it "is greater than 1"
+          (> s 1))))
 
-    (given "The square root of 2" [s (Math/sqrt 2)]
-      (it "is less than 2"
-        (expect (< s 2)))
-      (it "is greater than 1"
-        (expect (> s 1))))
-
-
-Nested Groups
-=============
-
-The `describe` and `given` macros may be nested to any depth, but
-neither may appear inside the `it` macro.
-        
 
 Getting Started with Leiningen
 ==============================
