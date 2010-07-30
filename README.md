@@ -86,8 +86,8 @@ Put the following in `project.clj`
 
     (defproject your-project-name "1.0.0-SNAPSHOT"
       :description "Your project description"
-      :dependencies [[org.clojure/clojure "1.2.0-master-SNAPSHOT"]
-                     [org.clojure/clojure-contrib "1.2.0-SNAPSHOT"]
+      :dependencies [[org.clojure/clojure "1.2.0-RC1"]
+                     [org.clojure/clojure-contrib "1.2.0-RC1"]
                      [com.stuartsierra/lazytest "1.0.0-SNAPSHOT"]]
       :repositories {"stuartsierra.com" "http://stuartsierra.com/m2snapshots"})
 
@@ -114,12 +114,12 @@ Put the following in `pom.xml`
       <dependency>
         <groupId>org.clojure</groupId>
         <artifactId>clojure</artifactId>
-        <version>1.2.0-master-SNAPSHOT</version>
+        <version>1.2.0-RC1</version>
       </dependency>
       <dependency>
         <groupId>org.clojure</groupId>
         <artifactId>clojure-contrib</artifactId>
-        <version>1.2.0-SNAPSHOT</version>
+        <version>1.2.0-RC1</version>
       </dependency>
       <dependency>
         <groupId>com.stuartsierra</groupId>
