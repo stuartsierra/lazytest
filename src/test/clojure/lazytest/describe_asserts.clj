@@ -3,6 +3,8 @@
 	[lazytest.runnable-test :only (run-tests)]
 	[lazytest.result :only (success?)]))
 
+
+;; Passing test
 (remove-ns 'one)
 (ns one (:use lazytest.describe))
 (describe "Addition"
@@ -15,6 +17,7 @@
 (remove-ns 'one)
 
 
+;; Failing test
 (remove-ns 'two)
 (ns two (:use lazytest.describe))
 (describe "Addition"
@@ -30,6 +33,7 @@
 (remove-ns 'two)
 
 
+;; Single given
 (remove-ns 'three)
 (ns three (:use lazytest.describe))
 (describe "Addition"
@@ -43,6 +47,7 @@
 (remove-ns 'three)
 
 
+;; Empty tests are marked pending, count as success
 (remove-ns 'four)
 (ns four (:use lazytest.describe))
 (describe "Addition"
@@ -56,6 +61,7 @@
 (remove-ns 'four)
 
 
+;; Skipped tests count as success
 (remove-ns 'five)
 (ns five (:use lazytest.describe))
 (describe "Addition"

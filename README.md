@@ -51,7 +51,7 @@ Arbitrary Code in an Example
 You can create an example that executes arbitrary code with the
 `do-it` macro.  Wrap each assertion expression in the `expect` macro.
 
-    (use '[lazytest.describe :only (describe it)]
+    (use '[lazytest.describe :only (describe it do-it)]
          '[lazytest.expect :only (expect)])
 
     (describe "Arithmetic"
