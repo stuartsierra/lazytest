@@ -109,8 +109,7 @@
 	  fixtures (map (fn [x] `(function-fixture (fn ~(find-locals &env) ~x)))
 			(seconds bindings))
 	  local-bindings (vec (interleave binding-forms fixtures))]      
-      `(def-unless-nested
-	 (wrap-local-scope ~local-bindings (test-group ~children ~metadata))))))
+      `(wrap-local-scope ~local-bindings (test-group ~children ~metadata)))))
 
 (defmacro using [& decl]
   (let [[doc decl] (get-arg string? decl)
@@ -123,14 +122,12 @@
     (let [binding-forms (firsts bindings)
 	  fixtures (seconds bindings)
 	  local-bindings (vec (interleave binding-forms fixtures))]      
-      `(def-unless-nested
-	 (wrap-local-scope ~local-bindings (test-group ~children ~metadata))))))
+      `(wrap-local-scope ~local-bindings (test-group ~children ~metadata)))))
 
 (defmacro it [& decl]
   (let [[sym decl] (get-arg symbol? decl)
 	[doc decl] (get-arg string? decl)
 	[attr-map body] (get-arg map? decl)
 	metadata (merged-metadata &form doc attr-map)]
-    `(def-unless-nested
-       (test-case ~(find-locals &env)
-		  (fn ~(find-local-binding-forms &env) ~@body) ~metadata))))
+    `(test-case ~(find-locals &env)
+		(fn ~(find-local-binding-forms &env) ~@body) ~metadata)))
