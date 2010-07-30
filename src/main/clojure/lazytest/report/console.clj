@@ -1,93 +1,119 @@
 (ns lazytest.report.console
   (:use [lazytest.result :only (success?)]
 	[clojure.pprint :only (pprint)]
-	[clojure.stacktrace :only (print-cause-trace)]))
+	[lazytest.report.color :only (colorize)]
+	[clojure.stacktrace :only (print-cause-trace)]
+	[clojure.java.io :only (file)]))
 
 (defprotocol ReportPrinter
   (p [this]))
+
+(defn docs [x]
+  (:doc (meta (:source x))))
+
+(defn location [x]
+  (let [m (meta (:source x))
+	f (.getName (file (:file m)))]
+    (str "(" f ":" (:line m) ")")))
+
+(def *indent* 0)
+
+(defn- indent []
+  (dotimes [i (dec *indent*)] (clojure.core/print " |   "))
+  (when (pos? *indent*) (clojure.core/print " |-- ")))
+
+(defn- iprintln [& args]
+  (indent)
+  (apply clojure.core/println args))
+
+(defmacro with-indent [& body]
+  `(binding [*indent* (inc *indent*)]
+     ~@body))
 
 (extend-protocol ReportPrinter
   ;; Base TestResult types
   lazytest.result.Pass
   (p [this]
-     (print ".")
-     (flush))
+     (iprintln (colorize (docs this) :green)
+	      (location this)))
 
   lazytest.result.Fail
   (p [this]
-     (println "\nFAIL")
-     (print "Metadata: ")
-     (pprint (meta (:source this)))
-     (print "Reason: ")
-     (p (:reason this)))
+     (iprintln (colorize (docs this) :red)
+	      (location this))
+     (with-indent 
+       (iprintln "FAILURE:")
+       (p (:reason this))))
 
   lazytest.result.Thrown
   (p [this]
-     (println "\nERROR")
-     (print "Metadata: ")
-     (pprint (meta (:source this)))
-     (print-cause-trace (:throwable this)))
+     (iprintln (colorize (docs this) :red)
+	      (location this))
+     (with-indent
+      (iprintln "ERROR:")
+      (print-cause-trace (:throwable this))))
 
   lazytest.result.Pending
   (p [this]
-     (println "\nPENDING")
-     (print "Metadata: ")
-     (print "Reason:" (:reason this)))
+     (iprintln (colorize (docs this) :blue)
+	      (location this))
+     (with-indent
+      (iprintln "PENDING:" (:reason this))))
 
   lazytest.result.Skip
   (p [this]
-     (println "\nSKIPPED")
-     (print "Metadata: ")
-     (print "Reason:" (:reason this)))
+     (iprintln (colorize (docs this) :blue)
+	       (location this))
+     (with-indent
+      (iprintln "SKIPPED:" (:reason this))))
+
+  lazytest.result.TestResultGroup
+  (p [this]
+     (iprintln (colorize (docs this) (if (success? this) :green :red))
+	      (location this))
+     (with-indent
+       (doseq [c (:children this)] (p c))))
 
   ;; Failure types
   lazytest.failure.NotEqual
   (p [this]
-     (println "Not equal:")
+     (iprintln "Not equal:")
      (doseq [o (:objects this)]
-       (print " -- ")
-       (pprint o)))
+       (indent) (pprint o)))
 
   lazytest.failure.NotNotEqual
   (p [this]
-     (println "Equal but should not be:")
+     (iprintln "Equal but should not be:")
      (doseq [o (:objects this)]
-       (print " -- ")
-       (pprint o)))
+       (indent) (pprint o)))
 
   lazytest.failure.NotInstanceOf
   (p [this]
-     (println "Expected an instance of" (:expected-class this))
-     (println "But got an instance of" (:actual-class this)))
+     (iprintln "Expected an instance of" (:expected-class this))
+     (iprintln "But got an instance of" (:actual-class this)))
 
   lazytest.failure.NotThrown
   (p [this]
-     (println "Expected an instance of" (:class this) "to be thrown")
-     (println "But nothing was thrown"))
+     (iprintln "Expected an instance of" (:class this) "to be thrown")
+     (iprintln "But nothing was thrown"))
 
   lazytest.failure.ThrownWithWrongMessage
   (p [this]
-     (println "Expected an object to be thrown with a message matching" (:expected-re this))
-     (println "But the actual message was" (:actual-message this)))
+     (iprintln "Expected an object to be thrown with a message matching" (:expected-re this))
+     (iprintln "But the actual message was" (:actual-message this)))
 
   lazytest.failure.NotLogicalTrue
   (p [this]
-     (println "Not true:")
-     (print " -- ")
      (pprint (:value this)))
 
   lazytest.failure.PredicateFailed
   (p [this]
-     (println "The function" (:pred this))
-     (println "Did not return true for these arguments:")
+     (iprintln "The function" (:pred this))
+     (iprintln "Did not return true for these arguments:")
      (doseq [arg (:args this)]
        (print " -- ")
        (pprint arg))))
 
 (defn report [results]
   (doseq [r results]
-    (if (seq (:children r))
-      (report (:children r))
-      (if (success? r)
-	(do (print ".") (flush))
-	(p r)))))
+    (p r)))
