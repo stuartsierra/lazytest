@@ -1,42 +1,5 @@
 (ns lazytest.expect
-  (:use lazytest.failure)
   (:import (lazytest ExpectationFailed)))
-
-(defn expect= [& args]
-  (or (apply = args)
-      (throw (ExpectationFailed. (not-equal args)))))
-
-(defn expect-not= [& args]
-  (or (apply not= args)
-      (throw (ExpectationFailed. (not-not-equal args)))))
-
-(defn expect-instance [class object]
-  (or (instance? class object)
-      (throw (ExpectationFailed. (not-instance-of class object)))))
-
-(defn  expect-logical-true [value]
-  (or value
-      (throw (ExpectationFailed. (not-logical-true value)))))
-
-(defn expect-predicate [pred & args]
-  (or (apply pred args)
-      (throw (ExpectationFailed. (predicate-failed pred args)))))
-
-(defmacro expect-thrown [class & body]
-  `(try ~@body
-	(throw (ExpectationFailed. (not-thrown ~class)))
-	(catch ~class e# true)))
-
-(defmacro expect-thrown-with-msg [class re & body]
-  `(try ~@body
-	(throw (ExpectationFailed. (not-thrown ~class)))
-	(catch ~class e#
-	  (if (re-find ~re (.getMessage e#))
-	    true
-	    (throw (ExpectationFailed. (thrown-with-wrong-message ~re (.getMessage e#))))))))
-
-(defmacro expect-nothing-thrown [& body]
-  `(do ~@body true))
 
 (defmacro thrown?
   "Returns true if body throws an instance of class c."
@@ -56,36 +19,32 @@
   [& body]
   `(do ~@body true))
 
-(def
- ^{:doc "Map from predicate Vars to qualified symbols for expectation
- forms.  Used by the expect macro to convert logical tests into
- expectation expressions."}
- expectation
- {#'clojure.core/= `expect=
-  #'clojure.core/not= `expect-not=
-  #'clojure.core/instance? `expect-instance
-  #'lazytest.expect/thrown? `expect-thrown
-  #'lazytest.expect/thrown-with-msg? `expect-thrown-with-msg
-  #'lazytest.expect/ok? `expect-nothing-thrown})
+(defn function-call? [form]
+  (and (seq? form)
+       (let [sym (first form)]
+	 (and (symbol? sym)
+	      (let [v (resolve sym)]
+		(and (var? v)
+		     (bound? v)
+		     (not (:macro (meta v)))
+		     (let [f (var-get v)]
+		       (fn? f))))))))
 
 (defmacro expect
   "For each expression, does nothing if it returns logical true.  If
   the expression returns logical false, throws
   lazytest.ExpectationFailed with an attached object describing the
-  reason for failure."  [& exprs]
-  (list* `and
-	 (map (fn [expr]
-		(if (seq? expr)
-		  (let [sym (first expr)
-			args (rest expr)
-			v (resolve sym)
-			f (when (bound? v) (var-get v))
-			expt (expectation v)]
-		    (cond expt
-			  (list* expt args)
-			  (and f (fn? f) (not (:macro (meta v))))
-			  `(expect-predicate ~f ~@args)
-			  :else
-			  expr))
-		  expr))
-	      exprs)))
+  reason for failure."  [expr]
+  (if (function-call? expr)
+    `(let [f# ~(first expr)
+	   args# (list ~@(rest expr))
+	   result# (apply f# args#)]
+       ;; can't use if-let b/c the binding doesn't include else clause
+       (or result#
+	   (throw (ExpectationFailed. {:form '~expr
+				       :evaluated (list* f# args#)
+				       :result result#}))))
+    `(let [result# ~expr]
+       (or result#
+	   (throw (ExpectationFailed. {:form '~expr
+				       :result result#}))))))

@@ -131,9 +131,11 @@
   (let [[sym decl] (get-arg symbol? decl)
 	[doc decl] (get-arg string? decl)
 	[attr-map body] (get-arg map? decl)
+	assertion (first body)
 	metadata (merged-metadata body &form doc attr-map)]
     `(test-case ~(find-locals &env)
-		(fn ~(find-local-binding-forms &env) (expect ~@body)) ~metadata)))
+		(fn ~(find-local-binding-forms &env) (expect ~assertion))
+		~metadata)))
 
 (defmacro do-it [& decl]
   (let [[sym decl] (get-arg symbol? decl)

@@ -29,7 +29,7 @@
   (assert (not (success? results)))
   (let [one-result (first (:children results))]
     (assert (instance? lazytest.result.Fail one-result))
-    (assert (instance? lazytest.failure.NotEqual (:reason one-result)))))
+    (assert (= (list = 999 4) (:evaluated (:reason one-result))))))
 (remove-ns 'two)
 
 
