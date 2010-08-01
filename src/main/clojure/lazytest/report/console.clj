@@ -21,10 +21,12 @@
 (extend-protocol ConsoleTestReport
   lazytest.result.TestResultGroup
   (p [r l]
-     (indent l)
-     (println (colorize (docs r) (if (success? r) :green :red)))
-     (doseq [c (:children r)]
-       (p c (inc l))))
+     (when (seq (docs r))
+       (indent l)
+       (println (colorize (docs r) (if (success? r) :green :red))))
+     (let [sub-indent (if (seq (docs r)) (inc l) l)]
+       (doseq [c (:children r)]
+	 (p c sub-indent))))
 
   lazytest.result.Pass
   (p [r l]
