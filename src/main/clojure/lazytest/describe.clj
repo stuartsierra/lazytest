@@ -144,3 +144,8 @@
 	metadata (merged-metadata body &form doc attr-map)]
     `(test-case ~(find-locals &env)
 		(fn ~(find-local-binding-forms &env) ~@body) ~metadata)))
+
+(defmacro insert
+  "Inserts a quoted snippet of code assigned to the Var named by sym."
+  [sym]
+  (var-get (resolve sym)))
