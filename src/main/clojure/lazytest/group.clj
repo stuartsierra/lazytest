@@ -28,8 +28,9 @@
 				 (if (:sequential (meta fix))
 				   (setup fix)
 				   (repeatedly #(setup fix))))
-			       (:fixtures tc))]
-      (apply map (partial apply-test-case tc) state-sequences))
+			       (:fixtures tc))
+	  argument-lists (apply map list state-sequences)]
+      (map (partial apply-test-case tc) argument-lists))
     (catch Throwable e (thrown tc e))))
 
 (defrecord TestCase [fixtures f]
@@ -37,10 +38,11 @@
   (get-tests [this] (list this))
   RunnableTest
   (run-tests [this]
-	     (or (skip-or-pending this)
-		 (if (some #(:sequential (meta %)) fixtures)
-		   (run-test-sequence this)
-		   (lazy-seq (list (run-test-case this)))))))
+	     (if-let [skipped (skip-or-pending this)]
+	       (list skipped)
+	       (if (some #(:sequential (meta %)) fixtures)
+		 (run-test-sequence this)
+		 (lazy-seq (list (run-test-case this)))))))
 
 (defn test-case
   ([fixtures f] (test-case fixtures f nil))

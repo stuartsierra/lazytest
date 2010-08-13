@@ -9,7 +9,7 @@
 (defn fixture? [x]
   (extends? Fixture (type x)))
 
-(deftype ConstantFixture [value]
+(defrecord ConstantFixture [value]
   Fixture
   (setup [this] value)
   (teardown [this] nil))
@@ -20,7 +20,7 @@
   [value]
   (ConstantFixture. value))
 
-(deftype FunctionFixture [f]
+(defrecord FunctionFixture [f]
   Fixture
   (setup [this] (f))
   (teardown [this] nil))
@@ -32,7 +32,7 @@
   {:pre [(fn? f)]}
   (FunctionFixture. f))
 
-(deftype MemoizedFixture [f cache]
+(defrecord MemoizedFixture [f cache]
   Fixture
   (setup [this]
 	 (swap! cache (fn [value]

@@ -5,7 +5,8 @@
 	[lazytest.group :only (test-case test-group)]
 	[lazytest.result :only (result-group)]
 	[lazytest.expect :only (expect)]
-	[lazytest.fixture :only (setup teardown function-fixture)]))
+	[lazytest.fixture :only (setup teardown function-fixture
+				 sequential-fixture)]))
 
 ;;; Utilities
 
@@ -110,6 +111,20 @@
     (assert (even? (count bindings)))
     (let [binding-forms (firsts bindings)
 	  fixtures (map (fn [x] `(function-fixture (fn ~(find-locals &env) ~x)))
+			(seconds bindings))
+	  local-bindings (vec (interleave binding-forms fixtures))]      
+      `(wrap-local-scope ~local-bindings (test-group ~children ~metadata)))))
+
+(defmacro for-all [& decl]
+  (let [[doc decl] (get-arg string? decl)
+	[attr-map decl] (get-arg map? decl)
+	[bindings body] (get-arg vector? decl)
+	children (vec body)
+	metadata (merged-metadata body &form doc attr-map)]
+    (assert (vector? bindings))
+    (assert (even? (count bindings)))
+    (let [binding-forms (firsts bindings)
+	  fixtures (map (fn [x] `(sequential-fixture (fn ~(find-locals &env) ~x)))
 			(seconds bindings))
 	  local-bindings (vec (interleave binding-forms fixtures))]      
       `(wrap-local-scope ~local-bindings (test-group ~children ~metadata)))))
