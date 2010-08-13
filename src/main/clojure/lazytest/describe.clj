@@ -92,7 +92,20 @@
 
 ;;; Public
 
-(defmacro describe [& decl]
+(defmacro describe
+  "Defines a group of tests.  
+
+  decl is: sym? doc? attr-map? children*
+
+  sym (optional) is a symbol; it will be resolved in the current namespace and
+  prepended to the documentation string.
+
+  doc (optional) is a documentation string
+
+  attr-map (optional) is a metadata map
+
+  children are test cases (see 'it') or nested test groups"
+  [& decl]
   (let [[sym decl] (get-arg symbol? decl)
 	[doc decl] (get-arg string? decl)
 	[attr-map body] (get-arg map? decl)
@@ -100,6 +113,32 @@
 	docstring (strcat (when sym (resolve sym)) doc)
 	metadata (merged-metadata body &form docstring attr-map)]
     `(def-unless-nested (test-group ~children ~metadata))))
+
+(defmacro using
+  "Defines a group of tests that use fixtures.
+
+  decl is: doc? attr-map? [bindings*] children*
+
+  attr-map (optional) is a metadata map
+
+  bindings are symbol/fixture pairs, as in 'let'.  The symbols will be
+  locally available in all nested test cases, where they will be bound
+  to the values returned by the 'before' functions of the
+  corresponding fixtures.  All destructuring forms are supported.
+
+  children are test cases (see 'it') or nested test groups"
+  [& decl]
+  (let [[doc decl] (get-arg string? decl)
+	[attr-map decl] (get-arg map? decl)
+	[bindings body] (get-arg vector? decl)
+	children (vec body)
+	metadata (merged-metadata body &form doc attr-map)]
+    (assert (vector? bindings))
+    (assert (even? (count bindings)))
+    (let [binding-forms (firsts bindings)
+	  fixtures (seconds bindings)
+	  local-bindings (vec (interleave binding-forms fixtures))]      
+      `(wrap-local-scope ~local-bindings (test-group ~children ~metadata)))))
 
 (defmacro given [& decl]
   (let [[doc decl] (get-arg string? decl)
@@ -126,19 +165,6 @@
     (let [binding-forms (firsts bindings)
 	  fixtures (map (fn [x] `(sequential-fixture (fn ~(find-locals &env) ~x)))
 			(seconds bindings))
-	  local-bindings (vec (interleave binding-forms fixtures))]      
-      `(wrap-local-scope ~local-bindings (test-group ~children ~metadata)))))
-
-(defmacro using [& decl]
-  (let [[doc decl] (get-arg string? decl)
-	[attr-map decl] (get-arg map? decl)
-	[bindings body] (get-arg vector? decl)
-	children (vec body)
-	metadata (merged-metadata body &form doc attr-map)]
-    (assert (vector? bindings))
-    (assert (even? (count bindings)))
-    (let [binding-forms (firsts bindings)
-	  fixtures (seconds bindings)
 	  local-bindings (vec (interleave binding-forms fixtures))]      
       `(wrap-local-scope ~local-bindings (test-group ~children ~metadata)))))
 
