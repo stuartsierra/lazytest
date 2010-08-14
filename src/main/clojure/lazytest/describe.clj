@@ -166,7 +166,7 @@
     (assert (vector? bindings))
     (assert (even? (count bindings)))
     (let [binding-forms (firsts bindings)
-	  fixtures (map (fn [x] `(function-fixture (fn ~(find-locals &env) ~x)))
+	  fixtures (map (fn [x] `(function-fixture (fn [] ~x)))
 			(seconds bindings))
 	  local-bindings (vec (interleave binding-forms fixtures))]      
       `(wrap-local-scope ~local-bindings (test-group ~children ~metadata)))))
@@ -197,7 +197,7 @@
     (assert (vector? bindings))
     (assert (even? (count bindings)))
     (let [binding-forms (firsts bindings)
-	  fixtures (map (fn [x] `(sequential-fixture (fn ~(find-locals &env) ~x)))
+	  fixtures (map (fn [x] `(sequential-fixture (fn [] ~x)))
 			(seconds bindings))
 	  local-bindings (vec (interleave binding-forms fixtures))]      
       `(wrap-local-scope ~local-bindings (test-group ~children ~metadata)))))

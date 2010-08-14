@@ -75,3 +75,33 @@
   (let [one-result (first (:children results))]
     (assert (instance? lazytest.result.Skip one-result))))
 (remove-ns 'five)
+
+
+;; 'given' blocks can be nested
+(remove-ns 'six)
+(ns six (:use lazytest.describe))
+(describe "Numbers"
+  (given [x 1]
+	 (given [y 1]
+		(it "are equal"
+		  (= x y)))))
+
+(in-ns 'lazytest.describe-asserts)
+(let [results (first (mapcat run-tests (get-tests (the-ns 'six))))]
+  (assert (success? results)))
+(remove-ns 'six)
+
+
+;; 'given' blocks can contain multiple bindings
+(remove-ns 'seven)
+(ns seven (:use lazytest.describe))
+(describe "Numbers"
+  (given [x 1
+	  y 1]
+	 (it "are equal"
+	   (= x y))))
+
+(in-ns 'lazytest.describe-asserts)
+(let [results (first (mapcat run-tests (get-tests (the-ns 'seven))))]
+  (assert (success? results)))
+(remove-ns 'seven)
