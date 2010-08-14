@@ -86,8 +86,8 @@ Put the following in `project.clj`
 
     (defproject your-project-name "1.0.0-SNAPSHOT"
       :description "Your project description"
-      :dependencies [[org.clojure/clojure "1.2.0-RC1"]
-                     [org.clojure/clojure-contrib "1.2.0-RC1"]
+      :dependencies [[org.clojure/clojure "1.2.0-RC3"]
+                     [org.clojure/clojure-contrib "1.2.0-RC3"]
                      [com.stuartsierra/lazytest "1.0.0-SNAPSHOT"]]
       :repositories {"stuartsierra.com" "http://stuartsierra.com/m2snapshots"})
 
@@ -114,12 +114,12 @@ Put the following in `pom.xml`
       <dependency>
         <groupId>org.clojure</groupId>
         <artifactId>clojure</artifactId>
-        <version>1.2.0-RC1</version>
+        <version>1.2.0-RC3</version>
       </dependency>
       <dependency>
         <groupId>org.clojure</groupId>
         <artifactId>clojure-contrib</artifactId>
-        <version>1.2.0-RC1</version>
+        <version>1.2.0-RC3</version>
       </dependency>
       <dependency>
         <groupId>com.stuartsierra</groupId>
@@ -164,7 +164,7 @@ Put the following in `pom.xml`
       </repository>
       <repository>
         <id>clojure-releases</id>
-        <url>http://build.clojure.org/snapshots</url>
+        <url>http://build.clojure.org/releases</url>
         <releases>
           <enabled>true</enabled>
         </releases>
@@ -206,12 +206,14 @@ Making Emacs Indent Tests Properly
 Put the following in `.emacs`
 
     (eval-after-load 'clojure-mode
-      '(define-clojure-indent (describe 'defun) (it 'defun)))
+      '(define-clojure-indent
+         (describe 'defun)
+         (it 'defun)))
 
 
 
 Known Defects
 =============
 
-* Changing an applicaton source file does not automatically recompile
+* Changing an applicaton source file does not automatically reload
   the associated test source file.
