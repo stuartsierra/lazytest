@@ -3,12 +3,12 @@
   current dynamic environment."
   (:use [lazytest.fixture :only (Fixture)]))
 
-(deftype ThreadLocalStub [v value]
+(deftype DynamicBindingStub [v value]
   Fixture
   (setup [this] (push-thread-bindings {v value}))
   (teardown [this] (pop-thread-bindings)))
 
-(deftype GlobalStub [v new-value]
+(deftype RootBindingStub [v new-value]
   Fixture
   (setup [this]
     (alter-meta! v (fn [m]
@@ -32,7 +32,7 @@
   new-value."
   [v new-value]
   {:pre [(var? v)]}
-  (ThreadLocalStub. v new-value))
+  (DynamicBindingStub. v new-value))
 
 (defn global-stub
   "Returns a Fixture that modifies the root binding if Var v. The Var
@@ -40,4 +40,4 @@
   instead unless you need to stub the Var on all threads."
   [v new-value]
   {:pre [(var? v)]}
-  (GlobalStub. v new-value))
+  (RootBindingStub. v new-value))
