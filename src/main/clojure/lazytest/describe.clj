@@ -90,7 +90,7 @@
     `(let [~(with-meta (gensym) {::nested true}) nil]
        (def ~(gensym) ~form))))
 
-;;; Public
+;;; Public API
 
 (defmacro describe
   "Defines a group of tests.  
@@ -117,7 +117,9 @@
 (defmacro using
   "Defines a group of tests that use fixtures.
 
-  decl is: doc? attr-map? [bindings*] children*
+  decl is: doc? attr-map? [bindings*] cases*
+
+  doc (optional) is a documentation string
 
   attr-map (optional) is a metadata map
 
@@ -126,7 +128,7 @@
   to the values returned by the 'before' functions of the
   corresponding fixtures.  All destructuring forms are supported.
 
-  children are test cases (see 'it') or nested test groups"
+  cases are test cases (see 'it') or nested test groups."
   [& decl]
   (let [[doc decl] (get-arg string? decl)
 	[attr-map decl] (get-arg map? decl)
@@ -140,7 +142,22 @@
 	  local-bindings (vec (interleave binding-forms fixtures))]      
       `(wrap-local-scope ~local-bindings (test-group ~children ~metadata)))))
 
-(defmacro given [& decl]
+(defmacro given 
+  "Defines a group of tests that use the same values.
+
+  decl is: doc? attr-map? [bindings*] cases*
+
+  doc (optional) is a documentation string
+
+  attr-map (optional) is a metadata map
+
+  bindings are symbol/expression pairs, as in 'let'.  The symbols will
+  be locally available in all nested test cases, where they will be
+  bound to the values returned by the corresponding expressions.
+  The expressions will be re-evaluated for each test case.
+
+  cases are test cases (see 'it') or nested test groups."
+  [& decl]
   (let [[doc decl] (get-arg string? decl)
 	[attr-map decl] (get-arg map? decl)
 	[bindings body] (get-arg vector? decl)
@@ -154,7 +171,24 @@
 	  local-bindings (vec (interleave binding-forms fixtures))]      
       `(wrap-local-scope ~local-bindings (test-group ~children ~metadata)))))
 
-(defmacro for-all [& decl]
+(defmacro for-all
+  "Defines a group of tests that will run repeatedly for every value
+  in a sequence.
+
+  decl is: doc? attr-map? [bindings*] cases*
+
+  doc (optional) is a documentation string
+
+  attr-map (optional) is a metadata map
+
+  bindings are symbol/expression pairs, as in 'let'.  Each expression
+  must return a sequence.  The symbols will be locally available in
+  all nested test cases, where they will be bound to the successive
+  values in the corresponding sequence.  The expressions will be
+  re-evaluated for each test case.
+
+  cases are test cases (see 'it') or nested test groups."
+  [& decl]
   (let [[doc decl] (get-arg string? decl)
 	[attr-map decl] (get-arg map? decl)
 	[bindings body] (get-arg vector? decl)
@@ -168,7 +202,20 @@
 	  local-bindings (vec (interleave binding-forms fixtures))]      
       `(wrap-local-scope ~local-bindings (test-group ~children ~metadata)))))
 
-(defmacro it [& decl]
+(defmacro it
+  "Defines a single test case.
+
+  decl is: doc? attr-map? expr
+
+  doc (optional) is a documentation string
+
+  attr-map (optional) is a metadata map
+
+  expr is a single expression, which must return logical true to
+  indicate the test case passes or logical false to indicate failure.
+  Local variables created with 'using', 'given', and so on will be
+  available in the expression."
+  [& decl]
   (let [[sym decl] (get-arg symbol? decl)
 	[doc decl] (get-arg string? decl)
 	[attr-map body] (get-arg map? decl)
@@ -178,7 +225,19 @@
 		(fn ~(find-local-binding-forms &env) (expect ~assertion))
 		~metadata)))
 
-(defmacro do-it [& decl]
+(defmacro do-it
+  "Defines a single test case that may execute arbitrary code.
+
+  decl is: doc? attr-map? body*
+
+  doc (optional) is a documentation string
+
+  attr-map (optional) is a metadata map
+
+  body is any code, which must throw an exception (such as with
+  'expect') to indicate failure.  If the code completes without
+  throwing any exceptions, the test case has passed."
+  [& decl]
   (let [[sym decl] (get-arg symbol? decl)
 	[doc decl] (get-arg string? decl)
 	[attr-map body] (get-arg map? decl)

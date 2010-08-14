@@ -19,7 +19,7 @@
   [& body]
   `(do ~@body true))
 
-(defn function-call? [form]
+(defn- function-call? [form]
   (and (seq? form)
        (let [sym (first form)]
 	 (and (symbol? sym)
@@ -31,10 +31,11 @@
 		       (fn? f))))))))
 
 (defmacro expect
-  "For each expression, does nothing if it returns logical true.  If
-  the expression returns logical false, throws
+  "Evaluates expression.  If it returns logical true, returns that
+  result.  If the expression returns logical false, throws
   lazytest.ExpectationFailed with an attached object describing the
-  reason for failure."  [expr]
+  reason for failure."
+  [expr]
   (if (function-call? expr)
     `(let [f# ~(first expr)
 	   args# (list ~@(rest expr))

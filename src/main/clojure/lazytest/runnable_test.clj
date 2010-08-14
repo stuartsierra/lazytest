@@ -1,6 +1,5 @@
 (ns lazytest.runnable-test
-  (:use [lazytest.result :only (pass fail thrown skip pending)])
-  (:import (lazytest ExpectationFailed)))
+  (:use [lazytest.result :only (skip pending)]))
 
 (defprotocol RunnableTest
   (run-tests [this]

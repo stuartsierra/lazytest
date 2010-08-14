@@ -6,7 +6,9 @@
   (setup [this] "Sets up and returns the state provided by this fixture.")
   (teardown [this] "Cleans up state created by this fixture."))
 
-(defn fixture? [x]
+(defn fixture?
+  "Returns true if x is a fixture, i.e., it implements the Fixture protocol."
+  [x]
   (extends? Fixture (type x)))
 
 (defrecord ConstantFixture [value]
