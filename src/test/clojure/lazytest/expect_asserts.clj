@@ -5,10 +5,19 @@
 (expect (= 1 1))
 (expect (not= 1 2))
 (expect (instance? java.lang.String "Hello, World!"))
+
 (expect (thrown? Exception (do (throw (IllegalArgumentException.)))))
 (expect (thrown-with-msg? Exception #"foo message"
 	  (do (throw (Exception. "the foo message for this exception")))))
 
+(expect (caused? IllegalArgumentException
+		 (do (throw (IllegalArgumentException. "bad arguments")))))
+
+(expect (caused? IllegalArgumentException
+		 (do (try
+		       (throw (IllegalArgumentException. "bad stuff"))
+		       (catch IllegalArgumentException e
+			 (throw (RuntimeException. "wrapped stuff" e)))))))
 
 (let [e1 (try (expect (= 1 2))
 	      false
