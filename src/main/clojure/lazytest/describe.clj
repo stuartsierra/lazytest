@@ -1,9 +1,9 @@
 (ns lazytest.describe
   (:use [lazytest.testable :only (Testable get-tests)]
-	[lazytest.runnable-test :only (RunnableTest run-tests
+	[lazytest.runnable :only (RunnableTest run-tests
 				       skip-or-pending)]
-	[lazytest.runnable-test.test-group :only (test-group)]
-	[lazytest.runnable-test.test-case :only (test-case)]
+	[lazytest.runnable.test-group :only (test-group)]
+	[lazytest.runnable.test-case :only (test-case)]
 	[lazytest.result :only (result-group)]
 	[lazytest.expect :only (expect)]
 	[lazytest.fixture :only (setup teardown function-fixture

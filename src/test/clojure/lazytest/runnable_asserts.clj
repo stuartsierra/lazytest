@@ -1,5 +1,5 @@
-(ns lazytest.runnable-test-asserts
-  (:use lazytest.runnable-test))
+(ns lazytest.runnable-asserts
+  (:use lazytest.runnable))
 
 (let [t (reify RunnableTest
 	       (run-tests [this] :result))]

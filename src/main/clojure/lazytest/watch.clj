@@ -1,6 +1,6 @@
 (ns lazytest.watch
   (:gen-class)
-  (:use	[lazytest.runnable-test :only (run-tests)]
+  (:use	[lazytest.runnable :only (run-tests)]
 	[lazytest.testable :only (get-tests)]
 	[lazytest.report.console :only (report)]
 	[clojure.contrib.find-namespaces

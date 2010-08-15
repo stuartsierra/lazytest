@@ -1,6 +1,6 @@
 (ns lazytest.describe-asserts
   (:use	[lazytest.testable :only (get-tests)]
-	[lazytest.runnable-test :only (run-tests)]
+	[lazytest.runnable :only (run-tests)]
 	[lazytest.result :only (success?)]))
 
 

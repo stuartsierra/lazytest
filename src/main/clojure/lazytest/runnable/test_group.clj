@@ -1,9 +1,9 @@
-(ns lazytest.runnable-test.test-group
+(ns lazytest.runnable.test-group
   (:use [lazytest.testable :only (Testable get-tests)]
-	[lazytest.runnable-test :only (RunnableTest
+	[lazytest.runnable :only (RunnableTest
 				       run-tests
 				       skip-or-pending
-				       runnable-test?)]
+				       runnable?)]
 	[lazytest.fixture :only (setup teardown fixture?)]
 	[lazytest.result :only (pass fail thrown result-group)])
   (:import (lazytest ExpectationFailed)))
@@ -22,5 +22,5 @@
   "Creates a group of tests.  children are test cases or nested groups."
   ([children] (test-group children nil))
   ([children metadata]
-     {:pre [(every? runnable-test? children)]}
+     {:pre [(every? runnable? children)]}
      (TestGroup. children metadata nil)))

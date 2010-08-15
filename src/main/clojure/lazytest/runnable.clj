@@ -1,4 +1,4 @@
-(ns lazytest.runnable-test
+(ns lazytest.runnable
   (:use [lazytest.result :only (skip pending)]))
 
 (defprotocol RunnableTest
@@ -6,7 +6,7 @@
     "Runs tests and returns a seq of TestResult objects. Handles
     the :skip and :pending metadata flags."))
 
-(defn runnable-test? [x]
+(defn runnable? [x]
   (extends? RunnableTest (type x)))
 
 (defn skip-or-pending
