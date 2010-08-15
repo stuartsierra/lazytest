@@ -1,12 +1,9 @@
 (ns lazytest.expect
   (:import (lazytest ExpectationFailed)))
 
-(defmacro ok?
-  "Returns true if body does not throw anything."
-  [& body]
-  `(do ~@body true))
-
-(defn- function-call? [form]
+(defn- function-call?
+  "True if form is a list representing a normal function call."
+  [form]
   (and (seq? form)
        (let [sym (first form)]
 	 (and (symbol? sym)

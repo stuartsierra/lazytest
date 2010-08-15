@@ -1,45 +1,64 @@
-(ns lazytest.expect.thrown)
+(ns lazytest.expect.thrown
+  (:use [lazytest.expect :only (expect)]))
 
-(defmacro thrown?
-  "Returns true if body throws an instance of class c."
-  [c & body]
-  `(try ~@body false
-        (catch ~c e# true)))
+(defn throws? 
+  "Calls f with no arguments; returns true if it throws an instance of
+  class c.  Any other exception will be re-thrown.  Returns false if f
+  throws no exceptions."
+  [c f]
+  (try (f) false
+       (catch Throwable t
+	 (if (instance? c t)
+	   true
+	   (throw t)))))
 
-(defmacro thrown-with-msg?
-  "Returns true if body throws an instance of class c whose message
-  matches re (with re-find)."
-  [c re & body]
-  `(try ~@body false
-        (catch ~c e# (re-find ~re (.getMessage e#)))))
+(defn throws-with-msg?
+  "Calls f with no arguments; catches exceptions of class c.  If the
+  message of the caught exception does not match re (with re-find),
+  throws ExpectationFailed.  Any other exception not of class c will
+  be re-thrown.  Returns false if f throws no exceptions."
+  [c re f]
+  (try (f) false
+       (catch Throwable t
+	 (if (instance? c t)
+	   (expect (re-find re (.getMessage t)))
+	   (throw t)))))
 
-(defn causes
-  "Given a Throwable, returns a sequence of the Throwables that caused
-  it, in the order they occurred."
+(defn cause-seq
+  "Given a Throwable, returns a sequence of causes.  The first element
+  of the sequence is the given throwable itself."
   [throwable]
   (lazy-seq
    (when throwable
-     (cons throwable (causes (.getCause throwable))))))
+     (cons throwable (cause-seq (.getCause throwable))))))
 
-(defmacro caused?
-  "Returns true if body throws an exception which is of class c or
-  caused by an exception of class c."
-  [c & body]
-  `(try ~@body false
-	(catch Throwable e#
-	  (if (some (fn [cause#] (instance? ~c cause#)) (causes e#))
-	    true
-	    (throw e#)))))
+(defn causes?
+  "Calls f with no arguments; returns true if it throws an exception
+  whose cause chain includes an instance of class c.  Any other
+  exception will be re-thrown.  Returns false if f throws no
+  exceptions."
+  [c f]
+  (try (f) false
+       (catch Throwable t
+	 (if (some #(instance? c %) (cause-seq t))
+	   true
+	   (throw t)))))
 
-(defmacro caused-with-msg?
-  "Returns true if body throws an exception of class c or caused by
-  an exception of class c whose message matches re (with re-find)."
-  [c re & body]
-  `(try ~@body false
-	(catch Throwable e#
-	  (if (some (fn [cause#]
-		      (and (instance? ~c cause#)
-			   (re-find ~re (.getMessage cause#))))
-		    (causes e#))
-	    true
-	    (throw e#)))))
+(defn causes-with-msg?
+  "Calls f with no arguments; catches exceptions with an instance of
+  class c in their cause chain.  If the message of the causing
+  exception does not match re (with re-find), throws
+  ExpectationFailed.  Any non-matching exception will be re-thrown.
+  Returns false if f throws no exceptions."
+  [c re f]
+  (try (f) false
+       (catch Throwable t
+	 (if-let [cause (some #(when (instance? c %) %) (cause-seq t))]
+	   (expect (re-find re (.getMessage cause)))
+	   (throw t)))))
+
+(defn ok?
+  "Calls f and discards its return value.  Returns true if f does not
+  throw any exceptions."
+  [f]
+  (f) true)

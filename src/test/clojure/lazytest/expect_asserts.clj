@@ -7,15 +7,15 @@
 (expect (not= 1 2))
 (expect (instance? java.lang.String "Hello, World!"))
 
-(expect (thrown? Exception (do (throw (IllegalArgumentException.)))))
-(expect (thrown-with-msg? Exception #"foo message"
-	  (do (throw (Exception. "the foo message for this exception")))))
+(expect (throws? Exception #(do (throw (IllegalArgumentException.)))))
+(expect (throws-with-msg? Exception #"foo message"
+	  #(do (throw (Exception. "the foo message for this exception")))))
 
-(expect (caused? IllegalArgumentException
-		 (do (throw (IllegalArgumentException. "bad arguments")))))
+(expect (causes? IllegalArgumentException
+		 #(do (throw (IllegalArgumentException. "bad arguments")))))
 
-(expect (caused? IllegalArgumentException
-		 (do (try
+(expect (causes? IllegalArgumentException
+		 #(do (try
 		       (throw (IllegalArgumentException. "bad stuff"))
 		       (catch IllegalArgumentException e
 			 (throw (RuntimeException. "wrapped stuff" e)))))))
