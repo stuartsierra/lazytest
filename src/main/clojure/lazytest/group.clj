@@ -8,16 +8,7 @@
 	[lazytest.result :only (pass fail thrown result-group)])
   (:import (lazytest ExpectationFailed)))
 
-(comment
-  (defn- debug [& args]
-    (spit "log" 
-	  (str (pr-str args) "\n")
-	  :append true)))
-
-(defmacro debug [& args] nil)
-
 (defn- apply-test-case [tc arguments]
-  (debug "apply-test-case" tc arguments)
   (let [this (vary-meta tc assoc :states arguments)]
     (try (apply (:f tc) arguments)
 	 (pass this)
@@ -25,7 +16,6 @@
 	 (catch Throwable e (thrown this e)))))
 
 (defn- run-test-case [tc]
-  (debug "run-test-case" tc)
   (try (let [states (map setup (:fixtures tc))
 	     result (apply-test-case tc states)]
 	 (dorun (map teardown (:fixtures tc)))
@@ -33,19 +23,13 @@
        (catch Throwable e (thrown tc e))))
 
 (defn- run-test-sequence [tc]
-  (debug "run-test-sequence" tc)
   (try 
     (let [state-sequences (map (fn [fix]
-				 (debug "Mapping over fixture" fix)
 				 (if (:sequential (meta fix))
-				   (do (debug "sequential fixture" fix)
-				       (setup fix))
-				   (do (debug "singular fixture" fix)
-				       (repeatedly (fn [] (setup fix))))))
+				   (setup fix)
+				   (repeatedly (fn [] (setup fix)))))
 			       (:fixtures tc))
-	  _unused_ (debug "state-sequences" state-sequences)
 	  argument-lists (apply map list state-sequences)]
-      (debug "argument-lists" argument-lists)
       (map (partial apply-test-case tc) argument-lists))
     (catch Throwable e (list (thrown tc e)))))
 
@@ -54,7 +38,6 @@
   (get-tests [this] (list this))
   RunnableTest
   (run-tests [this]
-	     (debug "TestCase.run-tests" this)
 	     (if-let [skipped (skip-or-pending this)]
 	       (list skipped)
 	       (if (some #(:sequential (meta %)) fixtures)
@@ -77,7 +60,6 @@
   (get-tests [this] (list this))
   RunnableTest
   (run-tests [this]
-	     (debug "TestGroup.run-tests" this)
 	     (lazy-seq
 	      (list
 	       (or (skip-or-pending this)
