@@ -1,5 +1,5 @@
 (ns lazytest.describe-asserts
-  (:use	[lazytest.testable :only (get-tests)]
+  (:use	[lazytest.find :only (find-tests)]
 	[lazytest.runnable :only (run-tests)]
 	[lazytest.result :only (success?)]))
 
@@ -12,7 +12,7 @@
     (= 4 (+ 2 2))))
 
 (in-ns 'lazytest.describe-asserts)
-(let [result (first (mapcat run-tests (get-tests (the-ns 'one))))]
+(let [result (first (mapcat run-tests (find-tests (the-ns 'one))))]
   (assert (success? result)))
 (remove-ns 'one)
 
@@ -25,7 +25,7 @@
     (= 999 (+ 2 2))))
 
 (in-ns 'lazytest.describe-asserts)
-(let [results (first (mapcat run-tests (get-tests (the-ns 'two))))]
+(let [results (first (mapcat run-tests (find-tests (the-ns 'two))))]
   (assert (not (success? results)))
   (let [one-result (first (:children results))]
     (assert (instance? lazytest.result.Fail one-result))
@@ -42,7 +42,7 @@
 	   (= seven (+ 3 4)))))
 
 (in-ns 'lazytest.describe-asserts)
-(let [result (first (mapcat run-tests (get-tests (the-ns 'three))))]
+(let [result (first (mapcat run-tests (find-tests (the-ns 'three))))]
   (assert (success? result)))
 (remove-ns 'three)
 
@@ -54,7 +54,7 @@
   (it "does something"))
 
 (in-ns 'lazytest.describe-asserts)
-(let [results (first (mapcat run-tests (get-tests (the-ns 'four))))]
+(let [results (first (mapcat run-tests (find-tests (the-ns 'four))))]
   (assert (success? results))
   (let [one-result (first (:children results))]
     (assert (instance? lazytest.result.Pending one-result))))
@@ -70,7 +70,7 @@
     (= 99 10)))
 
 (in-ns 'lazytest.describe-asserts)
-(let [results (first (mapcat run-tests (get-tests (the-ns 'five))))]
+(let [results (first (mapcat run-tests (find-tests (the-ns 'five))))]
   (assert (success? results))
   (let [one-result (first (:children results))]
     (assert (instance? lazytest.result.Skip one-result))))
@@ -87,7 +87,7 @@
 		  (= x y)))))
 
 (in-ns 'lazytest.describe-asserts)
-(let [results (first (mapcat run-tests (get-tests (the-ns 'six))))]
+(let [results (first (mapcat run-tests (find-tests (the-ns 'six))))]
   (assert (success? results)))
 (remove-ns 'six)
 
@@ -102,6 +102,6 @@
 	   (= x y))))
 
 (in-ns 'lazytest.describe-asserts)
-(let [results (first (mapcat run-tests (get-tests (the-ns 'seven))))]
+(let [results (first (mapcat run-tests (find-tests (the-ns 'seven))))]
   (assert (success? results)))
 (remove-ns 'seven)

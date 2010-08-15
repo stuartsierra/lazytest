@@ -1,5 +1,5 @@
 (ns lazytest.runnable.test-group
-  (:use [lazytest.testable :only (Testable get-tests)]
+  (:use [lazytest.find :only (FindTests find-tests)]
 	[lazytest.runnable :only (RunnableTest
 				       run-tests
 				       skip-or-pending
@@ -9,8 +9,8 @@
   (:import (lazytest ExpectationFailed)))
 
 (defrecord TestGroup [children]
-  Testable
-  (get-tests [this] (list this))
+  FindTests
+  (find-tests [this] (list this))
   RunnableTest
   (run-tests [this]
 	     (lazy-seq

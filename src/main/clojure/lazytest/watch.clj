@@ -1,7 +1,7 @@
 (ns lazytest.watch
   (:gen-class)
   (:use	[lazytest.runnable :only (run-tests)]
-	[lazytest.testable :only (get-tests)]
+	[lazytest.find :only (find-tests)]
 	[lazytest.report.console :only (report)]
 	[clojure.contrib.find-namespaces
 	 :only (find-clojure-sources-in-dir
@@ -38,7 +38,7 @@
 	(doseq [n names] (remove-ns n))
 	(doseq [n names] (require n :reload))
 	(println "Running examples at" (java.util.Date.))
-	(reporter (mapcat run-tests (mapcat get-tests (all-ns))))
+	(reporter (mapcat run-tests (mapcat find-tests (all-ns))))
 	(println "\nDone.")))
     (catch Throwable t
       (println "ERROR:" t)

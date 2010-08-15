@@ -1,5 +1,5 @@
 (ns lazytest.describe
-  (:use [lazytest.testable :only (Testable get-tests)]
+  (:use [lazytest.find :only (FindTests find-tests)]
 	[lazytest.runnable :only (RunnableTest run-tests
 				       skip-or-pending)]
 	[lazytest.runnable.test-group :only (test-group)]
@@ -29,7 +29,7 @@
   (map (fn [f] `(fn [] ~f)) forms))
 
 (defn- get-child-tests [parent t]
-  (get-tests
+  (find-tests
    (assoc t
      :locals (vec (concat (:locals parent) (:locals t)))
      :fixtures (vec (concat (:fixtures parent) (:fixtures t))))))

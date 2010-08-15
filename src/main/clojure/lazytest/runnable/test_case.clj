@@ -1,5 +1,5 @@
 (ns lazytest.runnable.test-case
-  (:use [lazytest.testable :only (Testable get-tests)]
+  (:use [lazytest.find :only (FindTests find-tests)]
 	[lazytest.runnable :only (RunnableTest
 				       run-tests
 				       skip-or-pending
@@ -34,8 +34,8 @@
     (catch Throwable e (list (thrown tc e)))))
 
 (defrecord TestCase [fixtures f]
-  Testable
-  (get-tests [this] (list this))
+  FindTests
+  (find-tests [this] (list this))
   RunnableTest
   (run-tests [this]
 	     (if-let [skipped (skip-or-pending this)]

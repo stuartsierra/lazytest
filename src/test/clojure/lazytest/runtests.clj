@@ -1,6 +1,6 @@
 (ns lazytest.runtests)
 
-(doseq [sym '[lazytest.testable-asserts
+(doseq [sym '[lazytest.find-asserts
 	      lazytest.runnable-asserts
 	      lazytest.expect-asserts
 	      lazytest.fixture-asserts
