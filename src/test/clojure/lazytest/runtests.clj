@@ -4,7 +4,7 @@
 	      lazytest.runnable-test-asserts
 	      lazytest.expect-asserts
 	      lazytest.fixture-asserts
-	      lazytest.stub-asserts
+	      lazytest.fixture.stub-asserts
 	      lazytest.describe-asserts
 	      lazytest.readme-examples]]
   (println "Running assertions in" sym)

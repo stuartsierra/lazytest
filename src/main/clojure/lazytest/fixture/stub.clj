@@ -1,4 +1,4 @@
-(ns lazytest.stub
+(ns lazytest.fixture.stub
   "A Stub is a special kind of Fixture that rebinds a Var in the
   current dynamic environment."
   (:use [lazytest.fixture :only (Fixture)]))
