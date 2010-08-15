@@ -39,11 +39,12 @@
   (setup [this]
 	 (swap! cache (fn [value]
 			(if (= ::unset value) (f) value))))
-  (teardown [this] nil))
+  (teardown [this]
+	    (reset! cache ::unset)))
 
 (defn memoized-fixture
   "Returns a fixture whose setup method calls, returns, and caches the
-  value of f. The fixture's teardown method does nothing."
+  value of f. The fixture's teardown method clears the cache."
   [f]
   {:pre [(fn? f)]}
   (MemoizedFixture. f (atom ::unset)))
