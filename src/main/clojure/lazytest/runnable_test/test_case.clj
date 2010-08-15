@@ -1,4 +1,4 @@
-(ns lazytest.group
+(ns lazytest.runnable-test.test-case
   (:use [lazytest.testable :only (Testable get-tests)]
 	[lazytest.runnable-test :only (RunnableTest
 				       run-tests
