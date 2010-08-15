@@ -1,5 +1,6 @@
 (ns lazytest.readme-examples
-    (:use [lazytest.expect :only (expect thrown?)]
+    (:use [lazytest.expect :only (expect)]
+	  [lazytest.expect.thrown :only (thrown?)]
 	  [lazytest.describe :only (describe it do-it given)]))
 
     (describe + "with integers"

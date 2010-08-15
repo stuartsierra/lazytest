@@ -1,5 +1,6 @@
 (ns lazytest.expect-asserts
-  (:use lazytest.expect)
+  (:use lazytest.expect
+	lazytest.expect.thrown)
   (import (lazytest ExpectationFailed)))
 
 (expect (= 1 1))
