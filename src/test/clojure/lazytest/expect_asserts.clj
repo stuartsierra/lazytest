@@ -37,3 +37,11 @@
     (assert (= '(instance? java.lang.String 42) (:form reason)))
     (assert (= (list instance? java.lang.String 42) (:evaluated reason)))
     (assert (false? (:result reason)))))
+
+(let [x (+ 3 4)]
+  (let [e4 (try (expect (zero? (* x 2)))
+		false
+		(catch ExpectationFailed err err))]
+    (assert e4)
+    (let [reason (.reason e4)]
+      (assert (= {'x 7} (:locals reason))))))

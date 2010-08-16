@@ -1,6 +1,12 @@
 (ns lazytest.expect
   (:import (lazytest ExpectationFailed)))
 
+(defn- local-bindings
+  "Returns a map of the names of local bindings to their values."
+  [env]
+  (reduce (fn [m sym] (assoc m `'~sym sym))
+	  {} (keys env)))
+
 (defn- function-call?
   "True if form is a list representing a normal function call."
   [form]
@@ -33,6 +39,7 @@
 		      (merge '~(meta &form)
 			     '~(meta expr)
 			     {:form '~expr
+			      :locals ~(local-bindings &env)
 			      :evaluated (list* f# args#)
 			      :result result#
 			      :file ~*file*
@@ -45,6 +52,7 @@
 		      (merge '~(meta &form)
 			     '~(meta expr)
 			     {:form '~expr
+			      :locals ~(local-bindings &env)
 			      :result result#
 			      :file ~*file*
 			      :ns *ns*}
