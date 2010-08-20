@@ -72,7 +72,7 @@
 	<configuration>
 	  <testScript>src/test/clojure/lazytest/runtests.clj</testScript>
 	</configuration>
-	<executions>
+	<!-- <executions>
           <execution>
             <id>test-clojure</id>
             <phase>test</phase>
@@ -87,7 +87,7 @@
               <goal>compile</goal>
             </goals>
           </execution>
-        </executions>
+        </executions> -->
       </plugin>
     </plugins>
     <extensions>
