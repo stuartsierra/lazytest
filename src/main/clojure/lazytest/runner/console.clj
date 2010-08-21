@@ -1,7 +1,7 @@
 (ns lazytest.runner.console
   (:use lazytest.find
 	lazytest.suite
-	lazytest.case
+	lazytest.test-case
 	lazytest.focus
 	lazytest.wrap)
   (:import lazytest.ExpectationFailed))
@@ -13,23 +13,16 @@
 	     (System/identityHashCode x))
 	 " (" (:file m) ":" (:doc m) ")")))
 
-(defn try-expectation [f]
-  (try (f) {:pass true, :source f}
-       (catch ExpectationFailed e
-	 {:pass false, :source f, :reason e})
-       (catch Throwable t
-	 {:pass false, :source f, :error true, :reason t})))
-
 (defn run-test-case [tc]
   (println "Running test case" (identifier tc))
   (do-before tc)
-  (let [result (try-expectation tc)]
+  (let [result (try-test-case tc)]
     (do-after tc)
     result))
 
 (defn run-suite [suite]
-  (println "Running suite" (identifier suite))
   (let [suite-seq (suite)]
+    (println "Running suite" (identifier suite-seq))
     (do-before suite-seq)
     (let [results (doall (map (fn [x]
 				(cond (suite? x) (run-suite x)
