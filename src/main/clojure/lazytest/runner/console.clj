@@ -3,7 +3,8 @@
 	lazytest.suite
 	lazytest.test-case
 	lazytest.focus
-	lazytest.wrap)
+	lazytest.wrap
+	[clojure.stacktrace :only (print-cause-trace)])
   (:import lazytest.ExpectationFailed))
 
 (defn identifier [x]
@@ -11,13 +12,19 @@
     (str (or (:name m)
 	     (:doc m)
 	     (System/identityHashCode x))
-	 " (" (:file m) ":" (:doc m) ")")))
+	 " (" (:file m) ":" (:line m) ")")))
 
 (defn run-test-case [tc]
   (println "Running test case" (identifier tc))
   (do-before tc)
   (let [result (try-test-case tc)]
+    (prn result)
+    (when-let [t (:thrown result)]
+      (when (instance? ExpectationFailed t)
+	(prn (.reason t)))
+      (print-cause-trace t 5))
     (do-after tc)
+    (println "Done with test case" (identifier tc))
     result))
 
 (defn run-suite [suite]
@@ -31,6 +38,7 @@
 						    "Non-test given to run-suite."))))
 			      suite-seq))]
       (do-after suite-seq)
+      (println "Done with suite" (identifier suite-seq))
       results)))
 
 (defn run-tests

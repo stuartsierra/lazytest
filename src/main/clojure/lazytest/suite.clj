@@ -5,6 +5,9 @@
   suite function must be free of side effects and must return a
   sequence of test cases and/or other test suites.
 
+  Metadata on the returned sequence provides identifying information
+  for the test suite, such as :name and :doc.
+
   The sequence returned by a test suite function may have before/after
   metadata (see lazytest.wrap).  'before' functions must be executed
   *before* all test case functions contained within the suite.
