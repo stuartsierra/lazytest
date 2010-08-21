@@ -43,7 +43,7 @@
 			      :evaluated (list* f# args#)
 			      :result result#
 			      :file ~*file*
-			      :ns *ns*}
+			      :ns '~(ns-name *ns*)}
 			     ~(when docstring {:doc docstring}))))))
        ;; Unknown type of expression
        `(let [result# ~expr]
@@ -55,5 +55,5 @@
 			      :locals ~(local-bindings &env)
 			      :result result#
 			      :file ~*file*
-			      :ns *ns*}
+			      :ns '~(ns-name *ns*)}
 			     ~(when docstring {:doc docstring})))))))))
