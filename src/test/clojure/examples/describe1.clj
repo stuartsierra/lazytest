@@ -6,7 +6,6 @@
     (= 7 (+ 3 4))))
 
 (describe + "given any 2 integers"
-  (all 
-    (for [x (range 5), y (range 5)]
-      (it "is commutative"
-	(= (+ x y) (+ y x))))))
+  (for [x (range 5), y (range 5)]
+    (it "is commutative"
+      (= (+ x y) (+ y x)))))
