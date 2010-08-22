@@ -21,3 +21,8 @@
       (= 0.0000007 (+ 0.0000003 0.0000004)))
     (it "computes sums of large numbers"
       (= 7000000.0 (+ 3000000.0 4000000.0)))))
+
+(describe "The do-it macro"
+  (do-it "allows arbitrary code"
+	 (println "Hello, do-it!")
+	 (println "This test will succeed because it doesn't throw.")))
