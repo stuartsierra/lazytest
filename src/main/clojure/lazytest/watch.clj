@@ -1,8 +1,6 @@
 (ns lazytest.watch
   (:gen-class)
-  (:use	[lazytest.runnable :only (run-tests)]
-	[lazytest.find :only (find-tests)]
-	[lazytest.report.console :only (report)]
+  (:use	[lazytest.find :only (find-tests)]
 	[clojure.contrib.find-namespaces
 	 :only (find-clojure-sources-in-dir
 		read-file-ns-decl)]
@@ -11,6 +9,12 @@
   (:import (java.util.concurrent ScheduledThreadPoolExecutor TimeUnit)
 	   (java.util.regex Pattern)
 	   (java.io File)))
+
+(defn report [& args]
+  (println "report function not implemented"))
+
+(defn run-tests [& args]
+  (println "run-tests function not implmented"))
 
 (defn find-sources
   [dirs]

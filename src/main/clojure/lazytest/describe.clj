@@ -1,13 +1,8 @@
 (ns lazytest.describe
-  (:use [lazytest.find :only (FindTests find-tests)]
-	[lazytest.runnable :only (RunnableTest run-tests
-				       skip-or-pending)]
-	[lazytest.runnable.test-group :only (test-group)]
-	[lazytest.runnable.test-case :only (test-case)]
-	[lazytest.result :only (result-group)]
-	[lazytest.expect :only (expect)]
-	[lazytest.fixture :only (setup teardown function-fixture
-				 sequential-fixture)]))
+  (:use	lazytest.expect
+	lazytest.suite
+	lazytest.find
+	lazytest.test-case))
 
 ;;; Utilities
 
@@ -27,12 +22,6 @@
 
 (defn- thunk-forms [forms]
   (map (fn [f] `(fn [] ~f)) forms))
-
-(defn- get-child-tests [parent t]
-  (find-tests
-   (assoc t
-     :locals (vec (concat (:locals parent) (:locals t)))
-     :fixtures (vec (concat (:fixtures parent) (:fixtures t))))))
 
 (defn- strcat
   "Concatenate strings, with spaces in between, skipping nil."
@@ -109,99 +98,13 @@
   [& decl]
   (let [[sym decl] (get-arg symbol? decl)
 	[doc decl] (get-arg string? decl)
-	[attr-map body] (get-arg map? decl)
-	children (vec body)
+	[attr-map children] (get-arg map? decl)
 	docstring (strcat (when sym (resolve sym)) doc)
-	metadata (merged-metadata body &form docstring attr-map)]
-    `(def-unless-nested (test-group ~children ~metadata))))
-
-(defmacro using
-  "Defines a group of tests that use fixtures.
-
-  decl is: doc? attr-map? [bindings*] cases*
-
-  doc (optional) is a documentation string
-
-  attr-map (optional) is a metadata map
-
-  bindings are symbol/fixture pairs, as in 'let'.  The symbols will be
-  locally available in all nested test cases, where they will be bound
-  to the values returned by the 'before' functions of the
-  corresponding fixtures.  All destructuring forms are supported.
-
-  cases are test cases (see 'it') or nested test groups."
-  [& decl]
-  (let [[doc decl] (get-arg string? decl)
-	[attr-map decl] (get-arg map? decl)
-	[bindings body] (get-arg vector? decl)
-	children (vec body)
-	metadata (merged-metadata body &form doc attr-map)]
-    (assert (vector? bindings))
-    (assert (even? (count bindings)))
-    (let [binding-forms (firsts bindings)
-	  fixtures (seconds bindings)
-	  local-bindings (vec (interleave binding-forms fixtures))]      
-      `(wrap-local-scope ~local-bindings (test-group ~children ~metadata)))))
-
-(defmacro given 
-  "Defines a group of tests that use the same values.
-
-  decl is: doc? attr-map? [bindings*] cases*
-
-  doc (optional) is a documentation string
-
-  attr-map (optional) is a metadata map
-
-  bindings are symbol/expression pairs, as in 'let'.  The symbols will
-  be locally available in all nested test cases, where they will be
-  bound to the values returned by the corresponding expressions.
-  The expressions will be re-evaluated for each test case.
-
-  cases are test cases (see 'it') or nested test groups."
-  [& decl]
-  (let [[doc decl] (get-arg string? decl)
-	[attr-map decl] (get-arg map? decl)
-	[bindings body] (get-arg vector? decl)
-	children (vec body)
-	metadata (merged-metadata body &form doc attr-map)]
-    (assert (vector? bindings))
-    (assert (even? (count bindings)))
-    (let [binding-forms (firsts bindings)
-	  fixtures (map (fn [x] `(function-fixture (fn [] ~x)))
-			(seconds bindings))
-	  local-bindings (vec (interleave binding-forms fixtures))]      
-      `(wrap-local-scope ~local-bindings (test-group ~children ~metadata)))))
-
-(defmacro for-all
-  "Defines a group of tests that will run repeatedly for every value
-  in a sequence.
-
-  decl is: doc? attr-map? [bindings*] cases*
-
-  doc (optional) is a documentation string
-
-  attr-map (optional) is a metadata map
-
-  bindings are symbol/expression pairs, as in 'let'.  Each expression
-  must return a sequence.  The symbols will be locally available in
-  all nested test cases, where they will be bound to the successive
-  values in the corresponding sequence.  The expressions will be
-  re-evaluated for each test case.
-
-  cases are test cases (see 'it') or nested test groups."
-  [& decl]
-  (let [[doc decl] (get-arg string? decl)
-	[attr-map decl] (get-arg map? decl)
-	[bindings body] (get-arg vector? decl)
-	children (vec body)
-	metadata (merged-metadata body &form doc attr-map)]
-    (assert (vector? bindings))
-    (assert (even? (count bindings)))
-    (let [binding-forms (firsts bindings)
-	  fixtures (map (fn [x] `(sequential-fixture (fn [] ~x)))
-			(seconds bindings))
-	  local-bindings (vec (interleave binding-forms fixtures))]      
-      `(wrap-local-scope ~local-bindings (test-group ~children ~metadata)))))
+	metadata (merged-metadata children &form docstring attr-map)]
+    `(def-unless-nested (suite (fn []
+				 (with-meta
+				   (list ~@children)
+				   ~metadata))))))
 
 (defmacro it
   "Defines a single test case.
@@ -213,18 +116,16 @@
   attr-map (optional) is a metadata map
 
   expr is a single expression, which must return logical true to
-  indicate the test case passes or logical false to indicate failure.
-  Local variables created with 'using', 'given', and so on will be
-  available in the expression."
+  indicate the test case passes or logical false to indicate failure."
   [& decl]
   (let [[sym decl] (get-arg symbol? decl)
 	[doc decl] (get-arg string? decl)
 	[attr-map body] (get-arg map? decl)
 	assertion (first body)
 	metadata (merged-metadata body &form doc attr-map)]
-    `(test-case ~(find-locals &env)
-		(fn ~(find-local-binding-forms &env) (expect ~assertion))
-		~metadata)))
+    `(test-case (with-meta
+		  (fn [] (expect ~assertion))
+		  ~metadata))))
 
 (defmacro do-it
   "Defines a single test case that may execute arbitrary code.
@@ -243,10 +144,6 @@
 	[doc decl] (get-arg string? decl)
 	[attr-map body] (get-arg map? decl)
 	metadata (merged-metadata body &form doc attr-map)]
-    `(test-case ~(find-locals &env)
-		(fn ~(find-local-binding-forms &env) ~@body) ~metadata)))
-
-(defmacro insert
-  "Inserts a quoted snippet of code assigned to the Var named by sym."
-  [sym]
-  (var-get (resolve sym)))
+    `(test-case (with-meta
+		  (fn [] ~@body)
+		  ~metadata))))
