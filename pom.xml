@@ -24,12 +24,12 @@
     <dependency>
       <groupId>org.clojure</groupId>
       <artifactId>clojure</artifactId>
-      <version>1.2.0-RC3</version>
+      <version>1.2.0</version>
     </dependency>
     <dependency>
       <groupId>org.clojure</groupId>
       <artifactId>clojure-contrib</artifactId>
-      <version>1.2.0-RC3</version>
+      <version>1.2.0</version>
     </dependency>
     <dependency>
       <groupId>swank-clojure</groupId>
@@ -54,7 +54,7 @@
     </repository>
     <repository>
       <id>clojure-releases</id>
-      <url>http://build.clojure.org/snapshots</url>
+      <url>http://build.clojure.org/releases</url>
       <releases>
         <enabled>true</enabled>
       </releases>
@@ -72,7 +72,7 @@
 	<configuration>
 	  <testScript>src/test/clojure/lazytest/runtests.clj</testScript>
 	</configuration>
-	<!-- <executions>
+	<executions>
           <execution>
             <id>test-clojure</id>
             <phase>test</phase>
@@ -87,7 +87,7 @@
               <goal>compile</goal>
             </goals>
           </execution>
-        </executions> -->
+        </executions>
       </plugin>
     </plugins>
     <extensions>
