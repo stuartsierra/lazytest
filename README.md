@@ -60,22 +60,6 @@ You can create an example that executes arbitrary code with the
         (expect (= 4 (+ 2 2)))))
 
 
-Givens
-======
-
-Use the `given` macro to share a computed value among several
-examples.  `given` takes a vector of symbol/value pairs.  The syntax
-is similar to `let`, including destructuring support.
-
-    (use '[lazytest.describe :only (describe given it)])
-
-    (describe
-      (given "The square root of 2" [s (Math/sqrt 2)]
-        (it "is less than 2"
-          (< s 2))
-        (it "is greater than 1"
-          (> s 1))))
-
 
 Getting Started with Leiningen
 ==============================
@@ -86,8 +70,8 @@ Put the following in `project.clj`
 
     (defproject your-project-name "1.0.0-SNAPSHOT"
       :description "Your project description"
-      :dependencies [[org.clojure/clojure "1.2.0-RC3"]
-                     [org.clojure/clojure-contrib "1.2.0-RC3"]
+      :dependencies [[org.clojure/clojure "1.2.0"]
+                     [org.clojure/clojure-contrib "1.2.0"]
                      [com.stuartsierra/lazytest "1.0.0-SNAPSHOT"]]
       :repositories {"stuartsierra.com" "http://stuartsierra.com/m2snapshots"})
 
@@ -114,12 +98,12 @@ Put the following in `pom.xml`
       <dependency>
         <groupId>org.clojure</groupId>
         <artifactId>clojure</artifactId>
-        <version>1.2.0-RC3</version>
+        <version>1.2.0</version>
       </dependency>
       <dependency>
         <groupId>org.clojure</groupId>
         <artifactId>clojure-contrib</artifactId>
-        <version>1.2.0-RC3</version>
+        <version>1.2.0</version>
       </dependency>
       <dependency>
         <groupId>com.stuartsierra</groupId>
