@@ -23,6 +23,19 @@
   [x]
   (and (fn? x) (::test-case (meta x))))
 
+(defn test-case-result
+  ([pass? source]
+     {:pre [(or (true? pass?) (false? pass?))
+	    (test-case? source)]}
+     (with-meta {:pass? pass?, :source source}
+       {:type ::test-case-result}))
+  ([pass? source thrown]
+     {:pre [(or (true? pass?) (false? pass?))
+	    (test-case? source)
+	    (instance? Throwable thrown)]}
+     (with-meta {:pass? pass?, :source source, :thrown thrown}
+       {:type ::test-case-result})))
+
 (defn try-test-case
   "Executes a test case function.  Does not execute before/after
    metadata functions.  Catches all Throwables.  Returns a map with
@@ -34,6 +47,7 @@
   [f]
   {:pre [(test-case? f)]
    :post [(map? %) (contains? % :pass?)]}
-  (try (f) {:pass? true, :source f}
+  (try (f)
+       (test-case-result true f)
        (catch Throwable t
-	 {:pass? false, :source f, :thrown t})))
+	 (test-case-result false f t))))

@@ -30,7 +30,7 @@
 
 (defn run-suite [ste]
   (let [ste-seq (ste)]
-    (println "Running ste" (identifier ste-seq))
+    (println "Running suite" (identifier ste-seq))
     (do-before ste-seq)
     (let [results (doall (map (fn [x]
 				(cond (suite? x) (run-suite x)
@@ -40,7 +40,7 @@
 			      ste-seq))]
       (do-after ste-seq)
       (println "Done with ste" (identifier ste-seq))
-      results)))
+      (suite-result ste-seq results))))
 
 (defn run-tests
   "Runs tests defined in the given namespaces, with verbose output."

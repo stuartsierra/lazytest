@@ -21,3 +21,10 @@
   "True if x is a test suite."
   [x]
   (and (fn? x) (::suite (meta x))))
+
+(defn suite-result
+  [source children]
+  {:pre [(suite? source)
+	 (seq? children)]}
+  (with-meta {:source source, :children children}
+    {:type ::suite-result}))
