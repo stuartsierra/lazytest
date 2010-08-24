@@ -1,15 +1,15 @@
-(ns lazytest.fixture.stub
-  "A Stub is a special kind of Fixture that rebinds a Var in the
+(ns lazytest.context.stub
+  "A Stub is a special kind of Context that rebinds a Var in the
   current dynamic environment."
-  (:use [lazytest.fixture :only (Fixture)]))
+  (:use [lazytest.context :only (Context)]))
 
 (deftype DynamicBindingStub [v value]
-  Fixture
+  Context
   (setup [this] (push-thread-bindings {v value}))
   (teardown [this] (pop-thread-bindings)))
 
 (deftype RootBindingStub [v new-value]
-  Fixture
+  Context
   (setup [this]
     (alter-meta! v (fn [m]
 		     (when (contains? m this)
@@ -28,14 +28,14 @@
 		     (dissoc m this)))))
 
 (defn stub
-  "Returns a Fixture that creates a thread-local binding of Var v to
+  "Returns a Context that creates a thread-local binding of Var v to
   new-value."
   [v new-value]
   {:pre [(var? v)]}
   (DynamicBindingStub. v new-value))
 
 (defn global-stub
-  "Returns a Fixture that modifies the root binding if Var v. The Var
+  "Returns a Context that modifies the root binding if Var v. The Var
   must have a root binding before 'setup' is called. Use 'stub'
   instead unless you need to stub the Var on all threads."
   [v new-value]

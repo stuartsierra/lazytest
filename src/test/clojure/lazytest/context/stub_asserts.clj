@@ -1,6 +1,6 @@
-(ns lazytest.fixture.stub-asserts
-  (:use [lazytest.fixture :only (setup teardown)]
-	lazytest.fixture.stub))
+(ns lazytest.context.stub-asserts
+  (:use [lazytest.context :only (setup teardown)]
+	lazytest.context.stub))
 
 (defn foo [] 0)
 

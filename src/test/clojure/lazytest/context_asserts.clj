@@ -1,7 +1,7 @@
-(ns lazytest.fixture-asserts
-  (:use lazytest.fixture))
+(ns lazytest.context-asserts
+  (:use lazytest.context))
 
-(let [f (reify Fixture
+(let [f (reify Context
 	       (setup [this] :state)
 	       (teardown [this] :done))]
   (assert (= :state (setup f)))

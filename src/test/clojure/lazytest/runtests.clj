@@ -1,8 +1,8 @@
 (ns lazytest.runtests)
 
 (doseq [sym '[lazytest.expect-asserts
-	      lazytest.fixture-asserts
-	      lazytest.fixture.stub-asserts]]
+	      lazytest.context-asserts
+	      lazytest.context.stub-asserts]]
   (println "Running assertions in" sym)
   (require sym))
 
