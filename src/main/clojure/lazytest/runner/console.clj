@@ -34,8 +34,7 @@
   "Runs tests defined in the given namespaces, with colored green dots
   indicating passing tests and red 'F's indicating falied tests."
   [& namespaces]
-  (let [nns (if (seq namespaces) namespaces (all-ns))
-	stes (remove nil? (map find-tests namespaces))
+  (let [stes (apply find-suites namespaces)
 	results (doall (map run-suite stes))]
     (newline)
     results))
