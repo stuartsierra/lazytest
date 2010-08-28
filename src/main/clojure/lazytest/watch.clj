@@ -1,20 +1,15 @@
 (ns lazytest.watch
   (:gen-class)
-  (:use	[lazytest.find :only (find-tests)]
-	[clojure.contrib.find-namespaces
+  (:use	[clojure.contrib.find-namespaces
 	 :only (find-clojure-sources-in-dir
 		read-file-ns-decl)]
 	[clojure.java.io :only (file)]
 	[clojure.string :only (split join)])
+  (:require lazytest.runner.console
+	    lazytest.report.nested)
   (:import (java.util.concurrent ScheduledThreadPoolExecutor TimeUnit)
 	   (java.util.regex Pattern)
 	   (java.io File)))
-
-(defn report [& args]
-  (println "report function not implemented"))
-
-(defn run-tests [& args]
-  (println "run-tests function not implmented"))
 
 (defn find-sources
   [dirs]
@@ -42,7 +37,7 @@
 	(doseq [n names] (remove-ns n))
 	(doseq [n names] (require n :reload))
 	(println "Running examples at" (java.util.Date.))
-	(reporter (mapcat run-tests (mapcat find-tests (all-ns))))
+	(reporter (apply lazytest.runner.console/run-tests (all-ns)))
 	(println "\nDone.")))
     (catch Throwable t
       (println "ERROR:" t)
@@ -50,7 +45,8 @@
 
 (defn start [dirs & options]
   (let [dirs (map file dirs)
-	{:keys [reporter delay], :or {delay 500, reporter report}} options
+	{:keys [reporter delay],
+	 :or {delay 500, reporter lazytest.report.nested/report}} options
 	last-run-timestamp (atom 0)
 	runner #(reload-and-run dirs last-run-timestamp reporter)]
     (doto (ScheduledThreadPoolExecutor. 1)
