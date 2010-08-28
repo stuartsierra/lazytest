@@ -39,10 +39,13 @@ should be true.
     (describe + "with integers"
       (it "computes the sum of 1 and 2"
         (= 3 (+ 1 2)))
-      (it "computes the sume of 3 and 4"
+      (it "computes the sum of 3 and 4"
         (= 7 (+ 3 4))))
 
-Each `it` example may only contain *one* test expression.
+Each `it` example may only contain *one* expression, which must return
+logical true to indicate the test passed or logical false to indicate
+it failed.
+
 
 
 Arbitrary Code in an Example
@@ -92,80 +95,26 @@ Type CTRL+C to stop.
 Getting Started with Maven
 ==========================
 
-Put the following in `pom.xml`
+Put the following in your `pom.xml` file's `<dependencies>` section:
 
-    <dependencies>
-      <dependency>
-        <groupId>org.clojure</groupId>
-        <artifactId>clojure</artifactId>
-        <version>1.2.0</version>
-      </dependency>
-      <dependency>
-        <groupId>org.clojure</groupId>
-        <artifactId>clojure-contrib</artifactId>
-        <version>1.2.0</version>
-      </dependency>
-      <dependency>
-        <groupId>com.stuartsierra</groupId>
-        <artifactId>lazytest</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
-      </dependency>
-    </dependencies>
-    <repositories>
-      <repository>
-        <id>stuartsierra-snapshots</id>
-        <url>http://stuartsierra.com/m2snapshots</url>
-        <releases>
-          <enabled>false</enabled>
-        </releases>
-        <snapshots>
-          <enabled>true</enabled>
-        </snapshots>
-      </repository>
-      <repository>
-        <id>stuartsierra-releases</id>
-        <url>http://clojure.org/maven2</url>
-        <releases>
-          <enabled>true</enabled>
-        </releases>
-        <snapshots>
-          <enabled>false</enabled>
-        </snapshots>
-      </repository>
-      <repository>
-        <id>clojars</id>
-        <url>http://clojars.org/repo</url>
-      </repository>
-      <repository>
-        <id>clojure-snapshots</id>
-        <url>http://build.clojure.org/snapshots</url>
-        <releases>
-          <enabled>false</enabled>
-        </releases>
-        <snapshots>
-          <enabled>true</enabled>
-        </snapshots>
-      </repository>
-      <repository>
-        <id>clojure-releases</id>
-        <url>http://build.clojure.org/releases</url>
-        <releases>
-          <enabled>true</enabled>
-        </releases>
-        <snapshots>
-          <enabled>false</enabled>
-        </snapshots>
-      </repository>
-    </repositories>
-    <build>
-      <plugins>
-        <plugin>
-          <groupId>com.theoryinpractise</groupId>
-          <artifactId>clojure-maven-plugin</artifactId>
-          <version>1.3.3</version>
-        </plugin>
-      </plugins>
-    </build>
+    <dependency>
+      <groupId>com.stuartsierra</groupId>
+      <artifactId>lazytest</artifactId>
+      <version>1.0.0-SNAPSHOT</version>
+    </dependency>
+
+And the following in the `pom.xml` file's `<repositories>` section:
+
+    <repository>
+      <id>stuartsierra-snapshots</id>
+      <url>http://stuartsierra.com/m2snapshots</url>
+      <releases>
+	<enabled>false</enabled>
+      </releases>
+      <snapshots>
+	<enabled>true</enabled>
+      </snapshots>
+    </repository>
 
 Put your test sources in `src/test/clojure/`
 
