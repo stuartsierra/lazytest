@@ -10,8 +10,9 @@
 	  value)))))
 
 (defn- test-seq-for-ns [this-ns]
-  (vary-meta (remove nil? (map find-tests-for-var (vals (ns-interns this-ns))))
-	     assoc :name (ns-name this-ns)))
+  (let [s (remove nil? (map find-tests-for-var (vals (ns-interns this-ns))))]
+    (when (seq s)
+      (vary-meta s assoc :name (ns-name this-ns)))))
 
 (defn- find-tests-in-namespace [this-ns]
   (when-not (= (the-ns 'clojure.core) this-ns)
