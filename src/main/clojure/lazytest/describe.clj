@@ -55,9 +55,10 @@
 	docstring (strcat (when sym (resolve sym)) doc)
 	metadata (merged-metadata children &form docstring attr-map)]
     `(def-unless-nested (suite (fn []
-				 (with-meta
-				   (flatten (list ~@children))
-				   ~metadata))))))
+				 (test-seq
+				  (with-meta
+				    (flatten (list ~@children))
+				    ~metadata)))))))
 
 (defmacro it
   "Defines a single test case.

@@ -13,7 +13,8 @@
   lazytest.wrap).  The 'before' function must be executed *before* the
   test case function is executed.  The 'after' function must be
   executed *after* the test case function is executed, regardless of
-  whether or not the test case function was successful."
+  whether or not the test case function was successful.  Executing the
+  before/after functions is the responsibility of the test runner."
   [f]
   {:pre [(fn? f)]}
   (vary-meta f assoc ::test-case true))
@@ -24,6 +25,13 @@
   (and (fn? x) (::test-case (meta x))))
 
 (defn test-case-result
+  "Creates a test case result map with keys :pass?, :source, and :thrown.
+
+  pass? is true if the test case passed successfully, false otherwise.
+
+  source is the test case object that returned this result.
+
+  thrown is the exception (Throwable) thrown by a failing test case."
   ([pass? source]
      {:pre [(or (true? pass?) (false? pass?))
 	    (test-case? source)]}
@@ -36,6 +44,11 @@
      (with-meta {:pass? pass?, :source source, :thrown thrown}
        {:type ::test-case-result})))
 
+(defn test-case-result?
+  "True if x is a test case result."
+  [x]
+  (and (map? x) (isa? (type x) ::test-case-result)))
+
 (defn try-test-case
   "Executes a test case function.  Does not execute before/after
    metadata functions.  Catches all Throwables.  Returns a map with
@@ -46,7 +59,7 @@
      :thrown - the Throwable instance if thrown"
   [f]
   {:pre [(test-case? f)]
-   :post [(map? %) (contains? % :pass?)]}
+   :post [(test-case-result? %)]}
   (try (f)
        (test-case-result true f)
        (catch Throwable t

@@ -19,7 +19,7 @@
     result))
 
 (defn run-suite [ste]
-  (let [ste-seq (ste)]
+  (let [ste-seq (expand-suite ste)]
     (do-before ste-seq)
     (let [results (doall (map (fn [x]
 				(cond (suite? x) (run-suite x)
@@ -35,5 +35,7 @@
   indicating passing tests and red 'F's indicating falied tests."
   [& namespaces]
   (let [nns (if (seq namespaces) namespaces (all-ns))
-	stes (remove nil? (map find-tests namespaces))]
-    (doall (map run-suite stes))))
+	stes (remove nil? (map find-tests namespaces))
+	results (doall (map run-suite stes))]
+    (newline)
+    results))

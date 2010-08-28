@@ -16,27 +16,27 @@
 (def s1
      (suite
       (fn []
-	(with-meta
-	  (common-test-cases 1)
-	  {:doc "One"}))))
+	(vary-meta
+	 (test-seq (common-test-cases 1))
+	 assoc :doc "One"))))
 
 (def s2
      (suite
       (fn []
 	(after
 	 (before
-	  (with-meta
-	    (common-test-cases 2)
-	    {:doc "Two"})
+	  (vary-meta
+	    (test-seq (common-test-cases 2))
+	    assoc :doc "Two")
 	  #(prn "Before Two"))
 	 #(prn "After Two")))))
 
 (def s3
      (suite
       (fn []
-	(with-meta
-	 (map (fn [tc]
-		(after (before tc #(prn "Before test case"))
-		       #(prn "After test case")))
-	      (common-test-cases 3))
-	 {:doc "Three"}))))
+	(vary-meta
+	  (test-seq (map (fn [tc]
+			   (after (before tc #(prn "Before test case"))
+				  #(prn "After test case")))
+			 (common-test-cases 3)))
+	  assoc :doc "Three"))))

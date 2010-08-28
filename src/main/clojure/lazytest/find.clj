@@ -9,7 +9,7 @@
 	(when (suite? value)
 	  value)))))
 
-(defn- suite-for-ns [this-ns]
+(defn- test-seq-for-ns [this-ns]
   (vary-meta (remove nil? (map find-tests-for-var (vals (ns-interns this-ns))))
 	     assoc :name (ns-name this-ns)))
 
@@ -17,8 +17,8 @@
   (when-not (= (the-ns 'clojure.core) this-ns)
     (if-let [f (:find-tests (meta this-ns))]
       (do (assert (fn? f)) (f))
-      (when-let [s (suite-for-ns this-ns)]
-	(suite (fn [] s))))))
+      (when-let [s (test-seq-for-ns this-ns)]
+	(suite (fn [] (test-seq s)))))))
 
 (defn find-tests [x]
   "Returns a seq of runnable tests. Processes the :focus metadata flag.
