@@ -62,9 +62,9 @@ define constants shared among several tests:
     (describe "The square root of two"
       (given [root (Math/sqrt 2)]
         (it "is less than two"
-	  (< root 2))
-	(it "is more than one"
-	  (> root 1))))
+          (< root 2))
+        (it "is more than one"
+          (> root 1))))
 
 The syntax of `given` is just like `let`, including destructuring support.
 
@@ -201,8 +201,8 @@ Put the following in `.emacs`
     (eval-after-load 'clojure-mode
       '(define-clojure-indent
          (describe 'defun)
-	 (testing 'defun)
-	 (given 'defun)
+         (testing 'defun)
+         (given 'defun)
          (it 'defun)))
 
 
