@@ -1,4 +1,4 @@
-(ns lazytest.report.color)
+(ns lazytest.color)
 
 ;; Mostly stolen from Stuart Halloway's circumspec
 

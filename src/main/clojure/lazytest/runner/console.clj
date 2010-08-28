@@ -2,7 +2,7 @@
   (:use lazytest.find
 	lazytest.suite
 	lazytest.test-case
-	lazytest.report.color
+	lazytest.color
 	lazytest.focus
 	lazytest.wrap
 	[clojure.stacktrace :only (print-cause-trace)])

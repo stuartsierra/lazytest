@@ -1,5 +1,5 @@
 (ns lazytest.report.nested
-  (:use lazytest.report.color
+  (:use lazytest.color
 	lazytest.suite))
 
 (defn identifier [result]
