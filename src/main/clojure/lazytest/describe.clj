@@ -99,3 +99,11 @@
     `(test-case (with-meta
 		  (fn [] ~@body)
 		  ~metadata))))
+
+(defmacro given
+  "Like 'let' but returns the expressions of body in a list.
+  Suitable for nesting inside 'describe' or 'testing'."
+  [bindings & body]
+  {:pre [(vector? bindings)
+	 (even? (count bindings))]}
+  `(let ~bindings (list ~@body)))

@@ -21,7 +21,7 @@ Test Examples and Groups
 Use the `describe` macro to create a group of tests.  Start the group
 with a documentation string.
 
-    (use '[lazytest.describe :only (describe testing it)])
+    (use '[lazytest.describe :only (describe testing given it do-it)])
 
     (describe "This application" ...)
 
@@ -50,6 +50,23 @@ it failed.
 Test groups may be nested inside other groups with the `testing`
 macro, which has the same syntax as `describe` but does not define a
 top-level Var.
+
+
+
+Constants Shared Among Tests
+============================
+
+Inside a `describe` or `testing` group, use the `given` macro to
+define constants shared among several tests:
+
+    (describe "The square root of two"
+      (given [root (Math/sqrt 2)]
+        (it "is less than two"
+	  (< root 2))
+	(it "is more than one"
+	  (> root 1))))
+
+The syntax of `given` is just like `let`, including destructuring support.
 
 
 
@@ -184,6 +201,8 @@ Put the following in `.emacs`
     (eval-after-load 'clojure-mode
       '(define-clojure-indent
          (describe 'defun)
+	 (testing 'defun)
+	 (given 'defun)
          (it 'defun)))
 
 

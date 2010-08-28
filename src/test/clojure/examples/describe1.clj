@@ -26,3 +26,10 @@
   (do-it "allows arbitrary code"
 	 (println "Hello, do-it!")
 	 (println "This test will succeed because it doesn't throw.")))
+
+(describe "The square root of two"
+  (given [root (Math/sqrt 2)]
+	 (it "is less than two"
+	   (< root 2))
+	 (it "is more than one"
+	   (> root 1))))
