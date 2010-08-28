@@ -25,18 +25,27 @@
   [& args]
   (apply str (interpose \space (remove nil? args))))
 
-;;; Top-level definitions
-
-(defmacro def-unless-nested [form]
-  (if (some #(::nested (meta %)) (keys &env))
-    form
-    `(let [~(with-meta (gensym) {::nested true}) nil]
-       (def ~(gensym) ~form))))
-
 ;;; Public API
 
+(defmacro testing
+  "Like 'describe' but does not create a Var.  Used for nesting test
+  suites inside 'describe'."
+  [& decl]
+  (let [[sym decl] (get-arg symbol? decl)
+	[doc decl] (get-arg string? decl)
+	[attr-map children] (get-arg map? decl)
+	docstring (strcat (when sym (resolve sym)) doc)
+	metadata (merged-metadata children &form docstring attr-map)]
+    `(suite (fn []
+	      (test-seq
+	       (with-meta
+		 (flatten (list ~@children))
+		 ~metadata))))))
+
 (defmacro describe
-  "Defines a group of tests.  
+  "Defines a suite of tests assigned to a Var with a generated name.
+  Evaluating the same 'describe' form multiple times yields multiple
+  Vars with different names.
 
   decl is: sym? doc? attr-map? children*
 
@@ -47,18 +56,9 @@
 
   attr-map (optional) is a metadata map
 
-  children are test cases (see 'it') or nested test groups"
+  children are test cases (see 'it') or nested test suites (see 'testing')"
   [& decl]
-  (let [[sym decl] (get-arg symbol? decl)
-	[doc decl] (get-arg string? decl)
-	[attr-map children] (get-arg map? decl)
-	docstring (strcat (when sym (resolve sym)) doc)
-	metadata (merged-metadata children &form docstring attr-map)]
-    `(def-unless-nested (suite (fn []
-				 (test-seq
-				  (with-meta
-				    (flatten (list ~@children))
-				    ~metadata)))))))
+  `(def ~(gensym) (testing ~@decl)))
 
 (defmacro it
   "Defines a single test case.
@@ -72,8 +72,7 @@
   expr is a single expression, which must return logical true to
   indicate the test case passes or logical false to indicate failure."
   [& decl]
-  (let [[sym decl] (get-arg symbol? decl)
-	[doc decl] (get-arg string? decl)
+  (let [[doc decl] (get-arg string? decl)
 	[attr-map body] (get-arg map? decl)
 	assertion (first body)
 	metadata (merged-metadata body &form doc attr-map)]
@@ -94,8 +93,7 @@
   'expect') to indicate failure.  If the code completes without
   throwing any exceptions, the test case has passed."
   [& decl]
-  (let [[sym decl] (get-arg symbol? decl)
-	[doc decl] (get-arg string? decl)
+  (let [[doc decl] (get-arg string? decl)
 	[attr-map body] (get-arg map? decl)
 	metadata (merged-metadata body &form doc attr-map)]
     `(test-case (with-meta

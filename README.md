@@ -14,13 +14,14 @@ the terms of this license.  You must not remove this notice, or any
 other, from this software.
 
 
+
 Test Examples and Groups
 ========================
 
 Use the `describe` macro to create a group of tests.  Start the group
 with a documentation string.
 
-    (use '[lazytest.describe :only (describe it)])
+    (use '[lazytest.describe :only (describe testing it)])
 
     (describe "This application" ...)
 
@@ -45,6 +46,10 @@ should be true.
 Each `it` example may only contain *one* expression, which must return
 logical true to indicate the test passed or logical false to indicate
 it failed.
+
+Test groups may be nested inside other groups with the `testing`
+macro, which has the same syntax as `describe` but does not define a
+top-level Var.
 
 
 
@@ -109,10 +114,10 @@ And the following in the `pom.xml` file's `<repositories>` section:
       <id>stuartsierra-snapshots</id>
       <url>http://stuartsierra.com/m2snapshots</url>
       <releases>
-	<enabled>false</enabled>
+        <enabled>false</enabled>
       </releases>
       <snapshots>
-	<enabled>true</enabled>
+        <enabled>true</enabled>
       </snapshots>
     </repository>
 
@@ -141,12 +146,16 @@ The smallest unit of testing is a *test case*, which is a function
 may throw an exception to indicate failure.  If it does not throw an
 exception, it is assumed to have passed.  The return value of a test
 case is always ignored.  Running a test case may have side effects.
+The macros `lazytest.describe/it` and `lazytest.describe/do-it` create
+test cases.
 
 Tests cases are organized into *suites*.  A test suite is a function
 (see `lazytest.suite/suite`) that returns a *test sequence*.  A test
 sequence (see `lazytest.suite/test-seq`) is a sequence, possibly lazy,
 of test cases and/or suites.  Suites, therefore, may be nested inside
-other suites, but nothing may be nested inside a test case.
+other suites, but nothing may be nested inside a test case.  The
+macros `lazytest.describe/describe` and `lazytest.describe/testing`
+create test suites.
 
 A test suite function may NOT have side effects; it is only used to
 generate test cases and/or other test suites.
@@ -184,3 +193,6 @@ Known Defects
 
 * Changing an applicaton source file does not automatically reload
   the associated test source file.
+
+* before/after functions and contexts are not yet supported in the
+  `describe` syntax.
