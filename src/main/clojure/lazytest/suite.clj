@@ -24,7 +24,7 @@
 
 (defn suite-result
   [source children]
-  {:pre [(suite? source)
+  {:pre [(seq? source)
 	 (seq? children)]}
   (with-meta {:source source, :children children}
     {:type ::suite-result}))
