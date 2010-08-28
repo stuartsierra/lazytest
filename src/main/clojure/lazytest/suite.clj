@@ -28,3 +28,6 @@
 	 (seq? children)]}
   (with-meta {:source source, :children children}
     {:type ::suite-result}))
+
+(defn suite-result? [x]
+  (isa? (type x) ::suite-result))
