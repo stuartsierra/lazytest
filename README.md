@@ -47,9 +47,26 @@ Each `it` example may only contain *one* expression, which must return
 logical true to indicate the test passed or logical false to indicate
 it failed.
 
+
+
+Nested Test Groups
+========================
+
 Test groups may be nested inside other groups with the `testing`
 macro, which has the same syntax as `describe` but does not define a
-top-level Var.
+top-level Var:
+
+   (describe "Addition"
+     (testing "of integers"
+       (it "computes small sums"
+         (= 3 (+ 1 2)))
+       (it "computes large sums"
+         (= 7000 (+ 3000 4000))))
+     (testing "of floats"
+       (it "computes small sums"
+         (= 0.3 (+ 0.1 0.2)))
+       (it "computes large sums"
+         (= 3000.0 (+ 1000.0 2000.0)))))
 
 
 
@@ -81,8 +98,16 @@ You can create an example that executes arbitrary code with the
 
     (describe "Arithmetic"
       (do-it "after printing"
+        (expect (= 4 (+ 2 2)))
         (println "Hello, World!")
-        (expect (= 4 (+ 2 2)))))
+        (expect (= -1 (- 4 5)))))
+
+The `expect` macro is like `assert` but carries more information about
+the failure.  It throws an exception if the expression does not
+evaluate to logical true.
+
+If the code inside the `do-it` macro runs to completion without
+throwing an exception, the test example is considered to have passed.
 
 
 
@@ -169,10 +194,10 @@ test cases.
 Tests cases are organized into *suites*.  A test suite is a function
 (see `lazytest.suite/suite`) that returns a *test sequence*.  A test
 sequence (see `lazytest.suite/test-seq`) is a sequence, possibly lazy,
-of test cases and/or suites.  Suites, therefore, may be nested inside
-other suites, but nothing may be nested inside a test case.  The
-macros `lazytest.describe/describe` and `lazytest.describe/testing`
-create test suites.
+of test cases and/or test suites.  Suites, therefore, may be nested
+inside other suites, but nothing may be nested inside a test case.
+The macros `lazytest.describe/describe` and
+`lazytest.describe/testing` create test suites.
 
 A test suite function may NOT have side effects; it is only used to
 generate test cases and/or other test suites.
@@ -203,7 +228,8 @@ Put the following in `.emacs`
          (describe 'defun)
          (testing 'defun)
          (given 'defun)
-         (it 'defun)))
+         (it 'defun)
+         (do-it 'defun))
 
 
 
