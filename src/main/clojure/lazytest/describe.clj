@@ -60,6 +60,51 @@
   [& decl]
   `(def ~(gensym) (testing ~@decl)))
 
+(defmacro using
+  "Like 'testing' but takes a vector of context bindings before
+  children.  The contexts will be added to each child test; stateful
+  contexts may be dereferenced within test case bodies by the symbols
+  they are bound to here."
+  [& decl]
+  (let [[sym decl] (get-arg symbol? decl)
+	[doc decl] (get-arg string? decl)
+	[attr-map decl] (get-arg map? decl)
+	[bindings children] (get-arg vector? decl)
+	docstring (strcat (when sym (resolve sym)) doc)
+	metadata (merged-metadata children &form docstring attr-map)
+	binding-symbols (take-nth 2 (drop 1 bindings))]
+    (assert (vector? bindings))
+    (assert (even? (count bindings)))
+    `(let ~bindings
+       (suite (fn []
+		(test-seq
+		 (with-meta
+		   (map (fn [tc#] (add-context tc# ~@binding-symbols))
+			(flatten (list ~@children)))
+		   ~metadata)))))))
+
+(defmacro using-once
+  "Like 'using' but adds contexts to the test sequence, so they are
+  only executed once for all child tests."
+  [& decl]
+  (let [[sym decl] (get-arg symbol? decl)
+	[doc decl] (get-arg string? decl)
+	[attr-map decl] (get-arg map? decl)
+	[bindings children] (get-arg vector? decl)
+	docstring (strcat (when sym (resolve sym)) doc)
+	metadata (merged-metadata children &form docstring attr-map)
+	binding-symbols (take-nth 2 (drop 1 bindings))]
+    (assert (vector? bindings))
+    (assert (even? (count bindings)))
+    `(let ~bindings
+       (suite (fn []
+		(add-context
+		 (test-seq
+		  (with-meta
+		    (flatten (list ~@children))
+		    ~metadata))
+		 ~@binding-symbols))))))
+
 (defmacro it
   "Defines a single test case.
 
