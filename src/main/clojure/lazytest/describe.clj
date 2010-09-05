@@ -98,12 +98,12 @@
     (assert (even? (count bindings)))
     `(let ~bindings
        (suite (fn []
-		(add-context
-		 (test-seq
+		(test-seq
+		 (add-context
 		  (with-meta
 		    (flatten (list ~@children))
-		    ~metadata))
-		 ~@binding-symbols))))))
+		    ~metadata)
+		  ~@binding-symbols)))))))
 
 (defmacro it
   "Defines a single test case.
