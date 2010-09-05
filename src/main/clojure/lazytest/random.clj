@@ -20,7 +20,7 @@
   are :min (inclusive) and :max (exclusive). Defaults are
   min-random-integer and max-random-integer."
   (let [{:keys [min max]
-	 :or {min min-integer, max max-integer}} options]
+	 :or {min min-random-integer, max max-random-integer}} options]
     (fn [] (rand-int-in-range min max))))
 
 (defn rand-double-in-range
@@ -40,7 +40,7 @@
   and :max. Defaults are min-random-double and max-random-double."
   [& options]
   (let [{:keys [min max]
-	 :or {min min-integer, max max-integer}} options]
+	 :or {min min-random-double, max max-random-double}} options]
     (fn [] (rand-double-in-range min max))))
 
 (def ^{:doc "Default minimum length for random collections"}
