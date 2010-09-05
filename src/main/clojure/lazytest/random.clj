@@ -1,5 +1,5 @@
 (ns lazytest.random
-  "Compostable generators for random data.")
+  "Composable generators for random data.")
 
 (defn rand-int-in-range
   "Returns a random integer between min (inclusive) and max (exclusive)."
