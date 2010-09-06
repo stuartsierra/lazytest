@@ -14,7 +14,7 @@
       (print (colorize "." :green))
       (print (colorize "F" :red)))
     (flush)
-    (setup-contexts tc)
+    (teardown-contexts tc)
     result))
 
 (defn run-suite [ste]
@@ -26,7 +26,7 @@
 				      :else (throw (IllegalArgumentException.
 						    "Non-test given to run-suite."))))
 			      ste-seq))]
-      (setup-contexts ste-seq)
+      (teardown-contexts ste-seq)
       (suite-result ste-seq results))))
 
 (defn run-tests
