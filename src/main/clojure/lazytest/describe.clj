@@ -106,6 +106,14 @@
 		    ~metadata)
 		  ~@binding-symbols)))))))
 
+(defmacro before
+  [& body]
+  `(fn-context (fn [] ~@body) (constantly nil)))
+
+(defmacro after
+  [& body]
+  `(fn-context (constantly nil) (fn [] ~@body)))
+
 (defmacro it
   "Defines a single test case.
 
