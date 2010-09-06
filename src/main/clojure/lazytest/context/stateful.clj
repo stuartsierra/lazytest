@@ -1,40 +1,43 @@
 (ns lazytest.context.stateful
   (:use [lazytest.context :only (Context context? setup teardown)]))
 
+;; You don't create instances of this; use the stateful function.
 (deftype StatefulContext [c state-atom]
-  ;; state-atom is a pair [value counter]. The wrapped setup/teardown
-  ;; functions are only called when counter is zero.
   Context
     (setup [this]
-	   (first
-	    (swap! state-atom
-		   (fn [[value counter]]
-		     [(if (zero? counter) (setup c) value)
-		      (inc counter)]))))
+      (first
+       (swap! state-atom
+	      (fn [[value counter]]
+		[(if (zero? counter) (setup c) value)
+		 (inc counter)]))))
     (teardown [this]
-	      (swap! state-atom
-		     (fn [[value counter]]
-		       (let [newcount (dec counter)]
-			 [(if (zero? newcount) (teardown c) value)
-			  newcount])))
-	      nil)
+      (swap! state-atom
+	     (fn [[value counter]]
+	       (let [newcount (dec counter)]
+		 (when (neg? newcount)
+		   (throw (IllegalStateException.
+			   "teardown called too many times on stateful context")))
+		 [(if (zero? newcount) (teardown c) value)
+		  newcount])))
+      nil)
 
   clojure.lang.IDeref
     (deref [this]
-	   (let [[value counter] @state-atom]
-	     (if (zero? counter)
-	       (throw (IllegalStateException.
-		       "Tried to deref context before setup."))
-	       value))))
+      (let [[value counter] @state-atom]
+	(if (zero? counter)
+	  (throw (IllegalStateException.
+		  "Tried to deref stateful context before setup."))
+	  value))))
 
 (defn stateful
   "Returns a Context that wraps Context c in a stateful container.
-  The state returned by c's setup function can be retrieved by
-  deref'ing this context.
 
-  Counts the number of times setup is called; does not call c's
-  teardown function until teardown has been called an equal number of
-  times."
+  The setup method of context c returns some state.  That state can be
+  retrieved by deref'ing this context.
+
+  Nested calls to setup/teardown are counted and handled
+  appropriately; only the outermost setup/teardown calls are passed to
+  the wrapped context."
   [c]
   {:pre [(context? c)]}
   (StatefulContext. c (atom [nil 0])))
