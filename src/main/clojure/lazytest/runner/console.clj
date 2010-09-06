@@ -2,32 +2,31 @@
   (:use lazytest.find
 	lazytest.suite
 	lazytest.test-case
-	lazytest.color
 	lazytest.focus
-	lazytest.wrap
-	[clojure.stacktrace :only (print-cause-trace)])
+	lazytest.color
+	lazytest.context)
   (:import lazytest.ExpectationFailed))
 
 (defn run-test-case [tc]
-  (do-before tc)
+  (setup-contexts tc)
   (let [result (try-test-case tc)]
     (if (:pass? result)
       (print (colorize "." :green))
       (print (colorize "F" :red)))
     (flush)
-    (do-after tc)
+    (setup-contexts tc)
     result))
 
 (defn run-suite [ste]
   (let [ste-seq (expand-suite ste)]
-    (do-before ste-seq)
+    (setup-contexts ste-seq)
     (let [results (doall (map (fn [x]
 				(cond (suite? x) (run-suite x)
 				      (test-case? x) (run-test-case x)
 				      :else (throw (IllegalArgumentException.
 						    "Non-test given to run-suite."))))
 			      ste-seq))]
-      (do-after ste-seq)
+      (setup-contexts ste-seq)
       (suite-result ste-seq results))))
 
 (defn run-tests

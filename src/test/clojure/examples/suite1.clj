@@ -2,7 +2,7 @@
   (:use lazytest.suite
 	lazytest.test-case
 	lazytest.expect
-	lazytest.wrap))
+	lazytest.context))
 
 (defn common-test-cases [x]
   (list
@@ -23,20 +23,18 @@
 (def s2
      (suite
       (fn []
-	(after
-	 (before
-	  (vary-meta
-	    (test-seq (common-test-cases 2))
-	    assoc :doc "Two")
-	  #(prn "Before Two"))
-	 #(prn "After Two")))))
+	(add-context
+	 (vary-meta
+	  (test-seq (common-test-cases 2))
+	  assoc :doc "Two")
+	 (fn-context #(prn "Before Two") #(prn "After Two"))))))
 
 (def s3
      (suite
       (fn []
 	(vary-meta
 	  (test-seq (map (fn [tc]
-			   (after (before tc #(prn "Before test case"))
-				  #(prn "After test case")))
+			   (add-context tc (fn-context #(prn "Before test case")
+						       #(prn "After test case"))))
 			 (common-test-cases 3)))
 	  assoc :doc "Three"))))
