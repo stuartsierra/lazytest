@@ -22,9 +22,13 @@
 	total (count children)
 	passed (count (filter :pass? children))
 	failed (count (remove :pass? children))]
-    (if (zero? failed)
-      (println (colorize (str (identifier result) " (" passed " cases passed)") :green))
-      (println (colorize (str (identifier result) " (" failed " out of " total " cases failed)") :red)))))
+    (cond
+     (zero? total)
+       (println (colorize (str (identifier result) " (no cases run)") :yellow))
+     (zero? failed)
+       (println (colorize (str (identifier result) " (" passed " cases passed)") :green))
+     :else
+       (println (colorize (str (identifier result) " (" failed " out of " total " cases failed)") :red)))))
 
 (defn- report-normal-suite-result [result depth]
   (indent depth)
