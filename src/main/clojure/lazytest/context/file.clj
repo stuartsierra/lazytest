@@ -4,6 +4,7 @@
 	[clojure.java.io :only (file)])
   (:import (java.io File)))
 
+;; You don't create instances of this; use the temp-file function.
 (deftype TempFileContext [name suffix dir ^{:tag File :unsynchronized-mutable true} f]
   Context
   (setup [this] (set! f (File/createTempFile name suffix dir)))
@@ -18,7 +19,7 @@
   If suffix is a file extension, it should include the leading period,
   e.g., \".txt\"
 
-  If dir is specified (string or File), the temporary file will be
+  If dir is specified (String or File), the temporary file will be
   created in that directory; otherwise it will be in the
   system-default temporary directory."
   ([]
@@ -33,6 +34,7 @@
      (let [dir (if (nil? dir) dir (file dir))]
        (stateful (TempFileContext. prefix suffix dir nil)))))
 
+;; You don't create instances of this; use the temp-dir function.
 (deftype TempDirContext [name dir ^{:tag File :unsynchronized-mutable true} f]
   Context
   (setup [this]
@@ -44,14 +46,14 @@
 	    (doseq [x (reverse (file-seq f))]
 	      (.delete x))))
 
-
 (defn temp-dir
   "Returns a stateful context that creates a temporary directory.
-  After setup, an empty directory named with the given prefix and will
-  exist.  The state of the context is the java.io.File.  The directory
-  and all its contents will be recursively deleted during teardown.
+  After setup, an empty directory named with the given
+  prefix (optional) will exist.  The state of the context is the
+  java.io.File.  The directory and all its contents will be
+  recursively deleted during teardown.
 
-  If dir is specified (string or File), the temporary directory will
+  If dir is specified (String or File), the temporary directory will
   be created in that directory; otherwise it will be in the
   system-default temporary directory."
   ([]
