@@ -1,6 +1,7 @@
 (ns lazytest.report.nested
   (:use lazytest.color
 	lazytest.suite
+	lazytest.test-case
 	clojure.pprint
 	[clojure.stacktrace :only (print-cause-trace)]))
 
@@ -15,11 +16,30 @@
 (defn- indent [n]
   (dotimes [i n] (print "    ")))
 
-(defn- report-suite-result [result depth]
+(defn- report-counted-suite-result [result depth]
+  (indent depth)
+  (let [children (:children result)
+	total (count children)
+	passed (count (filter :pass? children))
+	failed (count (remove :pass? children))]
+    (if (zero? failed)
+      (println (colorize (str (identifier result) " (" passed " cases passed)") :green))
+      (println (colorize (str (identifier result) " (" failed " out of " total " cases failed)") :red)))))
+
+(defn- report-normal-suite-result [result depth]
   (indent depth)
   (println (identifier result))
   (doseq [child (:children result)]
     (report-result child (inc depth))))
+
+(defn- unnamed-test-case-result? [x]
+  (and (test-case-result? x)
+       (nil? (identifier x))))
+
+(defn- report-suite-result [result depth]
+  (if (every? unnamed-test-case-result? (:children result))
+    (report-counted-suite-result result depth)
+    (report-normal-suite-result result depth)))
 
 (defn- report-test-case-result [result depth]
   (indent depth)
@@ -73,12 +93,13 @@
     {:total total, :pass passed, :fail failed}))
 
 (defn- print-summary [summary]
-  (let [count-msg (str "Ran " (:total summary) " tests.")]
-    (println (if (zero? (:total summary))
-	       (colorize count-msg :yellow)
-	       count-msg)))
-  (println (colorize (str (:fail summary) " failures.")
-		     (if (zero? (:fail summary)) :green :red))))
+  (let [{:keys [total fail]} summary]
+    (let [count-msg (str "Ran " total " test cases.")]
+      (println (if (zero? total)
+		 (colorize count-msg :yellow)
+		 count-msg)))
+    (println (colorize (str fail " failures.")
+		       (if (zero? fail) :green :red)))))
 
 ;;; Entry point
 
