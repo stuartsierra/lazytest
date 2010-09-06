@@ -12,7 +12,7 @@
   Sodomka, Robert Lachlan, and Stuart Halloway."
   (:use lazytest.describe
 	lazytest.expect.thrown
-	[lazytest.context.stub :only (stub)])
+	[lazytest.context.stub :only (global-stub)])
   (:require [clojure.set :as set]))
 
 (defn hierarchy-tags
@@ -119,24 +119,22 @@
     (it "...but not its superclasses!"
       (not (isa? h java.util.Collection ::map)))))
 
-;; Not yet adequate support for this:
-#_(describe "The global hierarchy"
-  (using-once [_ (stub #'clojure.core/global-hierarchy (make-hierarchy))]
+(describe "The global hierarchy"
+  (using-once [_ (global-stub #'clojure.core/global-hierarchy (make-hierarchy))]
     (is-valid-hierarchy @#'clojure.core/global-hierarchy)
-    (testing "when you add some derivations..."
-      (derive ::lion ::cat)
-      (derive ::manx ::cat)
-      (is-valid-hierarchy @#'clojure.core/global-hierarchy))
-    (testing "...isa? sees the derivations"
-      (it (isa? ::lion ::cat))
-      (it (not (isa? ::cat ::lion))))
-    (testing "... you can traverse the derivations"
-      (it (= #{::manx ::lion} (descendants ::cat)))
-      (it (= #{::cat} (parents ::manx)))
-      (it (= #{::cat} (ancestors ::manx))))
-    (testing "then, remove a derivation..."
-      (underive ::manx ::cat))
-    (testing "... traversals update accordingly"
-      (it (= #{::lion} (descendants ::cat)))
-      (it (nil? (parents ::manx)))
-      (it (nil? (ancestors ::manx))))))
+    (using-once "when you add some derivations..."
+		[_ (before (derive ::lion ::cat)
+			   (derive ::manx ::cat))]
+		(testing "...isa? sees the derivations"
+		  (it (isa? ::lion ::cat))
+		  (it (not (isa? ::cat ::lion))))
+		(testing "... you can traverse the derivations"
+		  (it (= #{::manx ::lion} (descendants ::cat)))
+		  (it (= #{::cat} (parents ::manx)))
+		  (it (= #{::cat} (ancestors ::manx))))
+		(using-once "then, remove a derivation..."
+			    [_ (before (underive ::manx ::cat))]
+			    (testing "... traversals update accordingly"
+			      (it (= #{::lion} (descendants ::cat)))
+			      (it (nil? (parents ::manx)))
+			      (it (nil? (ancestors ::manx))))))))
