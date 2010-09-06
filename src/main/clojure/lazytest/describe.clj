@@ -2,7 +2,8 @@
   (:use	lazytest.expect
 	lazytest.suite
 	lazytest.find
-	lazytest.test-case))
+	lazytest.test-case
+	lazytest.context))
 
 ;;; Utilities
 
