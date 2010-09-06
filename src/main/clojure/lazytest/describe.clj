@@ -107,10 +107,12 @@
 		  ~@binding-symbols)))))))
 
 (defmacro before
+  "Returns a context whose teardown function evaluates body."
   [& body]
   `(fn-context (fn [] ~@body) (constantly nil)))
 
 (defmacro after
+  "Returns a context whose teardown method evaluates body."
   [& body]
   `(fn-context (constantly nil) (fn [] ~@body)))
 
