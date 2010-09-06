@@ -119,6 +119,7 @@
     (it "...but not its superclasses!"
       (not (isa? h java.util.Collection ::map)))))
 
+;; This syntax still needs some work.
 (describe "The global hierarchy"
   (using-once [_ (global-stub #'clojure.core/global-hierarchy (make-hierarchy))]
     (is-valid-hierarchy @#'clojure.core/global-hierarchy)
