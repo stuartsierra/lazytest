@@ -10,7 +10,8 @@
 (println "All assertions passed.")
 
 (doseq [sym '[examples.suite1
-	      examples.describe1]]
+	      examples.describe1
+	      examples.multimethods]]
   (println "Loading" sym)
   (require sym)
   (println "Running tests in" sym)
