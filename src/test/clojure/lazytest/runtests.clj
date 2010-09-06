@@ -3,7 +3,8 @@
 	    lazytest.report.nested))
 
 (doseq [sym '[lazytest.expect-asserts
-	      lazytest.context.stub-asserts]]
+	      lazytest.context.stub-asserts
+	      lazytest.context.file-asserts]]
   (println "Running assertions in" sym)
   (require sym))
 
