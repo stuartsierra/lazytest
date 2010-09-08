@@ -28,7 +28,7 @@
      {:pre [(context? c)]}
      (vary-meta iobj update-in [::contexts] conj c))
   ([iobj c & more]
-     (reduce add-context (add-context iobj c) more)))
+     (add-context (apply add-context iobj more) c)))
 
 (defn setup-contexts
   "Run setup functions of all contexts in iobj's metadata."
