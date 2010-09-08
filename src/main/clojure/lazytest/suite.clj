@@ -52,8 +52,9 @@
   (isa? (type x) ::suite-result))
 
 (defn expand-suite
-  "Expands a test suite, returning a test sequence."
+  "Expands a test suite, returning a test sequence. Copies metadata
+  from the suite function to the resulting test sequence."
   [ste]
   {:pre [(suite? ste)]
    :post [(test-seq? %)]}
-  (ste))
+  (vary-meta (ste) merge (dissoc (meta ste) ::suite)))

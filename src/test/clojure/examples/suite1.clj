@@ -38,3 +38,10 @@
 						       #(prn "After test case"))))
 			 (common-test-cases 3)))
 	  assoc :doc "Three"))))
+
+(def s4
+     (vary-meta
+      (suite
+       (fn []
+	 (test-seq (common-test-cases 4))))
+      assoc :doc "Four"))
