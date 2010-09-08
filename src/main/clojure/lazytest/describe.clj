@@ -61,6 +61,19 @@
   [& decl]
   `(def ~(gensym) (testing ~@decl)))
 
+(defmacro for-any
+  "Bindings is a vector of name-value pairs, where the values are
+  generator functions such as those in lazytest.random."
+  [bindings & body]
+  {:pre [(vector? bindings)
+	 (even? (count bindings))]}
+  (let [generated-bindings
+	(vec (mapcat (fn [[name generator]]
+		       [name `((lazytest.random/sequence-of ~generator))])
+		     (partition 2 bindings)))]
+    `(for ~generated-bindings
+       (list ~@body))))
+
 (defmacro with
   "Adds a collection of contexts to each of the body expressions."
   [contexts & body]
