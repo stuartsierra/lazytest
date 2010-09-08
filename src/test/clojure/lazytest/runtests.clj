@@ -12,6 +12,7 @@
 
 (doseq [sym '[examples.suite1
 	      examples.describe1
+	      examples.random-test
 	      examples.multimethods]]
   (println "Loading" sym)
   (require sym)
