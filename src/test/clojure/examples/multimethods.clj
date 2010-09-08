@@ -119,23 +119,22 @@
     (it "...but not its superclasses!"
       (not (isa? h java.util.Collection ::map)))))
 
-;; This syntax still needs some work.
 (describe "The global hierarchy"
-  (using-once [_ (global-stub #'clojure.core/global-hierarchy (make-hierarchy))]
-    (is-valid-hierarchy @#'clojure.core/global-hierarchy)
-    (using-once "when you add some derivations..."
-		[_ (before (derive ::lion ::cat)
-			   (derive ::manx ::cat))]
-		(testing "...isa? sees the derivations"
-		  (it (isa? ::lion ::cat))
-		  (it (not (isa? ::cat ::lion))))
-		(testing "... you can traverse the derivations"
-		  (it (= #{::manx ::lion} (descendants ::cat)))
-		  (it (= #{::cat} (parents ::manx)))
-		  (it (= #{::cat} (ancestors ::manx))))
-		(using-once "then, remove a derivation..."
-			    [_ (before (underive ::manx ::cat))]
-			    (testing "... traversals update accordingly"
-			      (it (= #{::lion} (descendants ::cat)))
-			      (it (nil? (parents ::manx)))
-			      (it (nil? (ancestors ::manx))))))))
+  (with [(global-stub #'clojure.core/global-hierarchy (make-hierarchy))]
+	(testing "(stubbed)"
+	  (is-valid-hierarchy @#'clojure.core/global-hierarchy)
+	  (with [(before (derive ::lion ::cat)
+			 (derive ::manx ::cat))]
+		(testing "when you add some derivations..."
+		  (testing "...isa? sees the derivations"
+		    (it (isa? ::lion ::cat))
+		    (it (not (isa? ::cat ::lion))))
+		  (testing "... you can traverse the derivations"
+		    (it (= #{::manx ::lion} (descendants ::cat)))
+		    (it (= #{::cat} (parents ::manx)))
+		    (it (= #{::cat} (ancestors ::manx))))
+		  (with [(before (underive ::manx ::cat))]
+			(testing "then, remove a derivation, traversals update accordingly"
+			  (it (= #{::lion} (descendants ::cat)))
+			  (it (nil? (parents ::manx)))
+			  (it (nil? (ancestors ::manx))))))))))

@@ -61,50 +61,23 @@
   [& decl]
   `(def ~(gensym) (testing ~@decl)))
 
-(defmacro using
-  "Like 'testing' but takes a vector of context bindings before
-  children.  The contexts will be added to each child test; stateful
-  contexts may be dereferenced within test case bodies by the symbols
-  they are bound to here."
-  [& decl]
-  (let [[sym decl] (get-arg symbol? decl)
-	[doc decl] (get-arg string? decl)
-	[attr-map decl] (get-arg map? decl)
-	[bindings children] (get-arg vector? decl)
-	docstring (strcat (when sym (resolve sym)) doc)
-	metadata (merged-metadata children &form docstring attr-map)
-	binding-symbols (take-nth 2 (drop 1 bindings))]
-    (assert (vector? bindings))
-    (assert (even? (count bindings)))
-    `(let ~bindings
-       (suite (fn []
-		(test-seq
-		 (with-meta
-		   (map (fn [tc#] (add-context tc# ~@binding-symbols))
-			(flatten (list ~@children)))
-		   ~metadata)))))))
+(defmacro with
+  "Adds a collection of contexts to each of the body expressions."
+  [contexts & body]
+  {:pre [(coll? contexts)]}
+  `(let [contexts# ~contexts]   ;; avoid duplicate evaluation
+     (map (fn [x#] (apply add-context x# contexts#)) (flatten (list ~@body)))))
 
-(defmacro using-once
-  "Like 'using' but adds contexts to the test sequence, so they are
-  only executed once for all child tests."
-  [& decl]
-  (let [[sym decl] (get-arg symbol? decl)
-	[doc decl] (get-arg string? decl)
-	[attr-map decl] (get-arg map? decl)
-	[bindings children] (get-arg vector? decl)
-	docstring (strcat (when sym (resolve sym)) doc)
-	metadata (merged-metadata children &form docstring attr-map)
-	binding-symbols (take-nth 2 (drop 1 bindings))]
-    (assert (vector? bindings))
-    (assert (even? (count bindings)))
-    `(let ~bindings
-       (suite (fn []
-		(test-seq
-		 (add-context
-		  (with-meta
-		    (flatten (list ~@children))
-		    ~metadata)
-		  ~@binding-symbols)))))))
+(defmacro using
+  "bindings is a vector of name-value pairs, like 'given', but each
+  value is a context. Adds contexts to each of the body expressions,
+  where they may be dereferenced by the given names."
+  [bindings & body]
+  {:pre [(vector? bindings)
+	 (even? (count bindings))]}
+  `(given ~bindings
+     (with ~(vec (take-nth 2 (drop 1 bindings)))
+	   (list ~@body))))
 
 (defmacro before
   "Returns a context whose teardown function evaluates body."
