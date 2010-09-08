@@ -1,5 +1,6 @@
 (ns lazytest.random
-  "Composable generators for random data.")
+  "Composable generators for random data."
+  (:refer-clojure :exclude (double vector-of)))
 
 (defn rand-int-in-range
   "Returns a random integer between min (inclusive) and max (exclusive)."
@@ -53,23 +54,21 @@
   "Returns a function whicn returns a sequence populated with the
   results of calling f a random number of times. options
   are :min (inclusive) and :max (exclusive) for the length of the
-  list, default to min-random-length and max-random-length. The
-  returned sequence will be passed through the 'constructor' function
-  before being returned."  
-  [constructor f & options]
+  list, default to min-random-length and max-random-length."  
+  [f & options]
   (let [{:keys [min max]
 	 :or {min min-random-length, max max-random-length}} options]
-    (fn [] (constructor (repeatedly (rand-int-in-range min max) f)))))
+    (fn [] (repeatedly (rand-int-in-range min max) f))))
 
 (defn list-of
   "Like sequence-of; returns a list."
   [f & options]
-  (apply sequence-of list* f options))
+  (comp list* (apply sequence-of f options)))
 
 (defn vector-of
   "Like sequence-of; returns a vector."
   [f & options]
-  (apply sequence-of vec f options))
+  (comp vec (apply sequence-of f options)))
 
 (defn pair
   "Returns a function which returns a pair of random values selected
@@ -80,31 +79,34 @@
 (defn map-of
   "Like sequence-of; returns a map. f must return a key-value pair."
   [f & options]
-  (apply sequence-of #(into {} %) f options))
+  (comp #(into {} %) (apply sequence-of options)))
 
 (defn string-of
   "Like sequence-of; returns a string."
   [f & options]
-  (apply sequence-of #(apply str %) f options))
+  (comp #(apply str %) (apply sequence-of f options)))
 
 (def ^{:doc "Collection of whitespace characters: space, tab, and newline"}
      whitespace [\space \tab \newline])
 
 (def ^{:doc "Collection of characters for digits 0 through 9"}
-     digit (vec (map char (range 48 58))))
+     digit "0123456789")
 
 (def ^{:doc "Collection of upper-case English letters"}
-     upper-case (vec (map char (range 65 91))))
+     upper-case "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 (def ^{:doc "Collection of lower-case English letters"}
-     lower-case (vec (map char (range 97 123))))
+     lower-case "abcdefghijklmnopqrstuvwxyz")
 
 (def ^{:doc "Collection of upper- and lower-case English letters"}
-     letter (vec (concat upper-case lower-case)))
+     letter (str upper-case lower-case))
+
+(def ^{:doc "Collection of digits and letters"}
+     alphanumeric (str digit letter))
 
 (def ^{:doc "Collection of printable ASCII characters, including
      spaces but not tabs or line breaks."}
-     printable (vec (map char (range 32 127))))
+     printable (apply str (map char (range 32 127))))
 
 (defn pick
   "Returns a function which returns a random element from any of the
