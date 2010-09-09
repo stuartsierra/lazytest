@@ -25,8 +25,9 @@
     (deref [this]
       (let [[value counter] @state-atom]
 	(if (zero? counter)
-	  (throw (IllegalStateException.
-		  "Tried to deref stateful context before setup."))
+	  ;; Can't throw here because print-method tries to deref
+	  (IllegalStateException.
+	   "Tried to deref stateful context before setup or after teardown.")
 	  value))))
 
 (defn stateful
