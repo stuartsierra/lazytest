@@ -89,7 +89,7 @@
   {:pre [(vector? bindings)
 	 (even? (count bindings))]}
   `(given ~bindings
-     (with ~(vec (take-nth 2 (drop 1 bindings)))
+     (with ~(vec (take-nth 2 bindings))
 	   (list ~@body))))
 
 (defmacro before
