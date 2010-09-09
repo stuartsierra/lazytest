@@ -21,7 +21,7 @@ Test Examples and Groups
 Use the `describe` macro to create a group of tests.  Start the group
 with a documentation string.
 
-    (use '[lazytest.describe :only (describe testing given it do-it)])
+    (use '[lazytest.describe :only (describe it)])
 
     (describe "This application" ...)
 
@@ -56,17 +56,19 @@ Test groups may be nested inside other groups with the `testing`
 macro, which has the same syntax as `describe` but does not define a
 top-level Var:
 
-   (describe "Addition"
-     (testing "of integers"
-       (it "computes small sums"
-         (= 3 (+ 1 2)))
-       (it "computes large sums"
-         (= 7000 (+ 3000 4000))))
-     (testing "of floats"
-       (it "computes small sums"
-         (= 0.3 (+ 0.1 0.2)))
-       (it "computes large sums"
-         (= 3000.0 (+ 1000.0 2000.0)))))
+    (use '[lazytest.describe :only (describe it testing)])
+
+    (describe "Addition"
+      (testing "of integers"
+        (it "computes small sums"
+          (= 3 (+ 1 2)))
+        (it "computes large sums"
+          (= 7000 (+ 3000 4000))))
+      (testing "of floats"
+        (it "computes small sums"
+          (= 0.3 (+ 0.1 0.2)))
+        (it "computes large sums"
+          (= 3000.0 (+ 1000.0 2000.0)))))
 
 
 
@@ -75,6 +77,8 @@ Constants Shared Among Tests
 
 Inside a `describe` or `testing` group, use the `given` macro to
 define constants shared among several tests:
+
+    (use '[lazytest.describe :only (describe it given)])
 
     (describe "The square root of two"
       (given [root (Math/sqrt 2)]
@@ -93,7 +97,7 @@ Arbitrary Code in an Example
 You can create an example that executes arbitrary code with the
 `do-it` macro.  Wrap each assertion expression in the `expect` macro.
 
-    (use '[lazytest.describe :only (describe it do-it)]
+    (use '[lazytest.describe :only (describe do-it)]
          '[lazytest.expect :only (expect)])
 
     (describe "Arithmetic"
@@ -108,6 +112,83 @@ evaluate to logical true.
 
 If the code inside the `do-it` macro runs to completion without
 throwing an exception, the test example is considered to have passed.
+
+
+
+Contexts
+========
+
+Contexts provide support for executing arbitrary code before, after,
+or around test cases and test suites.
+
+To attach contexts to tests, use the `with` macro, which takes a
+vector of contexts as its first argument.  Those contexts will be
+attached to each test case or test suite in the body of `with`.
+
+You can create simple contexts with the `before` and `after` macros.
+Each macro takes a body of expressions that will be executed before or
+after, respectively, the test cases or test suites they are attached
+to.
+
+    (use '[lazytest.describe :only (describe it with before after)])
+
+    (describe "Addition with a context"
+      (with [(before (println "This happens before each test example"))
+             (after (println "This happens after each test example"))]
+        (it "adds small numbers"
+          (= 7 (+ 3 4)))
+        (it "adds large numbers"
+          (= 7000 (+ 3000 4000)))))
+
+If you want the contexts to be executed only once for a group of
+tests, simply wrap the body of the `with` macro in a single `testing`
+group:
+
+    (use '[lazytest.describe :only (describe testing it with
+                                    before after)])
+
+    (describe "Addition with a context"
+      (with [(before (println "This happens before all tests"))
+             (after (println "This happens after all tests"))]
+        (testing "with a nested group"
+          (it "adds small numbers"
+            (= 7 (+ 3 4)))
+          (it "adds large numbers"
+            (= 7000 (+ 3000 4000))))))
+
+The `lazytest.context.stub` namespace provides contexts for stubbing
+out Vars with alternate definitions.
+
+
+
+Stateful Contexts
+=================
+
+Contexts which need to provide state information (for example, a
+database connection or an open file) to their tests are called
+*stateful* contexts.  They are wrapped in
+`lazytest.context.stateful/stateful` and attached to tests with the
+`using` macro instead of `with`.
+
+`using` takes a vector of name-context pairs.  The contexts will be
+attached to all the test cases or suites in the body of `using`, where
+they are also bound to the given names.
+
+To get the state out of a context, dereference it with Clojure's
+`deref` function, which can be abbreviated to `@`.
+
+    (use '[lazytest.describe :only (describe using before it)]
+         '[lazytest.context.stateful :only (stateful)])
+
+    (describe "Square root of two with state"
+      (using [root (stateful (before (Math/sqrt 2)))]
+        (it "is less than 2"
+          (> 2 @root))
+        (it "is more than 1"
+          (< 1 @root))))
+
+The `lazytest.context.file` namespace defines stateful contexts for
+creating temporary files and directories.
 
 
 
