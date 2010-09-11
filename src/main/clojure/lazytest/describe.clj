@@ -61,6 +61,14 @@
   [& decl]
   `(def ~(gensym) (testing ~@decl)))
 
+(defmacro given
+  "Like 'let' but returns the expressions of body in a list.
+  Suitable for nesting inside 'describe' or 'testing'."
+  [bindings & body]
+  {:pre [(vector? bindings)
+	 (even? (count bindings))]}
+  `(let ~bindings (list ~@body)))
+
 (defmacro for-any
   "Bindings is a vector of name-value pairs, where the values are
   generator functions such as those in lazytest.random."
@@ -141,11 +149,3 @@
     `(test-case (with-meta
 		  (fn [] ~@body)
 		  ~metadata))))
-
-(defmacro given
-  "Like 'let' but returns the expressions of body in a list.
-  Suitable for nesting inside 'describe' or 'testing'."
-  [bindings & body]
-  {:pre [(vector? bindings)
-	 (even? (count bindings))]}
-  `(let ~bindings (list ~@body)))
