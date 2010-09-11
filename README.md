@@ -320,5 +320,3 @@ Known Defects
 * Changing an applicaton source file does not automatically reload
   the associated test source file.
 
-* before/after functions and contexts are not yet supported in the
-  `describe` syntax.
