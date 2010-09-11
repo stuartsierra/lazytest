@@ -1,14 +1,7 @@
 (ns lazytest.context.file
-  (:use [lazytest.context :only (Context setup teardown)]
-	[lazytest.context.stateful :only (stateful)]
+  (:use [lazytest.context.stateful :only (stateful-fn-context)]
 	[clojure.java.io :only (file)])
   (:import (java.io File)))
-
-;; You don't create instances of this; use the temp-file function.
-(deftype TempFileContext [name suffix dir ^{:tag File :unsynchronized-mutable true} f]
-  Context
-  (setup [this] (set! f (File/createTempFile name suffix dir)))
-  (teardown [this] (.delete f)))
 
 (defn temp-file
   "Returns a stateful context that creates a temporary file.  After
@@ -32,19 +25,24 @@
      {:pre [(string? prefix)
 	    (or (nil? suffix) (string? suffix))]}
      (let [dir (if (nil? dir) dir (file dir))]
-       (stateful (TempFileContext. prefix suffix dir nil)))))
+       (stateful-fn-context
+	(fn [] (File/createTempFile prefix suffix dir))
+	(fn [f] (.delete f))))))
 
-;; You don't create instances of this; use the temp-dir function.
-(deftype TempDirContext [name dir ^{:tag File :unsynchronized-mutable true} f]
-  Context
-  (setup [this]
-	 (set! f (File/createTempFile name "" dir))
-	 (assert (.delete f))
-	 (assert (.mkdirs f))
-	 f)
-  (teardown [this]
-	    (doseq [x (reverse (file-seq f))]
-	      (.delete x))))
+(defn create-temp-dir
+  "Creates a directory with given name prefix, inside directory dir (a
+  java.io.File, may be nil for default temporary directory)."
+  [prefix dir]
+  (let [f (File/createTempFile prefix "" dir)]
+    (assert (.delete f))
+    (assert (.mkdirs f))
+    f))
+
+(defn delete-dir
+  "Recursively deletes directory f (java.io.File)"
+  [f]
+  (doseq [x (reverse (file-seq f))]
+    (.delete x)))
 
 (defn temp-dir
   "Returns a stateful context that creates a temporary directory.
@@ -63,4 +61,6 @@
   ([prefix dir]
      {:pre [(string? prefix)]}
      (let [dir (if (nil? dir) dir (file dir))]
-       (stateful (TempDirContext. prefix dir nil)))))
+       (stateful-fn-context
+	(fn [] (create-temp-dir prefix dir))
+	delete-dir))))

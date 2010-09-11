@@ -1,14 +1,15 @@
 (ns lazytest.context.stateful
   (:use [lazytest.context :only (Context context? setup teardown)]))
 
-;; You don't create instances of this; use the stateful function.
-(deftype StatefulContext [c state-atom]
+;; You don't create instances of this; use the stateful or
+;; stateful-fn-context functions.
+(deftype StatefulFunctionContext [setup-fn teardown-fn state-atom]
   Context
     (setup [this]
-      (first
+     (first  ; setup always returns the state
        (swap! state-atom
 	      (fn [[value counter]]
-		[(if (zero? counter) (setup c) value)
+		[(if (zero? counter) (setup-fn) value)
 		 (inc counter)]))))
     (teardown [this]
       (swap! state-atom
@@ -17,9 +18,9 @@
 		 (when (neg? newcount)
 		   (throw (IllegalStateException.
 			   "teardown called too many times on stateful context")))
-		 [(if (zero? newcount) (teardown c) value)
+		 [(if (zero? newcount) (teardown-fn value) value)
 		  newcount])))
-      nil)
+      nil)  ; teardown always returns nil
 
   clojure.lang.IDeref
     (deref [this]
@@ -41,4 +42,22 @@
   the wrapped context."
   [c]
   {:pre [(context? c)]}
-  (StatefulContext. c (atom [nil 0])))
+  (StatefulFunctionContext. (fn [] (setup c))
+			    (fn [_] (teardown c))
+			    (atom [nil 0])))
+
+(defn stateful-fn-context
+  "Creates a stateful context using the given functions.
+
+  setup-fn is a function of no arguments that returns some state.
+  That state may be retrieved by deref'ing this context.
+
+  teardown-fn is a function of *one* argument.  It will be called with
+  the dereferenced state.
+
+  Nested calls to setup/teardown are counted and handled
+  appropriately; only the outermost setup/teardown calls will invoke
+  the given functions."
+  [setup-fn teardown-fn]
+  {:pre [(fn? setup-fn) (fn? teardown-fn)]}
+  (StatefulFunctionContext. setup-fn teardown-fn (atom [nil 0])))
