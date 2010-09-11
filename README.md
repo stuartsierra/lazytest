@@ -172,13 +172,14 @@ Simple Before / After Contexts
 ==============================
 
 You can create simple contexts that just run some code before or after
-tests with the `before` and `after` macros:
+tests with the `before` and `after` macros.  Each takes a body of
+expressions to be run during setup or teardown, respectively.
 
     (use '[lazytest.describe :only (describe it with)])
 
     (describe "Addition with a context"
-      (with [(before "This happens before each test")
-             (after "This happens after each test")]
+      (with [(before (println "This happens before each test"))
+             (after (println "This happens after each test"))]
         (it "adds small numbers"
           (= 7 (+ 3 4)))
         (it "adds large numbers"
