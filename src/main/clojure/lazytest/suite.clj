@@ -58,3 +58,14 @@
   {:pre [(suite? ste)]
    :post [(test-seq? %)]}
   (vary-meta (ste) merge (dissoc (meta ste) ::suite)))
+
+(defn expand-tree
+  "Recursively expands a tree of nested test suites preserving
+  metadata."
+  [ste]
+  (if (suite? ste)
+    (let [test-seq (expand-suite ste)]
+      (with-meta
+	(map expand-tree test-seq)
+	(meta test-seq)))
+    ste))

@@ -14,19 +14,10 @@
     (when (seq s)
       (vary-meta s assoc :name (ns-name this-ns)))))
 
-(defn- find-suite-for-namespace [this-ns]
-  {:pre [(instance? clojure.lang.Namespace this-ns)]
-   :post [(or (nil? %) (suite? %))]}
-  (when-not (= (the-ns 'clojure.core) this-ns)
-    (or (:test-suite (meta this-ns))
-	(when-let [s (test-seq-for-ns this-ns)]
-	  (suite (fn [] (test-seq s)))))))
+(defn find-ns-suite
+  "Returns a test suite for the namespace.
 
-(defn find-suite
-  "Returns a test suite for x, which may be a Var, a namespace, or a
-  symbol naming a loaded namespace.
-
-  Returns nil if x has no test suites.
+  Returns nil if the namespace has no test suites.
 
   By default, recurses on all Vars in a namespace looking for values
   for which lazytest.suite/suite? is true.  If a namesapce
@@ -34,17 +25,27 @@
 
   Always returns nil for the clojure.core namespace, to avoid special
   Vars such as *1, *2, *3"
-  [x]
-  (cond (symbol? x)
-	  (find-suite-for-namespace (the-ns x))
-	(instance? clojure.lang.Namespace x)
-	  (find-suite-for-namespace x)
-	(var? x)
-	  (find-suite-for-var x)
-        :else nil))
+  [n]
+  {:post [(or (nil? %) (suite? %))]}
+  (let [n (the-ns n)]
+    (when-not (= (the-ns 'clojure.core) n)
+      (or (:test-suite (meta n))
+	  (when-let [s (test-seq-for-ns n)]
+	    (suite (fn [] (test-seq s))))))))
 
-(defn find-suites
-  "Returns a sequence of test suites found in the named namespaces.
+(defn- suite-for-namespaces [names]
+  (suite (fn [] (test-seq (remove nil? (map find-ns-suite names))))))
+
+(def ^{:private true} all-ns-suite
+     (suite
+      (with-meta
+	(fn [] (test-seq (remove nil? (map find-ns-suite (all-ns)))))
+	{:doc "All Namespaces"})))
+
+(defn find-suite
+  "Returns test suite containing suites for the given namespaces.
   If no names given, searches all namespaces."
   [& names]
-  (seq (remove nil? (map find-suite (or (seq names) (all-ns))))))
+  (if (seq names)
+    (suite-for-namespaces names)
+    all-ns-suite))

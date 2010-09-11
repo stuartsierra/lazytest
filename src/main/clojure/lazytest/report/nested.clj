@@ -107,7 +107,7 @@
 
 ;;; Entry point
 
-(defn report [results]
+(defn report [& results]
   (doseq [r results] (report-result r 0))
   (newline)
   (doseq [r results] (report-failures r []))

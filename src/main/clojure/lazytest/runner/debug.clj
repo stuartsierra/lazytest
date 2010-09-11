@@ -45,5 +45,4 @@
 (defn run-tests
   "Runs tests defined in the given namespaces, with verbose output."
   [& namespaces]
-  (let [stes (apply find-suites namespaces)]
-    (doall (map run-suite stes))))
+  (run-suite (apply find-suite namespaces)))
