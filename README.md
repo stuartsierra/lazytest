@@ -121,20 +121,26 @@ Contexts
 Contexts provide support for executing arbitrary code before, after,
 or around test cases and test suites.
 
-To attach contexts to tests, use the `with` macro, which takes a
-vector of contexts as its first argument.  Those contexts will be
-attached to each test case or test suite in the body of `with`.
+Fundamentally, a context is a pair of no-argument functions, called
+*setup* and *teardown*.  You can create a context out of two functions
+with the `fn-context` function:
 
-You can create simple contexts with the `before` and `after` macros.
-Each macro takes a body of expressions that will be executed before or
-after, respectively, the test cases or test suites they are attached
-to.
+    (use '[lazytest.context :only (fn-context)])
 
-    (use '[lazytest.describe :only (describe it with before after)])
+    (def my-context
+      (fn-context (fn [] (println "This happens during setup"))
+                  (fn [] (println "This happens during teardown"))))
+
+A context may be attached (via metadata) to any test case or suite.
+To attach contexts to test cases or suites, use the `with` macro,
+which takes a vector of contexts as its first argument.  Those
+contexts will be attached to each test case or test suite in the body
+of `with`.
+
+    (use '[lazytest.describe :only (describe it with)])
 
     (describe "Addition with a context"
-      (with [(before (println "This happens before each test example"))
-             (after (println "This happens after each test example"))]
+      (with [my-context]
         (it "adds small numbers"
           (= 7 (+ 3 4)))
         (it "adds large numbers"
@@ -144,12 +150,10 @@ If you want the contexts to be executed only once for a group of
 tests, simply wrap the body of the `with` macro in a single `testing`
 group:
 
-    (use '[lazytest.describe :only (describe testing it with
-                                    before after)])
+    (use '[lazytest.describe :only (describe testing it with)])
 
     (describe "Addition with a context"
-      (with [(before (println "This happens before all tests"))
-             (after (println "This happens after all tests"))]
+      (with [my-context]
         (testing "with a nested group"
           (it "adds small numbers"
             (= 7 (+ 3 4)))
@@ -159,6 +163,28 @@ group:
 The `lazytest.context.stub` namespace provides contexts for stubbing
 out Vars with alternate definitions.
 
+The `lazytest.context.properties` namespace provides contexts for
+setting Java system properties.
+
+
+
+Simple Before / After Contexts
+==============================
+
+You can create simple contexts that just run some code before or after
+tests with the `before` and `after` macros:
+
+    (use '[lazytest.describe :only (describe it with)])
+
+    (describe "Addition with a context"
+      (with [(before "This happens before each test")
+             (after "This happens after each test")]
+        (it "adds small numbers"
+          (= 7 (+ 3 4)))
+        (it "adds large numbers"
+          (= 7000 (+ 3000 4000)))))
+
+
 
 
 Stateful Contexts
@@ -166,22 +192,45 @@ Stateful Contexts
 
 Contexts which need to provide state information (for example, a
 database connection or an open file) to their tests are called
-*stateful* contexts.  They are wrapped in
-`lazytest.context.stateful/stateful` and attached to tests with the
-`using` macro instead of `with`.
+*stateful* contexts.
 
-`using` takes a vector of name-context pairs.  The contexts will be
-attached to all the test cases or suites in the body of `using`, where
-they are also bound to the given names.
+A stateful context has a setup function which returns a value.  That
+value becomes the "state" of the context and may be retrieved by
+calling `deref` (abbreviated `@`) on the context.
 
-To get the state out of a context, dereference it with Clojure's
-`deref` function, which can be abbreviated to `@`.
+The teardown function of a stateful context will be called with the
+current state of the context as its argument.
 
-    (use '[lazytest.describe :only (describe using before it)]
-         '[lazytest.context.stateful :only (stateful)])
+For example, a stateful context might be used to open and close a
+database connection:
+
+    (use '[lazytest.context.stateful :only (stateful-fn-context)]
+         '[lazytest.describe :only (describe it)])
+
+    (def database-context
+      (stateful-fn-context
+        (fn [] ... open & return database connection ...)
+        (fn [connection] ... close the connection ...)))
+
+    (describe "My tests with a database"
+      (with [database-context]
+        (it "can read from the database"
+          ... database connection is available as @database-context ...)))
+
+It is also possible to bind a stateful context to a local variable
+with the `using` macro.  Like `given`, the `using` macro takes a
+vector of name-value pairs, but each value must be a stateful context.
+Like `with`, the contexts will be attached to all the tests cases and
+or suites within the body of `using`.  The contexts may be
+dereferenced by their local names.
+
+    (use '[lazytest.describe :only (describe using it)]
+         '[lazytest.context.stateful :only (stateful-fn-context)])
 
     (describe "Square root of two with state"
-      (using [root (stateful (before (Math/sqrt 2)))]
+      (using [root (stateful-fn-context
+                     (fn [] (Math/sqrt 2))
+                     (fn [x] (println "All done with" x)))]
         (it "is less than 2"
           (> 2 @root))
         (it "is more than 1"
