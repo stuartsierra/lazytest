@@ -360,7 +360,7 @@ Put the following in `.emacs`
          (testing 'defun)
          (given 'defun)
          (it 'defun)
-         (do-it 'defun))
+         (do-it 'defun)))
 
 
 
