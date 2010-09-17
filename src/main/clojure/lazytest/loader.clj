@@ -1,6 +1,7 @@
 (ns lazytest.loader
   "Loading namespaces and managing dependencies."
   (:use [lazytest.dependency :only (graph depend)]
+	[lazytest.nsdeps :only (deps-from-ns-decl)]
 	[clojure.contrib.find-namespaces :only (find-clojure-sources-in-dir
 						read-file-ns-decl)]
 	[clojure.java.io :only (file)]))
