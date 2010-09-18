@@ -5,5 +5,4 @@
   [& symbols]
   (doseq [sym symbols]
     (remove-ns sym))
-  (doseq [sym symbols]
-    (require sym :reload)))
+  (apply require :reload symbols))
