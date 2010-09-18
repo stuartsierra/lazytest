@@ -1,7 +1,6 @@
 (ns lazytest.dependency
   "Bidirectional graphs of dependencies and dependent objects."
-  (:use [clojure.set :only (union)])
-  (:refer-clojure :exclude (remove)))
+  (:use [clojure.set :only (union)]))
 
 (defn graph "Returns a new, empty, dependency graph." []
   {:dependencies {}
@@ -42,23 +41,39 @@
 (defn depend
   "Adds to the dependency graph that x depends on deps.  Forbids
   circular dependencies."
+  ([graph x] graph)
   ([graph x dep]
      {:pre [(not (depends? graph dep x))]}
      (-> graph
 	 (add-relationship :dependencies x dep)
 	 (add-relationship :dependents dep x)))
   ([graph x dep & more]
-     (apply depend
-	    (depend graph x dep)
-	    x more)))
+     (reduce (fn [g d] (depend g x d))
+	     graph (cons dep more))))
 
-(defn remove
+(defn- remove-from-map [amap x]
+  (reduce (fn [m [k vs]]
+	    (assoc m k (disj vs x)))
+	  {} (dissoc amap x)))
+
+(defn remove-all
   "Removes all references to x in the dependency graph."
-  [graph x]
-  (let [f (fn [amap]
-	    (reduce (fn [m [k vs]]
-		      (assoc m k (disj vs x)))
-		    {} (dissoc amap x)))]
-    (assoc graph
-      :dependencies (f (:dependencies graph))
-      :dependents (f (:dependents graph)))))
+  ([graph] graph)
+  ([graph x]
+     (assoc graph
+       :dependencies (remove-from-map (:dependencies graph) x)
+       :dependents (remove-from-map (:dependents graph) x)))
+  ([graph x & more]
+     (reduce remove-all
+	     graph (cons x more))))
+
+(defn remove-key
+  "Removes the key x from the dependency graph without removing x as a
+  depedency of other keys."
+  ([graph] graph)
+  ([graph x]
+     (assoc graph
+       :dependencies (dissoc (:dependencies graph) x)))
+  ([graph x & more]
+     (reduce remove-key
+	     graph (cons x more))))
