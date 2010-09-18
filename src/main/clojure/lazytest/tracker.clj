@@ -47,9 +47,10 @@
     (fn []
       (let [then @timestamp
 	    now (System/currentTimeMillis)
-	    new-decls (newer-namespace-decls dirs then)
-	    new-names (map second new-decls)
-	    affected-names (affected-namespaces new-names @dependency-graph)]
-	(reset! timestamp now)
-	(swap! dependency-graph update-dependency-graph new-decls)
-	affected-names))))
+	    new-decls (newer-namespace-decls dirs then)]
+	(when (seq new-decls)
+	  (let [new-names (map second new-decls)
+		affected-names (affected-namespaces new-names @dependency-graph)]
+	    (reset! timestamp now)
+	    (swap! dependency-graph update-dependency-graph new-decls)
+	    affected-names))))))

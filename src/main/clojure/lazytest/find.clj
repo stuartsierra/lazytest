@@ -34,7 +34,8 @@
 	    (suite (fn [] (test-seq s))))))))
 
 (defn- suite-for-namespaces [names]
-  (suite (fn [] (test-seq (remove nil? (map find-ns-suite names))))))
+  (suite (with-meta (fn [] (test-seq (remove nil? (map find-ns-suite names))))
+	   {:doc "Namespaces"})))
 
 (def ^{:private true} all-ns-suite
      (suite
