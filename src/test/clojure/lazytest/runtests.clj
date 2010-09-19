@@ -21,3 +21,12 @@
    (lazytest.runner.console/run-tests sym)))
 
 
+(println "Loading examples.readme")
+(require 'examples.readme)
+(println "Running tests in examples.readme")
+(lazytest.report.nested/report
+ (apply
+  lazytest.runner.console/run-tests
+  (filter #(.startsWith (name %) "examples.readme")
+	  (map ns-name (all-ns)))))
+

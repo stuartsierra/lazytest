@@ -21,7 +21,8 @@ Test Examples and Groups
 Use the `describe` macro to create a group of tests.  Start the group
 with a documentation string.
 
-    (use '[lazytest.describe :only (describe it)])
+    (ns examples.readme.groups
+      (:use [lazytest.describe :only (describe it)]))
 
     (describe "This application" ...)
 
@@ -56,7 +57,8 @@ Test groups may be nested inside other groups with the `testing`
 macro, which has the same syntax as `describe` but does not define a
 top-level Var:
 
-    (use '[lazytest.describe :only (describe it testing)])
+    (ns examples.readme.nested
+      (:use [lazytest.describe :only (describe it testing)]))
 
     (describe "Addition"
       (testing "of integers"
@@ -66,9 +68,9 @@ top-level Var:
           (= 7000 (+ 3000 4000))))
       (testing "of floats"
         (it "computes small sums"
-          (= 0.3 (+ 0.1 0.2)))
+          (> 0.00001 (Math/abs (- 0.3 (+ 0.1 0.2)))))
         (it "computes large sums"
-          (= 3000.0 (+ 1000.0 2000.0)))))
+          (> 0.00001 (Math/abs (- 3000.0 (+ 1000.0 2000.0)))))))
 
 
 
@@ -78,7 +80,8 @@ Constants Shared Among Tests
 Inside a `describe` or `testing` group, use the `given` macro to
 define constants shared among several tests:
 
-    (use '[lazytest.describe :only (describe it given)])
+    (ns examples.readme.givens
+      (:use [lazytest.describe :only (describe it given)]))
 
     (describe "The square root of two"
       (given [root (Math/sqrt 2)]
@@ -97,8 +100,9 @@ Arbitrary Code in an Example
 You can create an example that executes arbitrary code with the
 `do-it` macro.  Wrap each assertion expression in the `expect` macro.
 
-    (use '[lazytest.describe :only (describe do-it)]
-         '[lazytest.expect :only (expect)])
+    (ns examples.readme.do-it
+      (:use [lazytest.describe :only (describe do-it)]
+            [lazytest.expect :only (expect)]))
 
     (describe "Arithmetic"
       (do-it "after printing"
@@ -125,7 +129,9 @@ Fundamentally, a context is a pair of no-argument functions, called
 *setup* and *teardown*.  You can create a context out of two functions
 with the `fn-context` function:
 
-    (use '[lazytest.context :only (fn-context)])
+    (ns examples.readme.contexts
+     (:use [lazytest.describe :only (describe testing it with)]
+           [lazytest.context :only (fn-context)]))
 
     (def my-context
       (fn-context (fn [] (println "This happens during setup"))
@@ -137,8 +143,6 @@ which takes a vector of contexts as its first argument.  Those
 contexts will be attached to each test case or test suite in the body
 of `with`.
 
-    (use '[lazytest.describe :only (describe it with)])
-
     (describe "Addition with a context"
       (with [my-context]
         (it "adds small numbers"
@@ -149,8 +153,6 @@ of `with`.
 If you want the contexts to be executed only once for a group of
 tests, simply wrap the body of the `with` macro in a single `testing`
 group:
-
-    (use '[lazytest.describe :only (describe testing it with)])
 
     (describe "Addition with a context"
       (with [my-context]
@@ -175,7 +177,8 @@ You can create simple contexts that just run some code before or after
 tests with the `before` and `after` macros.  Each takes a body of
 expressions to be run during setup or teardown, respectively.
 
-    (use '[lazytest.describe :only (describe it with)])
+    (ns examples.readme.before-after
+      (use [lazytest.describe :only (describe it with before after)]))
 
     (describe "Addition with a context"
       (with [(before (println "This happens before each test"))
@@ -205,8 +208,9 @@ current state of the context as its argument.
 For example, a stateful context might be used to open and close a
 database connection:
 
-    (use '[lazytest.context.stateful :only (stateful-fn-context)]
-         '[lazytest.describe :only (describe it)])
+    (ns examples.readme.stateful-contexts
+      (:use [lazytest.context.stateful :only (stateful-fn-context)]
+            [lazytest.describe :only (describe using it)]))
 
     (def database-context
       (stateful-fn-context
@@ -224,9 +228,6 @@ vector of name-value pairs, but each value must be a stateful context.
 Like `with`, the contexts will be attached to all the tests cases and
 or suites within the body of `using`.  The contexts may be
 dereferenced by their local names.
-
-    (use '[lazytest.describe :only (describe using it)]
-         '[lazytest.context.stateful :only (stateful-fn-context)])
 
     (describe "Square root of two with state"
       (using [root (stateful-fn-context
@@ -361,12 +362,3 @@ Put the following in `.emacs`
          (given 'defun)
          (it 'defun)
          (do-it 'defun)))
-
-
-
-Known Defects
-=============
-
-* Changing an applicaton source file does not automatically reload
-  the associated test source file.
-
