@@ -20,6 +20,10 @@
       <distribution>repo</distribution>
     </license>
   </licenses>
+  <scm>
+    <connection>scm:git:git://github.com/stuartsierra/lazytest.git</connection>
+    <url>http://github.com/stuartsierra/lazytest</url>
+  </scm>
   <dependencies>
     <dependency>
       <groupId>org.clojure</groupId>
