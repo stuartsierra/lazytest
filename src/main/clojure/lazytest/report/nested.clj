@@ -102,5 +102,5 @@
   (doseq [r results] (report-result r 0))
   (newline)
   (doseq [r results] (report-failures r []))
-  (print-summary (summarize results)))
+  (print-summary (apply summarize results)))
 

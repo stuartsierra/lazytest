@@ -10,7 +10,7 @@
 (defn summarize
   "Given a sequence of suite results, returns a map of counts with
   keys :total, :pass, and :fail."
-  [results]
+  [& results]
   (let [test-case-results (remove suite-result? (mapcat result-seq results))
 	total (count test-case-results)
 	passed (count (filter :pass? test-case-results))
