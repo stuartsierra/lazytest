@@ -262,12 +262,12 @@ These instructions require JDK 6.
 
 Put the following in `project.clj`
 
-    (defproject your-project-name "1.0.0-SNAPSHOT"
+    (defproject your-project-name "1.0.0"
       :description "Your project description"
       :dependencies [[org.clojure/clojure "1.2.0"]
                      [org.clojure/clojure-contrib "1.2.0"]
-                     [com.stuartsierra/lazytest "1.0.0-SNAPSHOT"]]
-      :repositories {"stuartsierra.com" "http://stuartsierra.com/m2snapshots"})
+                     [com.stuartsierra/lazytest "1.0.0"]]
+      :repositories {"stuartsierra.com" "http://stuartsierra.com/maven2"})
 
 Put your test sources in `test/`
 
@@ -291,19 +291,19 @@ Put the following in your `pom.xml` file's `<dependencies>` section:
     <dependency>
       <groupId>com.stuartsierra</groupId>
       <artifactId>lazytest</artifactId>
-      <version>1.0.0-SNAPSHOT</version>
+      <version>1.0.0</version>
     </dependency>
 
 And the following in the `pom.xml` file's `<repositories>` section:
 
     <repository>
-      <id>stuartsierra-snapshots</id>
-      <url>http://stuartsierra.com/m2snapshots</url>
+      <id>stuartsierra-releases</id>
+      <url>http://stuartsierra.com/maven2</url>
       <releases>
-        <enabled>false</enabled>
+        <enabled>true</enabled>
       </releases>
       <snapshots>
-        <enabled>true</enabled>
+        <enabled>false</enabled>
       </snapshots>
     </repository>
 
