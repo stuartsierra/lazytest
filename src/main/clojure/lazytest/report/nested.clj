@@ -1,6 +1,7 @@
 (ns lazytest.report.nested
   (:use lazytest.color
 	lazytest.suite
+	lazytest.results
 	lazytest.test-case
 	clojure.pprint
 	[clojure.stacktrace :only (print-cause-trace)]))
@@ -49,9 +50,6 @@
   (indent depth)
   (println (colorize (identifier result) (if (:pass? result) :green :red))))
 
-(defn- result-seq [result]
-  (tree-seq suite-result? :children result))
-
 (defn- report-result [result depth]
   (if (suite-result? result)
     (report-suite-result result depth)
@@ -88,13 +86,6 @@
     (report-test-case-failure result docs)))
 
 ;;; Summary
-
-(defn- summarize [results]
-  (let [test-case-results (remove suite-result? (mapcat result-seq results))
-	total (count test-case-results)
-	passed (count (filter :pass? test-case-results))
-	failed (- total passed)]
-    {:total total, :pass passed, :fail failed}))
 
 (defn- print-summary [summary]
   (let [{:keys [total fail]} summary]
