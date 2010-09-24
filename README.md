@@ -255,6 +255,17 @@ tests).
 
 
 
+Generating Random Test Data
+===========================
+
+Use random input data in your tests with the `for-any` macro, which
+takes a vector of name-value pairs like `given`, where each value is a
+generator function such as those defined in `lazytest.random`.
+
+This part needs better documentation.
+
+
+
 Getting Started with Leiningen
 ==============================
 
