@@ -243,6 +243,18 @@ creating temporary files and directories.
 
 
 
+Focusing on Indiviaul Tests and Suites
+======================================
+
+The `describe`, `testing`, `it`, and `do-it` macros all take an
+optional metadata map immediately after the docstring.
+
+Adding `:focus true` to this map will cause *only* that test/suite to
+be run.  Removing it will return to the normal behavior (run all
+tests).
+
+
+
 Getting Started with Leiningen
 ==============================
 
