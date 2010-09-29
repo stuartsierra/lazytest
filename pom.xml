@@ -17,6 +17,14 @@
       <distribution>repo</distribution>
     </license>
   </licenses>
+  <developers>
+    <developer>
+      <id>stuartsierra</id>
+      <name>Stuart Sierra</name>
+      <email>mail@stuartsierra.com</email>
+      <url>http://stuartsierra.com</url>
+    </developer>
+  </developers>
   <scm>
     <connection>scm:git:git://github.com/stuartsierra/lazytest.git</connection>
     <url>http://github.com/stuartsierra/lazytest</url>
