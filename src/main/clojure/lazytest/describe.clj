@@ -1,4 +1,5 @@
 (ns lazytest.describe
+  (:require lazytest.random)
   (:use	lazytest.expect
 	lazytest.suite
 	lazytest.find
