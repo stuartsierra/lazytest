@@ -292,6 +292,9 @@ And watch your tests run automatically whenever you save a file.
 
 Type CTRL+C to stop.
 
+MAY FAIL WITH AOT-COMPILED CLASSES; omit the "classes" directory from
+the command line if this happens.
+
 
 
 Getting Started with Maven
@@ -332,6 +335,8 @@ And type:
 And watch your tests run automatically whenever you save a file.
 
 Type CTRL+C to stop.
+
+MAY FAIL WITH AOT-COMPILED CLASSES; turn off AOT-compilation if this happens.
 
 
 
