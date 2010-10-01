@@ -6,7 +6,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.stuartsierra</groupId>
   <artifactId>lazytest</artifactId>
-  <version>1.0.3-SNAPSHOT</version>
+  <version>1.1.0-SNAPSHOT</version>
   <url>http://stuartsierra.com/</url>
   <description>Behavior-Driven Development framework for Clojure.</description>
   <name>${artifactId}</name>
