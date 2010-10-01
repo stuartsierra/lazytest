@@ -277,7 +277,7 @@ Put the following in `project.clj`
       :description "Your project description"
       :dependencies [[org.clojure/clojure "1.2.0"]
                      [org.clojure/clojure-contrib "1.2.0"]
-                     [com.stuartsierra/lazytest "1.0.1"]]
+                     [com.stuartsierra/lazytest "1.0.2"]]
       :repositories {"stuartsierra.com" "http://stuartsierra.com/maven2"})
 
 Put your test sources in `test/`
@@ -302,7 +302,7 @@ Put the following in your `pom.xml` file's `<dependencies>` section:
     <dependency>
       <groupId>com.stuartsierra</groupId>
       <artifactId>lazytest</artifactId>
-      <version>1.0.1</version>
+      <version>1.0.2</version>
     </dependency>
 
 And the following in the `pom.xml` file's `<repositories>` section:
