@@ -1,6 +1,18 @@
+v1.1.0        2010-10-02        Improvements for random generators
+
+ * Add lazytest.random/default-test-case-count and
+   scaled-test-case-count
+
+ * lazytest.describe/for-any uses the above
+
+ * lazytest.report.nested collapses large groups of test cases with
+   the same doc strings, such as randomly-generated tests
+
+
 v1.0.2        2010-10-01        Bugfix release
 
  * Fix parsing of ns forms with nested prefix lists
+
 
 v1.0.1        2010-09-29        Bugfix release
 
@@ -11,5 +23,6 @@ v1.0.1        2010-09-29        Bugfix release
    loads caused by (require :reload-all ...). It also seems to avoid
    some load-order issues with `:reload-all`, but I can't find
    consistent test cases.
+
 
 v1.0.0        2010-09-24        Initial Release
