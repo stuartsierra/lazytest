@@ -1,4 +1,4 @@
-(ns lazytest.runtests
+(ns runtests
   (:require lazytest.runner.console
 	    lazytest.report.nested))
 

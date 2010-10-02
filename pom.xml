@@ -81,7 +81,7 @@
         <version>1.3.4</version>
 	<extensions>true</extensions>
 	<configuration>
-	  <testScript>src/test/clojure/lazytest/runtests.clj</testScript>
+	  <testScript>src/test/script/runtests.clj</testScript>
 	</configuration>
       </plugin>
       <plugin>
