@@ -15,6 +15,23 @@ other, from this software.
 
 
 
+Known Problems
+========================================
+
+Reloading some AOT (ahead-of-time) compiled namespaces fails with an
+exception like:
+
+    namespace 'foo.bar' not found after loading '/foo/bar'
+
+This may be a Clojure bug; see http://gist.github.com/607161
+
+Until this issue can be resolved, you must disable AOT-compilation or
+remove the compiled classes directory from your classpath when using
+Lazytest.  See instructions under the appropriate "Getting Started"
+section, below.
+
+
+
 Test Examples and Groups
 ========================
 
