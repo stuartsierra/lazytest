@@ -364,10 +364,10 @@ AOT-compilation in pom.xml:
       <artifactId>clojure-maven-plugin</artifactId>
       <version>1.3.4</version>
       <configuration>
-	<compileDeclaredNamespaceOnly>true</compileDeclaredNamespaceOnly>
-	<namespaces>
-	  <namespace>!.*</namespace>
-	</namespaces>
+        <compileDeclaredNamespaceOnly>true</compileDeclaredNamespaceOnly>
+        <namespaces>
+          <namespace>!.*</namespace>
+        </namespaces>
       </configuration>
     </plugin>
 
@@ -421,7 +421,7 @@ Put the following in `.emacs`
          (describe 'defun)
          (testing 'defun)
          (given 'defun)
-	 (using 'defun)
-	 (with 'defun)
+         (using 'defun)
+         (with 'defun)
          (it 'defun)
          (do-it 'defun)))
