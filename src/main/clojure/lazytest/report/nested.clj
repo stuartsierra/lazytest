@@ -41,8 +41,17 @@
   (and (test-case-result? x)
        (nil? (identifier x))))
 
+(defn- collapsable?
+  "True if the suite result should be collapsed into \"X cases
+  passed\" instead of printing a line for each test case."
+  [ste-result]
+  (or (every? unnamed-test-case-result? (:children ste-result))
+      (and (pos? (count (:children ste-result)))
+	   (> 0.25 (/ (.doubleValue (count (distinct (map identifier (:children ste-result)))))
+		      (.doubleValue (count (:children ste-result))))))))
+
 (defn- report-suite-result [result depth]
-  (if (every? unnamed-test-case-result? (:children result))
+  (if (collapsable? result)
     (report-counted-suite-result result depth)
     (report-normal-suite-result result depth)))
 
