@@ -1,5 +1,5 @@
 (ns lazytest.describe
-  (:require lazytest.random)
+  (:require [lazytest.random :as r])
   (:use	lazytest.expect
 	lazytest.suite
 	lazytest.find
@@ -72,13 +72,16 @@
 
 (defmacro for-any
   "Bindings is a vector of name-value pairs, where the values are
-  generator functions such as those in lazytest.random."
+  generator functions such as those in lazytest.random. The number of
+  test cases generated depends on the number of bindings and
+  lazytest.random/default-test-case-count."
   [bindings & body]
   {:pre [(vector? bindings)
 	 (even? (count bindings))]}
-  (let [generated-bindings
+  (let [c (r/scaled-test-case-count (/ (count bindings) 2) (r/default-test-case-count))
+	generated-bindings
 	(vec (mapcat (fn [[name generator]]
-		       [name `((lazytest.random/sequence-of ~generator))])
+		       [name `((r/sequence-of ~generator :min ~c :max ~c))])
 		     (partition 2 bindings)))]
     `(for ~generated-bindings
        (list ~@body))))
