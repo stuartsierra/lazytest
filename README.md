@@ -309,8 +309,11 @@ And watch your tests run automatically whenever you save a file.
 
 Type CTRL+C to stop.
 
-MAY FAIL WITH AOT-COMPILED CLASSES; omit the "classes" directory from
-the command line if this happens.
+MAY FAIL WITH AOT-COMPILED CLASSES.  You can fix this by not running
+`lein compile` or by omitting the "classes" directory from the java
+command line:
+
+    java -cp "src:test:lib/*" lazytest.watch src test
 
 
 
@@ -353,7 +356,20 @@ And watch your tests run automatically whenever you save a file.
 
 Type CTRL+C to stop.
 
-MAY FAIL WITH AOT-COMPILED CLASSES; turn off AOT-compilation if this happens.
+MAY FAIL WITH AOT-COMPILED CLASSES. You can fix this by turning off
+AOT-compilation in pom.xml:
+
+    <plugin>
+      <groupId>com.theoryinpractise</groupId>
+      <artifactId>clojure-maven-plugin</artifactId>
+      <version>1.3.4</version>
+      <configuration>
+	<compileDeclaredNamespaceOnly>true</compileDeclaredNamespaceOnly>
+	<namespaces>
+	  <namespace>!.*</namespace>
+	</namespaces>
+      </configuration>
+    </plugin>
 
 
 
