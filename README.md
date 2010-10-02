@@ -388,5 +388,7 @@ Put the following in `.emacs`
          (describe 'defun)
          (testing 'defun)
          (given 'defun)
+	 (using 'defun)
+	 (with 'defun)
          (it 'defun)
          (do-it 'defun)))
