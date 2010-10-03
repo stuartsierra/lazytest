@@ -1,4 +1,17 @@
+v1.1.2        2010-10-03        Minor reloading enhancement
+
+ * Only touch source files on reloading when absolutely necessary
+
+
+v1.1.1        2010-10-02        Bugfix release
+
+ * Prevent 'namespace not found' bug by touching source files before
+   reloading
+
+
 v1.1.0        2010-10-02        Improvements for random generators
+
+ Note: due to a configuration error, this version was never deployed.
 
  * Add lazytest.random/default-test-case-count and
    scaled-test-case-count
