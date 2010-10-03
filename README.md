@@ -1,6 +1,8 @@
 LAZYTEST IS BETA: THERE MAY BE BUGS
 =======================================
 
+ *CURRENT RELEASE VERSION IS 1.1.2*
+
 Lazytest: behavior-driven development/testing framework for Clojure
 
 by Stuart Sierra, http://stuartsierra.com/
