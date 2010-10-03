@@ -25,10 +25,9 @@ exception like:
 
 This may be a Clojure bug; see http://gist.github.com/607161
 
-Until this issue can be resolved, you must disable AOT-compilation or
-remove the compiled classes directory from your classpath when using
-Lazytest.  See instructions under the appropriate "Getting Started"
-section, below.
+I believe I have a workaround for this as of Lazytest version 1.1.1.
+But if it crops up again, you can fix it by disabling AOT-compilation
+or removing the compiled classes directory from the classpath.
 
 
 
@@ -288,32 +287,25 @@ Getting Started with Leiningen
 
 These instructions require JDK 6.
 
-Put the following in `project.clj`
+Put the following in your `project.clj` file's `defproject`:
 
-    (defproject your-project-name "1.0.0-SNAPSHOT"
-      :description "Your project description"
-      :dependencies [[org.clojure/clojure "1.2.0"]
-                     [org.clojure/clojure-contrib "1.2.0"]
-                     [com.stuartsierra/lazytest "1.1.0"]]
-      :repositories {"stuartsierra.com" "http://stuartsierra.com/maven2"})
+    :dev-dependencies [[com.stuartsierra/lazytest "1.1.2"]]
+    :repositories {"stuartsierra-releases" "http://stuartsierra.com/maven2"})
 
-Put your test sources in `test/`
+Put your app sources in `src/` and your test sources in `test/`
 
 Then run:
 
     lein clean
     lein deps
-    java -cp "src:test:classes:lib/*" lazytest.watch src test
+    java -cp "src:test:classes:lib/*:lib/dev/*" lazytest.watch src test
 
 And watch your tests run automatically whenever you save a file.
 
 Type CTRL+C to stop.
 
-MAY FAIL WITH AOT-COMPILED CLASSES.  You can fix this by not running
-`lein compile` or by omitting the "classes" directory from the java
-command line:
-
-    java -cp "src:test:lib/*" lazytest.watch src test
+To run the tests just once and stop, invoke Java as above with
+`lazytest.main` instead of `lazytest.watch`.
 
 
 
@@ -325,7 +317,7 @@ Put the following in your `pom.xml` file's `<dependencies>` section:
     <dependency>
       <groupId>com.stuartsierra</groupId>
       <artifactId>lazytest</artifactId>
-      <version>1.1.0</version>
+      <version>1.1.2</version>
     </dependency>
 
 And the following in the `pom.xml` file's `<repositories>` section:
@@ -341,7 +333,7 @@ And the following in the `pom.xml` file's `<repositories>` section:
       </snapshots>
     </repository>
 
-Put your test sources in `src/test/clojure/`
+Put your app sources in `src/main/clojure/` and your test sources in `src/test/clojure/`
 
 Then run:
 
@@ -355,21 +347,6 @@ And type:
 And watch your tests run automatically whenever you save a file.
 
 Type CTRL+C to stop.
-
-MAY FAIL WITH AOT-COMPILED CLASSES. You can fix this by turning off
-AOT-compilation in pom.xml:
-
-    <plugin>
-      <groupId>com.theoryinpractise</groupId>
-      <artifactId>clojure-maven-plugin</artifactId>
-      <version>1.3.4</version>
-      <configuration>
-        <compileDeclaredNamespaceOnly>true</compileDeclaredNamespaceOnly>
-        <namespaces>
-          <namespace>!.*</namespace>
-        </namespaces>
-      </configuration>
-    </plugin>
 
 
 
