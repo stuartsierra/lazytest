@@ -10,6 +10,7 @@
 				       (rest form)))
 	(vector? form) (deps-from-libspec prefix (first form))
 	(symbol? form) #{(symbol (str (when prefix (str prefix ".")) form))}
+	(keyword? form) #{}
 	:else (throw (IllegalArgumentException.
 		      (pr-str "Unparsable namespace form:" form)))))
 

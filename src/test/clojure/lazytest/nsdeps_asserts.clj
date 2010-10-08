@@ -10,3 +10,6 @@
 
 ;; Nested prefix lists (ugh)
 (assert (= #{'a.b.c 'a.b.d} (deps-from-ns-decl '(ns x (:use (a (b c d)))))))
+
+;; Keyword flags in :use (ugh, but 'lein new' does it by default)
+(assert (= #{'a.b} (deps-from-ns-decl '(ns x (:use [a.b] :reload)))))
