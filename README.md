@@ -110,6 +110,10 @@ define constants shared among several tests:
 
 The syntax of `given` is just like `let`, including destructuring support.
 
+Note: `given` expressions are evaluated *before* contexts (see
+below). You cannot use contexts in a `given` expression. Givens really
+only work for constant values.
+
 
 
 Arbitrary Code in an Example
@@ -186,6 +190,9 @@ out Vars with alternate definitions.
 The `lazytest.context.properties` namespace provides contexts for
 setting Java system properties.
 
+Note: Givens and contexts are evaluated at different
+times. Expressions in the `given` macro cannot refer to context state.
+
 
 
 Simple Before / After Contexts
@@ -258,6 +265,9 @@ dereferenced by their local names.
 
 The `lazytest.context.file` namespace defines stateful contexts for
 creating temporary files and directories.
+
+Note: Givens and contexts are evaluated at different
+times. Expressions in the `given` macro cannot refer to context state.
 
 
 
