@@ -6,7 +6,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.stuartsierra</groupId>
   <artifactId>lazytest</artifactId>
-  <version>1.1.3-SNAPSHOT</version>
+  <version>1.2.0-SNAPSHOT</version>
   <url>http://stuartsierra.com/</url>
   <description>Behavior-Driven Development framework for Clojure.</description>
   <name>${artifactId}</name>
@@ -34,17 +34,17 @@
     <dependency>
       <groupId>org.clojure</groupId>
       <artifactId>clojure</artifactId>
-      <version>1.2.0</version>
+      <version>1.3.0-master-SNAPSHOT</version>
     </dependency>
     <dependency>
-      <groupId>org.clojure</groupId>
-      <artifactId>clojure-contrib</artifactId>
-      <version>1.2.0</version>
+      <groupId>org.clojure.contrib</groupId>
+      <artifactId>find-namespaces</artifactId>
+      <version>1.3.0-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>swank-clojure</groupId>
       <artifactId>swank-clojure</artifactId>
-      <version>1.2.1</version>
+      <version>1.3.0-SNAPSHOT</version>
     </dependency>
   </dependencies>
   <repositories>
