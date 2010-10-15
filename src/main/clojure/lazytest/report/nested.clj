@@ -4,7 +4,8 @@
 	lazytest.results
 	lazytest.test-case
 	clojure.pprint
-	[clojure.stacktrace :only (print-cause-trace)]))
+	[clojure.stacktrace :only (print-cause-trace)]
+	[clojure.data :only (diff)]))
 
 (defn- identifier [result]
   (let [m (meta (:source result))]
@@ -66,15 +67,34 @@
 
 ;;; Failures
 
+(defn- print-equality-failed [a b]
+  (let [[a b same] (diff a b)]
+    (println (colorize "Only in first argument:" :cyan))
+    (pprint a)
+    (println (colorize "Only in second argument:" :cyan))
+    (pprint b)
+    (println (colorize "The same in both:" :cyan))
+    (pprint same)))
+
+(defn- print-evaluated-arguments [reason]
+  (println (colorize "Evaluated arguments:" :cyan))
+  (doseq [arg (rest (:evaluated reason))]
+    (print "* ")
+    (pprint arg)))
+
 (defn- print-expectation-failed [err]
   (let [reason (. err reason)]
     (println "at" (:file reason) "line" (:line reason))
-    (println "Expression:" (:form reason))
-    (println "Result:" (pr-str (:result reason)))
+    (println (colorize "Expression:" :cyan))
+    (pprint (:form reason))
+    (println (colorize "Result:" :cyan))
+    (pprint (:result reason))
     (when (:evaluated reason)
-      (println "Evaluated arguments:")
-      (pprint (zipmap (rest (:form reason)) (rest (:evaluated reason)))))
-    (println "Local bindings:")
+      (print-evaluated-arguments reason)
+      (when (and (= = (first (:evaluated reason)))
+		 (= 3 (count (:evaluated reason))))
+	(apply print-equality-failed (rest (:evaluated reason)))))
+    (println (colorize "Local bindings:" :cyan))
     (pprint (:locals reason))))
 
 (defn- report-test-case-failure [result docs]
