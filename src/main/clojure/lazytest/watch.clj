@@ -21,6 +21,8 @@
 	(apply reload new-names)
 	(report-fn (apply run-fn new-names))
 	(println "\nDone.")))
+    (catch clojure.lang.Compiler$CompilerException t
+      (println "ERROR:" t))
     (catch Throwable t
       (println "ERROR:" t)
       (.printStackTrace t))))
