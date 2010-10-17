@@ -2,6 +2,7 @@
   (:gen-class)
   (:use	[lazytest.reload :only (reload)]
 	[lazytest.tracker :only (tracker)]
+	[lazytest.color :only (colorize)]
 	[clojure.java.io :only (file)]
 	[clojure.string :only (join)])
   (:require lazytest.runner.console
@@ -23,7 +24,10 @@
 	(println "\nDone.")))
     (catch Throwable t
       (println "ERROR:" t)
-      (.printStackTrace t))))
+      (.printStackTrace t)
+      (newline)
+      (println (colorize "ERROR while loading:" :red))
+      (println t))))
 
 (defn reloading-runner [dirs run-fn report-fn]
   (let [dirs (map file dirs)
