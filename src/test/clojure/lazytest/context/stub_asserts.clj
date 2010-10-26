@@ -2,7 +2,7 @@
   (:use [lazytest.context :only (setup teardown)]
 	lazytest.context.stub))
 
-(defn foo [] 0)
+(defn ^:dynamic foo [] 0)
 
 (def stub-1 (stub #'foo (constantly 1)))
 (def stub-2 (stub #'foo (constantly 2)))
