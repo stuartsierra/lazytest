@@ -123,7 +123,10 @@
 		 (colorize count-msg :yellow)
 		 count-msg)))
     (println (colorize (str fail " failures.")
-		       (if (zero? fail) :green :red)))))
+		       (if (zero? fail) :green :red)))
+    (if (zero? fail)
+       0
+       1)))
 
 ;;; Entry point
 
