@@ -1,3 +1,8 @@
+v1.2.2        2010-11-27        Fixed release with diff
+
+ * Fixed release using 'diff' and Clojure 1.3.0-alpha3
+
+
 v1.2.1        2010-11-27        BAD RELEASE: DO NOT USE
 
  * Wrong file extension on the deployed JAR
