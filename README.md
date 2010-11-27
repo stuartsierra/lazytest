@@ -18,6 +18,13 @@ the terms of this license.  You must not remove this notice, or any
 other, from this software.
 
 
+Probable Deprecation Notices
+========================================
+
+Contexts, `using`, and the `given` macro have not worked out well in
+practice.  They will probably be removed or substantially altered in a
+future version.
+
 
 Known Problems
 ========================================
@@ -303,7 +310,7 @@ These instructions require JDK 6.
 
 Put the following in your `project.clj` file's `defproject`:
 
-    :dev-dependencies [[com.stuartsierra/lazytest "1.1.2"]]
+    :dev-dependencies [[com.stuartsierra/lazytest "1.2.2"]]
     :repositories {"stuartsierra-releases" "http://stuartsierra.com/maven2"})
 
 Put your app sources in `src/` and your test sources in `test/`
@@ -331,7 +338,7 @@ Put the following in your `pom.xml` file's `<dependencies>` section:
     <dependency>
       <groupId>com.stuartsierra</groupId>
       <artifactId>lazytest</artifactId>
-      <version>1.1.2</version>
+      <version>1.2.2</version>
     </dependency>
 
 And the following in the `pom.xml` file's `<repositories>` section:
