@@ -1,9 +1,9 @@
 LAZYTEST IS BETA: THERE MAY BE BUGS
 =======================================
 
- **Current release version is 1.1.2**
+ **Current release version is 1.2.0 and depends on Clojure 1.3.0-alpha3**
 
-Latest development version is 1.2.0-SNAPSHOT
+Latest development version is 1.2.1-SNAPSHOT
 
 Lazytest: behavior-driven development/testing framework for Clojure
 
