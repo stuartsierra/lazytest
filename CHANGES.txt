@@ -1,4 +1,13 @@
-v1.2.0        2010-11-27        'diff' of test values
+v1.2.1        2010-11-27        BAD RELEASE: DO NOT USE
+
+ * Wrong file extension on the deployed JAR
+
+ * Tried maven-release-plugin version 2.1
+
+ 
+v1.2.0        2010-11-27        BAD RELEASE: DO NOT USE
+
+ * Wrong file extension on the deployed JAR
 
  * Depends on Clojure 1.3.0-alpha3
 
