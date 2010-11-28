@@ -6,7 +6,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.stuartsierra</groupId>
   <artifactId>lazytest-parent</artifactId>
-  <version>1.2.3-SNAPSHOT</version>
+  <version>1.2.3</version>
   <url>http://stuartsierra.com/</url>
   <description>Multi-module parent POM for Lazytest</description>
   <name>${artifactId}</name>

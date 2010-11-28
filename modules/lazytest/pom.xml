@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.stuartsierra</groupId>
   <artifactId>lazytest</artifactId>
-  <version>1.2.3-SNAPSHOT</version>
+  <version>1.2.3</version>
   <url>http://stuartsierra.com/</url>
   <description>Behavior-Driven Development framework for Clojure.</description>
   <name>${artifactId}</name>
@@ -11,7 +11,7 @@
   <parent>
     <groupId>com.stuartsierra</groupId>
     <artifactId>lazytest-parent</artifactId>
-    <version>1.2.3-SNAPSHOT</version>
+    <version>1.2.3</version>
   </parent>
   <dependencies>
     <dependency>
