@@ -8,6 +8,11 @@
   <name>${artifactId}</name>
   <description>Maven Mojo for running Lazytest single-run or watcher</description>
   <url>http://stuartsierra.com/</url>
+  <parent>
+    <groupId>com.stuartsierra</groupId>
+    <artifactId>lazytest-parent</artifactId>
+    <version>1.2.3-SNAPSHOT</version>
+  </parent>
   <dependencies>
     <dependency>
       <groupId>org.apache.maven</groupId>
