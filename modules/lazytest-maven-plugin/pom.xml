@@ -4,14 +4,14 @@
   <groupId>com.stuartsierra</groupId>
   <artifactId>lazytest-maven-plugin</artifactId>
   <packaging>maven-plugin</packaging>
-  <version>1.0.0</version>
+  <version>1.0.1-SNAPSHOT</version>
   <name>${artifactId}</name>
   <description>Maven Mojo for running Lazytest single-run or watcher</description>
   <url>http://stuartsierra.com/</url>
   <parent>
     <groupId>com.stuartsierra</groupId>
     <artifactId>lazytest-parent</artifactId>
-    <version>1.2.3</version>
+    <version>1.2.4-SNAPSHOT</version>
   </parent>
   <dependencies>
     <dependency>
