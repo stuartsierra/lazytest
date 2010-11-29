@@ -1,9 +1,11 @@
 LAZYTEST IS BETA: THERE MAY BE BUGS
 =======================================
 
- **Current release version is 1.2.2 and depends on Clojure 1.3.0-alpha3**
+ **Current Lazytest library release is version 1.2.3 and depends on Clojure 1.3.0-alpha3**
 
-Latest development version is 1.2.3-SNAPSHOT
+Latest development version is 1.2.4-SNAPSHOT
+
+ **Current Lazytest Maven plugin release is version 1.0.0**
 
 Lazytest: behavior-driven development/testing framework for Clojure
 
@@ -18,11 +20,11 @@ the terms of this license.  You must not remove this notice, or any
 other, from this software.
 
 
-Probable Deprecation Notices
+Deprecation Notices
 ========================================
 
-Contexts, `using`, and the `given` macro have not worked out well in
-practice.  They will probably be removed or substantially altered in a
+Contexts, the `using` macro, and the `given` macro have not worked out
+well in practice.  They will be removed or substantially altered in a
 future version.
 
 
@@ -104,6 +106,8 @@ top-level Var:
 Constants Shared Among Tests
 ============================
 
+ ** THIS SECTION IS DEPRECATED. **
+
 Inside a `describe` or `testing` group, use the `given` macro to
 define constants shared among several tests:
 
@@ -152,6 +156,8 @@ throwing an exception, the test example is considered to have passed.
 
 Contexts
 ========
+
+ ** THIS SECTION IS DEPRECATED. **
 
 Contexts provide support for executing arbitrary code before, after,
 or around test cases and test suites.
@@ -207,6 +213,8 @@ times. Expressions in the `given` macro cannot refer to context state.
 Simple Before / After Contexts
 ==============================
 
+ ** THIS SECTION IS DEPRECATED. **
+
 You can create simple contexts that just run some code before or after
 tests with the `before` and `after` macros.  Each takes a body of
 expressions to be run during setup or teardown, respectively.
@@ -227,6 +235,8 @@ expressions to be run during setup or teardown, respectively.
 
 Stateful Contexts
 =================
+
+ ** THIS SECTION IS DEPRECATED. **
 
 Contexts which need to provide state information (for example, a
 database connection or an open file) to their tests are called
@@ -310,7 +320,7 @@ These instructions require JDK 6.
 
 Put the following in your `project.clj` file's `defproject`:
 
-    :dev-dependencies [[com.stuartsierra/lazytest "1.2.2"]]
+    :dependencies [[com.stuartsierra/lazytest "1.2.3"]]
     :repositories {"stuartsierra-releases" "http://stuartsierra.com/maven2"})
 
 Put your app sources in `src/` and your test sources in `test/`
@@ -319,55 +329,37 @@ Then run:
 
     lein clean
     lein deps
-    java -cp "src:test:classes:lib/*:lib/dev/*" lazytest.watch src test
+    java -cp "src:test:classes:lib/*" lazytest.watch src test
 
 And watch your tests run automatically whenever you save a file.
 
 Type CTRL+C to stop.
 
-To run the tests just once and stop, invoke Java as above with
-`lazytest.main` instead of `lazytest.watch`.
+To run the tests **just once** and stop, run:
+
+    java -cp "src:test:classes:lib/*" lazytest.main src test
 
 
 
 Getting Started with Maven
 ==========================
 
-Put the following in your `pom.xml` file's `<dependencies>` section:
-
-    <dependency>
-      <groupId>com.stuartsierra</groupId>
-      <artifactId>lazytest</artifactId>
-      <version>1.2.2</version>
-    </dependency>
-
-And the following in the `pom.xml` file's `<repositories>` section:
-
-    <repository>
-      <id>stuartsierra-releases</id>
-      <url>http://stuartsierra.com/maven2</url>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-    </repository>
+Copy the example `pom.xml` file from `modules/lazytest-maven-plugin/src/examples/pom.xml`
 
 Put your app sources in `src/main/clojure/` and your test sources in `src/test/clojure/`
 
 Then run:
 
-    mvn clojure:repl
-
-And type:
-
-    (use 'lazytest.watch)
-    (start ["src"])
+    mvn lazytest:watch
 
 And watch your tests run automatically whenever you save a file.
 
 Type CTRL+C to stop.
+
+To run tests just once, run `mvn lazytest:run`
+
+Or, if you have used the configuration in the sample `pom.xml` file,
+you can run just `mvn test`.
 
 
 
