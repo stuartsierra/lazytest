@@ -344,7 +344,7 @@ To run the tests **just once** and stop, run:
 Getting Started with Maven
 ==========================
 
-Copy the example `pom.xml` file from `modules/lazytest-maven-plugin/src/examples/pom.xml`
+Copy the example `pom.xml` file from [modules/lazytest-maven-plugin/src/examples/pom.xml](https://github.com/stuartsierra/lazytest/blob/master/modules/lazytest-maven-plugin/src/examples/pom.xml)
 
 Put your app sources in `src/main/clojure/` and your test sources in `src/test/clojure/`
 
