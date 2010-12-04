@@ -1,16 +1,17 @@
 (ns lazytest.find
-  (:use lazytest.suite))
+  (:use lazytest.suite
+	lazytest.test-case))
 
-(defn- find-suite-for-var [this-var]
+(defn- find-var-test-value [this-var]
   {:pre [(var? this-var)]
-   :post [(or (nil? %) (suite? %))]}
+   :post [(or (nil? %) (suite? %) (test-case? %))]}
   (when (bound? this-var)
     (let [value (var-get this-var)]
-      (when (suite? value)
+      (when (or (suite? value) (test-case? value))
 	value))))
 
 (defn- test-seq-for-ns [this-ns]
-  (let [s (remove nil? (map find-suite-for-var (vals (ns-interns this-ns))))]
+  (let [s (remove nil? (map find-var-test-value (vals (ns-interns this-ns))))]
     (when (seq s)
       (vary-meta s assoc :name (ns-name this-ns)))))
 
