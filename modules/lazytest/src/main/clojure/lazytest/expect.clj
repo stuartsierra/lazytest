@@ -40,6 +40,7 @@
 			     '~(meta expr)
 			     {:form '~expr
 			      :locals ~(local-bindings &env)
+			      :bindings (get-thread-bindings)
 			      :evaluated (list* f# args#)
 			      :result result#
 			      :file ~*file*
@@ -53,6 +54,7 @@
 			     '~(meta expr)
 			     {:form '~expr
 			      :locals ~(local-bindings &env)
+			      :bindings (get-thread-bindings)
 			      :result result#
 			      :file ~*file*
 			      :ns '~(ns-name *ns*)}
