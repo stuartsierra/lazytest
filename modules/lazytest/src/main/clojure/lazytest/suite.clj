@@ -19,12 +19,7 @@
   A test sequence is a sequence of test cases and/or test suites.
 
   Metadata on the test sequence provides identifying information
-  for the test suite, such as :name and :doc.
-
-  The sequence may have before/after metadata (see lazytest.wrap).
-  'before' functions must be executed *before* all test case functions
-  contained within the sequence.  'after' functions must be executed
-  *after* all test case functions contained within the sequence."
+  for the test suite, such as :name and :doc."
   [s]
   {:pre [(seq? s)]}
   (vary-meta s assoc ::test-seq true))

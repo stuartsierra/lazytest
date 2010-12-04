@@ -7,14 +7,7 @@
   throwing an exception indicates success.
 
   Additional identifying metadata may be placed on the function, such
-  as :name and :doc.
-
-  Test case functions may have before/after metadata (see
-  lazytest.wrap).  The 'before' function must be executed *before* the
-  test case function is executed.  The 'after' function must be
-  executed *after* the test case function is executed, regardless of
-  whether or not the test case function was successful.  Executing the
-  before/after functions is the responsibility of the test runner."
+  as :name and :doc."
   [f]
   {:pre [(fn? f)]}
   (vary-meta f assoc ::test-case true))
