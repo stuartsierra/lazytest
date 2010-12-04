@@ -3,9 +3,7 @@
 	    lazytest.report.nested))
 
 (doseq [sym '[lazytest.expect-asserts
-	      lazytest.nsdeps-asserts
-	      lazytest.context.stub-asserts
-	      lazytest.context.file-asserts]]
+	      lazytest.nsdeps-asserts]]
   (println "Running assertions in" sym)
   (require sym))
 
@@ -14,7 +12,6 @@
 (doseq [sym '[examples.suite1
 	      examples.describe1
 	      examples.difference
-	      examples.complex-contexts
 	      examples.random-test
 	      examples.multimethods]]
   (println "Loading" sym)

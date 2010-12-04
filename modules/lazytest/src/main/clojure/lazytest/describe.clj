@@ -3,8 +3,7 @@
   (:use	lazytest.expect
 	lazytest.suite
 	lazytest.find
-	lazytest.test-case
-	lazytest.context))
+	lazytest.test-case))
 
 ;;; Utilities
 
@@ -85,34 +84,6 @@
 		     (partition 2 bindings)))]
     `(for ~generated-bindings
        (list ~@body))))
-
-(defmacro with
-  "Adds a collection of contexts to each of the body expressions."
-  [contexts & body]
-  {:pre [(coll? contexts)]}
-  `(let [contexts# ~contexts]   ;; avoid duplicate evaluation
-     (map (fn [x#] (apply add-context x# contexts#)) (flatten (list ~@body)))))
-
-(defmacro using
-  "bindings is a vector of name-value pairs, like 'given', but each
-  value is a context. Adds contexts to each of the body expressions,
-  where they may be dereferenced by the given names."
-  [bindings & body]
-  {:pre [(vector? bindings)
-	 (even? (count bindings))]}
-  `(given ~bindings
-     (with ~(vec (take-nth 2 bindings))
-	   (list ~@body))))
-
-(defmacro before
-  "Returns a context whose teardown function evaluates body."
-  [& body]
-  `(fn-context (fn [] ~@body) (constantly nil)))
-
-(defmacro after
-  "Returns a context whose teardown method evaluates body."
-  [& body]
-  `(fn-context (constantly nil) (fn [] ~@body)))
 
 (defmacro it
   "Defines a single test case.

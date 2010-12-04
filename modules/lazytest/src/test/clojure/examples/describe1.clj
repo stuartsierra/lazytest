@@ -1,7 +1,5 @@
 (ns examples.describe1
-  (:use lazytest.describe
-	[lazytest.context :only (fn-context)]
-	[lazytest.context.stateful :only (stateful-fn-context)]))
+  (:use lazytest.describe))
 
 (describe +
   (it "computes the sum of 3 and 4"
@@ -35,30 +33,3 @@
 	   (< root 2))
 	 (it "is more than one"
 	   (> root 1))))
-
-(describe "Addition with a context"
-  (with [(fn-context #(println "This happens before each test example")
-		     #(println "This happens after each test example"))]
-    (it "adds small numbers"
-      (= 7 (+ 3 4)))
-    (it "adds large numbers"
-      (= 7000 (+ 3000 4000)))))
-
-(describe "Addition with a context"
-  (with [(fn-context #(println "This happens before all tests")
-		     #(println "This happens after all tests"))]
-    (testing "with a nested group"
-      (it "adds small numbers"
-	(= 7 (+ 3 4)))
-      (it "adds large numbers"
-	(= 7000 (+ 3000 4000))))))
-
-(describe "Square root of two with state"
-  (using [root (stateful-fn-context
-		  (fn [] (Math/sqrt 2))
-		  (fn [x] (println "All done with" x)))]
-    (it "is less than 2"
-      (> 2 @root))
-    (it "is more than 1"
-      (< 1 @root))))
-

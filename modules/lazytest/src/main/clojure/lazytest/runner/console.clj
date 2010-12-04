@@ -3,29 +3,24 @@
 	lazytest.suite
 	lazytest.test-case
 	lazytest.focus
-	lazytest.color
-	lazytest.context)
+	lazytest.color)
   (:import lazytest.ExpectationFailed))
 
 (defn- run-test-case [tc]
-  (setup-contexts tc)
   (let [result (try-test-case tc)]
     (if (:pass? result)
       (print (colorize "." :green))
       (print (colorize "F" :red)))
     (flush)
-    (teardown-contexts tc)
     result))
 
 (defn- run-test-seq [s]
-  (setup-contexts s)
   (let [results (doall (map (fn [x]
 			      (cond (test-seq? x) (run-test-seq x)
 				    (test-case? x) (run-test-case x)
 				    :else (throw (IllegalArgumentException.
 						  "Non-test given to run-suite."))))
 			    s))]
-    (teardown-contexts s)
     (suite-result s results)))
 
 (defn run-tests

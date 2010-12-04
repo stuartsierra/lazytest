@@ -11,8 +11,7 @@
   original clojure.test-clojure.multimethods, written by Frantisek
   Sodomka, Robert Lachlan, and Stuart Halloway."
   (:use lazytest.describe
-	lazytest.expect.thrown
-	[lazytest.context.stub :only (global-stub)])
+	lazytest.expect.thrown)
   (:require [clojure.set :as set]))
 
 (defn hierarchy-tags
@@ -119,22 +118,22 @@
     (it "...but not its superclasses!"
       (not (isa? h java.util.Collection ::map)))))
 
-(describe "The global hierarchy"
-  (with [(global-stub #'clojure.core/global-hierarchy (make-hierarchy))]
-	(testing "(stubbed)"
-	  (is-valid-hierarchy @#'clojure.core/global-hierarchy)
-	  (with [(before (derive ::lion ::cat)
-			 (derive ::manx ::cat))]
-		(testing "when you add some derivations..."
-		  (testing "...isa? sees the derivations"
-		    (it (isa? ::lion ::cat))
-		    (it (not (isa? ::cat ::lion))))
-		  (testing "... you can traverse the derivations"
-		    (it (= #{::manx ::lion} (descendants ::cat)))
-		    (it (= #{::cat} (parents ::manx)))
-		    (it (= #{::cat} (ancestors ::manx))))
-		  (with [(before (underive ::manx ::cat))]
-			(testing "then, remove a derivation, traversals update accordingly"
-			  (it (= #{::lion} (descendants ::cat)))
-			  (it (nil? (parents ::manx)))
-			  (it (nil? (ancestors ::manx))))))))))
+;; (describe "The global hierarchy"
+;;   (with [(global-stub #'clojure.core/global-hierarchy (make-hierarchy))]
+;; 	(testing "(stubbed)"
+;; 	  (is-valid-hierarchy @#'clojure.core/global-hierarchy)
+;; 	  (with [(before (derive ::lion ::cat)
+;; 			 (derive ::manx ::cat))]
+;; 		(testing "when you add some derivations..."
+;; 		  (testing "...isa? sees the derivations"
+;; 		    (it (isa? ::lion ::cat))
+;; 		    (it (not (isa? ::cat ::lion))))
+;; 		  (testing "... you can traverse the derivations"
+;; 		    (it (= #{::manx ::lion} (descendants ::cat)))
+;; 		    (it (= #{::cat} (parents ::manx)))
+;; 		    (it (= #{::cat} (ancestors ::manx))))
+;; 		  (with [(before (underive ::manx ::cat))]
+;; 			(testing "then, remove a derivation, traversals update accordingly"
+;; 			  (it (= #{::lion} (descendants ::cat)))
+;; 			  (it (nil? (parents ::manx)))
+;; 			  (it (nil? (ancestors ::manx))))))))))
