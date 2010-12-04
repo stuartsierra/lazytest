@@ -43,9 +43,8 @@
   (and (map? x) (isa? (type x) ::test-case-result)))
 
 (defn try-test-case
-  "Executes a test case function.  Does not execute before/after
-   metadata functions.  Catches all Throwables.  Returns a map with
-   the following key-value pairs:
+  "Executes a test case function.  Catches all Throwables.  Returns a
+   map with the following key-value pairs:
 
      :source - the input function
      :pass?  - true if the function ran without throwing
