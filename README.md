@@ -1,13 +1,7 @@
-LAZYTEST IS BETA: THERE MAY BE BUGS
+LAZYTEST
 =======================================
 
- **Current Lazytest library release is version 1.2.3 and depends on Clojure 1.3.0-alpha3**
-
-Latest development version is 1.2.4-SNAPSHOT
-
- **Current Lazytest Maven plugin release is version 1.0.0**
-
-Lazytest: behavior-driven development/testing framework for Clojure
+Lazytest: Generic testing backend for Clojure
 
 by Stuart Sierra, http://stuartsierra.com/
 
@@ -20,32 +14,85 @@ the terms of this license.  You must not remove this notice, or any
 other, from this software.
 
 
-Deprecation Notices
+One Backend, Many Testing Styles
 ========================================
 
-Contexts, the `using` macro, and the `given` macro have not worked out
-well in practice.  They will be removed or substantially altered in a
-future version.
+Lazytest aims to be a generic library that can support many different
+modes and styles of testing. It defines a few generic representations
+for executable tests (see "Lazytest Internals", below). Any testing
+code that can be compiled into these representations can take
+advantage of Lazytest's running and reporting tools.
 
 
-Known Problems
+Getting Started with Leiningen
 ========================================
 
-Reloading some AOT (ahead-of-time) compiled namespaces fails with an
-exception like:
+Note: These instructions require JDK 6.
 
-    namespace 'foo.bar' not found after loading '/foo/bar'
+Copy the sample project in [modules/sample-leiningen-project](modules/sample-leiningen-project)
 
-This may be a Clojure bug; see http://gist.github.com/607161
+Put your app sources in `src/` and your test sources in `test/`
 
-I believe I have a workaround for this as of Lazytest version 1.1.1.
-But if it crops up again, you can fix it by disabling AOT-compilation
-or removing the compiled classes directory from the classpath.
+Then run:
+
+    lein clean
+    lein deps
+    java -cp "src:test:classes:lib/*" lazytest.watch src test
+
+And watch your tests run automatically whenever you save a file.
+
+Type CTRL+C to stop.
+
+To run your tests **just once** and stop, run:
+
+    java -cp "src:test:classes:lib/*" lazytest.main src test
 
 
 
-Test Examples and Groups
-========================
+Getting Started with Maven
+========================================
+
+Copy the sample project in [modules/sample-maven-project](https://github.com/stuartsierra/lazytest/blob/next/modules/sample-maven-project)
+
+Put your app sources in `src/main/clojure/` and your test sources in `src/test/clojure/`
+
+Then run:
+
+    mvn lazytest:watch
+
+And watch your tests run automatically whenever you save a file.
+
+Type CTRL+C to stop.
+
+To run your tests **just once** and stop, run:
+
+    mvn lazytest:run
+
+
+
+Testing with 'deftest'
+========================================
+
+The `lazytest.deftest` namespace is a drop-in replacement for the
+[clojure.test](http://clojure.github.com/clojure/clojure.test-api.html)
+library.  Each test is a function defined with the `deftest` macro,
+making assertions with the `is` macro:
+
+     (ns examples.readme.deftest
+       (:use [lazytest.deftest :only (deftest it thrown? thrown-with-msg?)]))
+
+     (deftest t-addition-with-integers
+       ;; arbitrary code may be executed here
+       (is (= 4 (+ 2 2)))
+       (is (= 7 (+ 3 4))))
+
+
+
+Testing with 'describe'
+========================================
+
+The `lazytest.describe` namespace mimics the behavior-driven testing
+style popularized by libraries such as [RSpec](http://rspec.info/).
 
 Use the `describe` macro to create a group of tests.  Start the group
 with a documentation string.
@@ -80,7 +127,7 @@ it failed.
 
 
 Nested Test Groups
-========================
+------------------------------
 
 Test groups may be nested inside other groups with the `testing`
 macro, which has the same syntax as `describe` but does not define a
@@ -103,37 +150,12 @@ top-level Var:
 
 
 
-Constants Shared Among Tests
-============================
-
- ** THIS SECTION IS DEPRECATED. **
-
-Inside a `describe` or `testing` group, use the `given` macro to
-define constants shared among several tests:
-
-    (ns examples.readme.givens
-      (:use [lazytest.describe :only (describe it given)]))
-
-    (describe "The square root of two"
-      (given [root (Math/sqrt 2)]
-        (it "is less than two"
-          (< root 2))
-        (it "is more than one"
-          (> root 1))))
-
-The syntax of `given` is just like `let`, including destructuring support.
-
-Note: `given` expressions are evaluated *before* contexts (see
-below). You cannot use contexts in a `given` expression. Givens really
-only work for constant values.
-
-
-
 Arbitrary Code in an Example
-============================
+------------------------------
 
 You can create an example that executes arbitrary code with the
-`do-it` macro.  Wrap each assertion expression in the `expect` macro.
+`do-it` macro.  Wrap each assertion expression in the
+`lazytest.expect/expect` macro.
 
     (ns examples.readme.do-it
       (:use [lazytest.describe :only (describe do-it)]
@@ -154,144 +176,8 @@ throwing an exception, the test example is considered to have passed.
 
 
 
-Contexts
-========
-
- ** THIS SECTION IS DEPRECATED. **
-
-Contexts provide support for executing arbitrary code before, after,
-or around test cases and test suites.
-
-Fundamentally, a context is a pair of no-argument functions, called
-*setup* and *teardown*.  You can create a context out of two functions
-with the `fn-context` function:
-
-    (ns examples.readme.contexts
-     (:use [lazytest.describe :only (describe testing it with)]
-           [lazytest.context :only (fn-context)]))
-
-    (def my-context
-      (fn-context (fn [] (println "This happens during setup"))
-                  (fn [] (println "This happens during teardown"))))
-
-A context may be attached (via metadata) to any test case or suite.
-To attach contexts to test cases or suites, use the `with` macro,
-which takes a vector of contexts as its first argument.  Those
-contexts will be attached to each test case or test suite in the body
-of `with`.
-
-    (describe "Addition with a context"
-      (with [my-context]
-        (it "adds small numbers"
-          (= 7 (+ 3 4)))
-        (it "adds large numbers"
-          (= 7000 (+ 3000 4000)))))
-
-If you want the contexts to be executed only once for a group of
-tests, simply wrap the body of the `with` macro in a single `testing`
-group:
-
-    (describe "Addition with a context"
-      (with [my-context]
-        (testing "with a nested group"
-          (it "adds small numbers"
-            (= 7 (+ 3 4)))
-          (it "adds large numbers"
-            (= 7000 (+ 3000 4000))))))
-
-The `lazytest.context.stub` namespace provides contexts for stubbing
-out Vars with alternate definitions.
-
-The `lazytest.context.properties` namespace provides contexts for
-setting Java system properties.
-
-Note: Givens and contexts are evaluated at different
-times. Expressions in the `given` macro cannot refer to context state.
-
-
-
-Simple Before / After Contexts
-==============================
-
- ** THIS SECTION IS DEPRECATED. **
-
-You can create simple contexts that just run some code before or after
-tests with the `before` and `after` macros.  Each takes a body of
-expressions to be run during setup or teardown, respectively.
-
-    (ns examples.readme.before-after
-      (use [lazytest.describe :only (describe it with before after)]))
-
-    (describe "Addition with a context"
-      (with [(before (println "This happens before each test"))
-             (after (println "This happens after each test"))]
-        (it "adds small numbers"
-          (= 7 (+ 3 4)))
-        (it "adds large numbers"
-          (= 7000 (+ 3000 4000)))))
-
-
-
-
-Stateful Contexts
-=================
-
- ** THIS SECTION IS DEPRECATED. **
-
-Contexts which need to provide state information (for example, a
-database connection or an open file) to their tests are called
-*stateful* contexts.
-
-A stateful context has a setup function which returns a value.  That
-value becomes the "state" of the context and may be retrieved by
-calling `deref` (abbreviated `@`) on the context.
-
-The teardown function of a stateful context will be called with the
-current state of the context as its argument.
-
-For example, a stateful context might be used to open and close a
-database connection:
-
-    (ns examples.readme.stateful-contexts
-      (:use [lazytest.context.stateful :only (stateful-fn-context)]
-            [lazytest.describe :only (describe using it)]))
-
-    (def database-context
-      (stateful-fn-context
-        (fn [] ... open & return database connection ...)
-        (fn [connection] ... close the connection ...)))
-
-    (describe "My tests with a database"
-      (with [database-context]
-        (it "can read from the database"
-          ... database connection is available as @database-context ...)))
-
-It is also possible to bind a stateful context to a local variable
-with the `using` macro.  Like `given`, the `using` macro takes a
-vector of name-value pairs, but each value must be a stateful context.
-Like `with`, the contexts will be attached to all the tests cases and
-or suites within the body of `using`.  The contexts may be
-dereferenced by their local names.
-
-    (describe "Square root of two with state"
-      (using [root (stateful-fn-context
-                     (fn [] (Math/sqrt 2))
-                     (fn [x] (println "All done with" x)))]
-        (it "is less than 2"
-          (> 2 @root))
-        (it "is more than 1"
-          (< 1 @root))))
-
-The `lazytest.context.file` namespace defines stateful contexts for
-creating temporary files and directories.
-
-Note: Givens and contexts are evaluated at different
-times. Expressions in the `given` macro cannot refer to context state.
-
-
-
 Focusing on Indiviaul Tests and Suites
-======================================
+========================================
 
 The `describe`, `testing`, `it`, and `do-it` macros all take an
 optional metadata map immediately after the docstring.
@@ -300,71 +186,24 @@ Adding `:focus true` to this map will cause *only* that test/suite to
 be run.  Removing it will return to the normal behavior (run all
 tests).
 
+When using `deftest`, you can put `:focus true` metadata on the symbol
+name of your test:
+
+    (deftest ^:focus my-test
+      ...)
+
 
 
 Generating Random Test Data
-===========================
+========================================
 
-Use random input data in your tests with the `for-any` macro, which
-takes a vector of name-value pairs like `given`, where each value is a
-generator function such as those defined in `lazytest.random`.
-
-This part needs better documentation.
-
-
-
-Getting Started with Leiningen
-==============================
-
-These instructions require JDK 6.
-
-Put the following in your `project.clj` file's `defproject`:
-
-    :dependencies [[com.stuartsierra/lazytest "1.2.3"]]
-    :repositories {"stuartsierra-releases" "http://stuartsierra.com/maven2"})
-
-Put your app sources in `src/` and your test sources in `test/`
-
-Then run:
-
-    lein clean
-    lein deps
-    java -cp "src:test:classes:lib/*" lazytest.watch src test
-
-And watch your tests run automatically whenever you save a file.
-
-Type CTRL+C to stop.
-
-To run the tests **just once** and stop, run:
-
-    java -cp "src:test:classes:lib/*" lazytest.main src test
-
-
-
-Getting Started with Maven
-==========================
-
-Copy the example `pom.xml` file from [modules/lazytest-maven-plugin/src/examples/pom.xml](https://github.com/stuartsierra/lazytest/blob/master/modules/lazytest-maven-plugin/src/examples/pom.xml)
-
-Put your app sources in `src/main/clojure/` and your test sources in `src/test/clojure/`
-
-Then run:
-
-    mvn lazytest:watch
-
-And watch your tests run automatically whenever you save a file.
-
-Type CTRL+C to stop.
-
-To run tests just once, run `mvn lazytest:run`
-
-Or, if you have used the configuration in the sample `pom.xml` file,
-you can run just `mvn test`.
+The `lazytest.random` namespace provides functions for generating
+random input data for your tests.
 
 
 
 Lazytest Internals
-==================
+========================================
 
 The smallest unit of testing is a *test case*, which is a function
 (see `lazytest.test-case/test-case`).  When the function is called, it
@@ -402,7 +241,7 @@ display to the user.  One example reporter is provided, see
 
 
 Making Emacs Indent Tests Properly
-==================================
+========================================
 
 Put the following in `.emacs`
 
