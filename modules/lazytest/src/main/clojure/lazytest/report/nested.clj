@@ -58,7 +58,7 @@
 
 (defn- report-test-case-result [result depth]
   (indent depth)
-  (println (colorize (identifier result) (if (:pass? result) :green :red))))
+  (println (colorize (str (identifier result)) (if (:pass? result) :green :red))))
 
 (defn- report-result [result depth]
   (if (suite-result? result)
