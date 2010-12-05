@@ -2,7 +2,8 @@
   "A drop-in replacement for clojure.test.  Supports the 'deftest',
   'is', 'are', and 'testing' macros.  Currently 'testing' doc strings
   do not appear in the report output."
-  (:use lazytest.expect
+  (:use [clojure.string :only (join)]
+	lazytest.expect
 	lazytest.test-case
 	[lazytest.expect.thrown :only (throws? throws-with-msg?)])
   (:require clojure.template))
@@ -15,30 +16,34 @@
   `(binding [*testing* (cons ~doc *testing*)]
      ~@body))
 
-(defmacro thrown? [c expr]
+(defn current-testing-string
+  "Returns the result of concatenating the sequence of nested
+  documentation strings created with the `testing` macro."
+  []
+  (when (seq *testing*)
+    (join " " (reverse *testing*))))
+
+(defmacro thrown?
+  "Returns true if expr throws an exception of class c."
+  [c expr]
   `(throws? ~c (fn [] ~expr)))
 
-(defmacro thrown-with-msg? [c re expr]
+(defmacro thrown-with-msg?
+  "Returns true if expr throws an exception of class c with a message
+  matching regular expression re."
+  [c re expr]
   `(throws-with-msg? ~c ~re (fn [] ~expr)))
 
 (defmacro is
   "Generic assertion macro.  'form' is any predicate test.
   'msg' is an optional message to attach to the assertion.
   
-  Example: (is (= 4 (+ 2 2)) \"Two plus two should be 4\")
-
-  Special forms:
-
-  (is (thrown? c body)) checks that an instance of c is thrown from
-  body, fails if not; then returns the thing thrown.
-
-  (is (thrown-with-msg? c re body)) checks that an instance of c is
-  thrown AND that the message on the exception matches (with
-  re-find) the regular expression re."
+  Example: (is (= 4 (+ 2 2)) \"Two plus two should be 4\")"
   ([expr]
-     `(expect nil ~expr))
+     `(expect (current-testing-string) ~expr))
   ([expr message]
-     `(expect ~message ~expr)))
+     `(testing ~message
+	(expect (current-testing-string) ~expr))))
 
 (defmacro are [argv expr & args]
   "Checks multiple assertions with a template expression.
@@ -60,4 +65,6 @@
   [sym & body]  
   {:pre [(symbol? sym)]}
   `(def ~sym (vary-meta (test-case (fn [] ~@body))
-			assoc :name '~sym)))
+			merge
+			'~(meta (first body))
+			{:name '~sym})))
