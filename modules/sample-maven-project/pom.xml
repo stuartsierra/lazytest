@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.stuartsierra</groupId>
+  <artifactId>sample-maven-project</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <name>Lazytest sample Maven project</name>
+  <description>This project demonstrates how to use Lazytest in a Maven-based project.</description>
+
+  <dependencies>
+    <!-- Add Lazytest as a 'test' dependency -->
+    <dependency>
+      <groupId>com.stuartsierra</groupId>
+      <artifactId>lazytest</artifactId>
+      <version>2.0.0-SNAPSHOT</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- Lazytest depends on Clojure 1.3.0-alpha3 or later -->
+    <dependency>
+      <groupId>org.clojure</groupId>
+      <artifactId>clojure</artifactId>
+      <version>1.3.0-alpha3</version>
+    </dependency>
+  </dependencies>
+
+
+  <build>
+    <plugins>
+      <plugin>
+	<!-- The Lazytest Maven plugin -->
+	<groupId>com.stuartsierra</groupId>
+	<artifactId>lazytest-maven-plugin</artifactId>
+	<version>1.0.1-SNAPSHOT</version>
+	<executions>
+	  <execution>
+	    <!-- This execution runs Lazytest once during the 'test' phase -->
+	    <id>lazytest-run</id>
+	    <phase>test</phase>
+	    <goals>
+	      <goal>run</goal>
+	    </goals>
+	  </execution>
+	</executions>
+      </plugin>
+    </plugins>
+  </build>
+
+
+  <repositories>
+    <repository>
+      <!-- Lazytest releases are deployed here -->
+      <id>stuartsierra-releases</id>
+      <url>http://stuartsierra.com/maven2</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+
+    <!-- You may also want these Clojure repositories -->
+    <repository>
+      <id>clojure-releases</id>
+      <url>http://build.clojure.org/releases</url>
+    </repository>
+    <repository>
+      <id>clojure-snapshots</id>
+      <url>http://build.clojure.org/snapshots</url>
+    </repository>
+    <repository>
+      <id>clojars</id>
+      <url>http://clojars.org/repo</url>
+    </repository>
+  </repositories>
+
+
+  <pluginRepositories>
+    <pluginRepository>
+      <!-- lazytest-maven-plugin releases are deployed here -->
+      <id>stuartsierra-releases</id>
+      <url>http://stuartsierra.com/maven2</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </pluginRepository>
+  </pluginRepositories>
+</project>
