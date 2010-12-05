@@ -29,7 +29,7 @@ Getting Started with Leiningen
 
 Note: These instructions require JDK 6.
 
-Copy the sample project in [modules/sample-leiningen-project](modules/sample-leiningen-project)
+Copy the sample project in [modules/sample-leiningen-project](./modules/sample-leiningen-project)
 
 Put your app sources in `src/` and your test sources in `test/`
 
@@ -52,7 +52,7 @@ To run your tests **just once** and stop, run:
 Getting Started with Maven
 ========================================
 
-Copy the sample project in [modules/sample-maven-project](https://github.com/stuartsierra/lazytest/blob/next/modules/sample-maven-project)
+Copy the sample project in [modules/sample-maven-project](./next/modules/sample-maven-project)
 
 Put your app sources in `src/main/clojure/` and your test sources in `src/test/clojure/`
 
