@@ -66,5 +66,5 @@
   {:pre [(symbol? sym)]}
   `(def ~sym (vary-meta (test-case (fn [] ~@body))
 			merge
-			'~(meta (first body))
+			'~(meta sym)
 			{:name '~sym})))
