@@ -28,10 +28,10 @@
   itself will be merged into the failure map."
   ([expr] `(expect nil ~expr))
   ([docstring expr]
-     {:pre [(or (string? docstring) (nil? docstring))]}
      (if (function-call? expr)
        ;; Normal function call
-       `(let [f# ~(first expr)
+       `(let [doc# ~docstring
+	      f# ~(first expr)
 	      args# (list ~@(rest expr))
 	      result# (apply f# args#)]
 	  (or result#
@@ -45,9 +45,10 @@
 			      :result result#
 			      :file ~*file*
 			      :ns '~(ns-name *ns*)}
-			     ~(when docstring {:doc docstring}))))))
+			     (when doc# {:doc doc#}))))))
        ;; Unknown type of expression
-       `(let [result# ~expr]
+       `(let [doc# ~docstring
+	      result# ~expr]
 	  (or result#
 	      (throw (ExpectationFailed.
 		      (merge '~(meta &form)
@@ -58,4 +59,4 @@
 			      :result result#
 			      :file ~*file*
 			      :ns '~(ns-name *ns*)}
-			     ~(when docstring {:doc docstring})))))))))
+			     (when doc# {:doc doc#})))))))))
