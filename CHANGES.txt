@@ -1,3 +1,14 @@
+v2.0.0-SNAPSHOT
+
+ * Remove contexts and `given`
+
+ * Added deftest style
+
+ * Added sample projects for Leiningen & Maven
+
+ * Added samples using clojure.test-clojure
+
+
 v1.2.3        2010-11-27        Added Maven Plugin
 
  * Separated into modules
