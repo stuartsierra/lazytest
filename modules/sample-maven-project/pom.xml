@@ -59,6 +59,17 @@
         <enabled>false</enabled>
       </snapshots>
     </repository>
+    <repository>
+      <!-- Lazytest SNAPSHOTs are deployed here -->
+      <id>stuartsierra-snapshots</id>
+      <url>http://stuartsierra.com/m2snapshots</url>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
 
     <!-- You may also want these Clojure repositories -->
     <repository>
@@ -86,6 +97,17 @@
       </releases>
       <snapshots>
         <enabled>false</enabled>
+      </snapshots>
+    </pluginRepository>
+    <pluginRepository>
+      <!-- Lazytest SNAPSHOTs are deployed here -->
+      <id>stuartsierra-snapshots</id>
+      <url>http://stuartsierra.com/m2snapshots</url>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
       </snapshots>
     </pluginRepository>
   </pluginRepositories>
