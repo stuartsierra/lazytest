@@ -82,30 +82,35 @@
 	      :expected this
 	      :actual that)))
 
-(defn longest-common-substring [s t]
+(defn longest-common-substring-indices [s t]
   (let [m (count s)
 	n (count t)
 	L (make-array Integer/TYPE m n)]
     (loop [i 0, j 0, z 0, ret #{}]
-      (prn i j z ret)
       (cond (= j n)
 	    (recur (inc i) 0 z ret)
 	    
 	    (= i m)
-	    ret
+	    [z ret]
 
 	    (= (nth s i) (nth t j))
-	    (do (if (or (zero? i) (zero? j))
-		  (aset-int L i j 1)
-		  (aset-int L i j (inc (aget L (dec i) (dec j)))))
+	    (do (aset-int L i j
+			  (if (or (zero? i) (zero? j))
+			    1
+			    (inc (aget L (dec i) (dec j)))))
 		(cond (> (aget L i j) z)
 		      (recur i (inc j) (aget L i j)
-			     #{(subs s (inc (- i (aget L i j))) (inc i))})
+			     #{(inc (- i (aget L i j)))})
 		      (= (aget L i j) z)
 		      (recur i (inc j) z
-			     (conj ret (subs s (inc (- i z)) (inc i))))
+			     (conj ret (inc (- i z))))
 		      :else
 		      (recur i (inc j) z ret)))
 
 	    :else
 	    (recur i (inc j) z ret)))))
+
+(defn longest-common-substring [s t]
+  (let [[z ret] (longest-common-substring-indices s t)]
+    (reduce (fn [result x] (conj result (subs s x (+ x z))))
+	    #{} ret)))
