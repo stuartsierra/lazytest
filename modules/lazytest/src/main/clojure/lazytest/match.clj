@@ -114,3 +114,8 @@
   (let [[z ret] (longest-common-substring-indices s t)]
     (reduce (fn [result x] (conj result (subs s x (+ x z))))
 	    #{} ret)))
+
+(defn longest-common-subvec [v w]
+  (let [[z ret] (longest-common-substring-indices v w)]
+    (reduce (fn [result x] (conj result (subvec v x (+ x z))))
+	    #{} ret)))
