@@ -178,7 +178,7 @@ throwing an exception, the test example is considered to have passed.
 
 
 
-Focusing on Indiviaul Tests and Suites
+Focusing on Individual Tests and Suites
 ========================================
 
 The `describe`, `testing`, `it`, and `do-it` macros all take an
