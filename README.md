@@ -1,7 +1,9 @@
-LAZYTEST 2.0.0-SNAPSHOT is unstable and subject to change
-=========================================================
+Lazytest
+=========
 
- ** For stable releases, use the [stable branch](https://github.com/stuartsierra/lazytest/tree/stable) **
+ ** Not under active development **
+
+ ** Latest stable release is on the [stable branch](https://github.com/stuartsierra/lazytest/tree/stable) **
 
 Lazytest: Generic testing backend for Clojure
 
