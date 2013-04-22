@@ -55,7 +55,7 @@
   "Removes all namespaces named by symbols, then reloads them."
   [& symbols]
   {:pre (every? symbol? symbols)}
-  (doseq [sym symbols] (remove-ns sym))
-  (apply remove-from-loaded-libs symbols)
+  ;(doseq [sym symbols] (remove-ns sym))
+  ;(apply remove-from-loaded-libs symbols)
   (doseq [sym symbols] (ensure-source-file-newer sym))
-  (apply require symbols))
+  (apply require (conj symbols :reload)))
