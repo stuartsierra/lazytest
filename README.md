@@ -83,7 +83,7 @@ library.  Each test is a function defined with the `deftest` macro,
 making assertions with the `is` macro:
 
      (ns examples.readme.deftest
-       (:use [lazytest.deftest :only (deftest it thrown? thrown-with-msg?)]))
+       (:use [lazytest.deftest :only (deftest is thrown? thrown-with-msg?)]))
 
      (deftest t-addition-with-integers
        ;; arbitrary code may be executed here
